@@ -145,7 +145,7 @@ public class ZonalStats2 extends BaseStatisticsOperationJAI {
             // /////////////////////////////////////////////////////////////////////
             //
             // Transcode the polygons parameter into a roi list. If an old ROI
-            // parameter is used, then it is put inside the roi list
+            // parameter is used, then it is put inside the roi list.
             //
             // I am assuming that the supplied values are in the same
             // CRS as the source coverage. We here apply
@@ -163,6 +163,9 @@ public class ZonalStats2 extends BaseStatisticsOperationJAI {
             // Output List for storing the geometries inside a ROI List
             List<ROI> outputList = null;
 
+            // Calculation of the source coverage envelope
+            ReferencedEnvelope coverageEnvelope = new ReferencedEnvelope(envelope);
+
             // Creation of the New RoiList object
             if (roilist != null && roilist instanceof List<?>) {
 
@@ -172,8 +175,7 @@ public class ZonalStats2 extends BaseStatisticsOperationJAI {
                 Iterator<SimpleFeature> geomIter = geomList.iterator();
                 // Output List definition
                 outputList = new ArrayList<ROI>(numGeom);
-                // Calculation of the source coverage envelope
-                ReferencedEnvelope coverageEnvelope = new ReferencedEnvelope(envelope);
+
                 // For each feature, there is the conversion
                 while (geomIter.hasNext()) {
                     SimpleFeature zone = geomIter.next();
@@ -236,6 +238,54 @@ public class ZonalStats2 extends BaseStatisticsOperationJAI {
             }
             // Setting of the roilist parameter to the parameterBlock
             block.setParameter("roilist", outputList);
+
+            // /////////////////////////////////////////////////////////////////////
+            //
+            // Transcode the mask parameter into a roi.
+            //
+            // /////////////////////////////////////////////////////////////////////
+
+            // Grab the mask parameter and eventually reproject it
+            Geometry mask = (Geometry) parameters.parameter("mask").getValue();
+
+            if (mask != null) {
+                // first off, cut the geometry around the coverage bounds if necessary
+                ReferencedEnvelope maskEnvelope = new ReferencedEnvelope(
+                        mask.getEnvelopeInternal(), crs);
+
+                // Check if the mask envelop intersects the coverage Envelope
+                if (coverageEnvelope.intersects((Envelope) maskEnvelope)) {
+
+                    if (!coverageEnvelope.contains((Envelope) maskEnvelope)) {
+                        // the geometry goes outside of the coverage envelope, that makes
+                        // the stats fail for some reason
+                        mask = JTS.toGeometry((Envelope) coverageEnvelope).intersection(mask);
+                        maskEnvelope = new ReferencedEnvelope(mask.getEnvelopeInternal(), crs);
+                    }
+
+                    // transform the geometry to raster space so that we can use it as a ROI source
+                    Geometry maskSpaceGeometry = JTS.transform(mask, worldToGridTransform);
+
+                    // simplify the geometry so that it's as precise as the coverage, excess coordinates
+                    // just make it slower to determine the point in polygon relationship
+                    Geometry simplifiedMaskGeometry = DouglasPeuckerSimplifier.simplify(
+                            maskSpaceGeometry, 1);
+
+                    // translation of the selected geometry of 0.5, from the pixel center to the corners.
+                    AffineTransformation at = new AffineTransformation();
+
+                    at.setToTranslation(-0.5, -0.5);
+                    simplifiedMaskGeometry.apply(at);
+
+                    // build a shape using a fast point in polygon wrapper
+                    ROI maskROI = new ROIGeometry(simplifiedMaskGeometry, false);
+
+                    // Setting of the roilist parameter to the parameterBlock
+                    block.setParameter("mask", maskROI);
+                } else {
+                    throw new IllegalArgumentException("Mask is outside the Coverage Envelope");
+                }
+            }
 
             return block;
         } catch (Exception e) {

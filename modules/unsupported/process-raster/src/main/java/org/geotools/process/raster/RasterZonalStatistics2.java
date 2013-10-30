@@ -36,6 +36,7 @@ import org.opengis.coverage.processing.Operation;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.parameter.ParameterValueGroup;
 import com.sun.media.jai.util.SunTileCache;
+import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Polygon;
 
 
@@ -78,7 +79,9 @@ public class RasterZonalStatistics2 implements RasterProcess {
             @DescribeParameter(name = "classifier", description = "Raster whose values will be used as classes for the statistical analysis. Each zone reports statistics partitioned "
                     + "by classes according to the values of the raster. Must be a single band raster with integer values.", min = 0) GridCoverage2D classifier,
             @DescribeParameter(name = "nodata", description = "Input Range for NoData") Range nodata,
-            @DescribeParameter(name = "roi", description = "Optional roi object used, if the zones parameter is not used") Polygon roi,
+            @DescribeParameter(name = "mask", description = "Optional mask for the statistic calculations") Geometry mask,
+            @DescribeParameter(name = "useROIAccessor", description = "Boolean indicating if a RasterAccessor associated to the Mask should be used for calculating statistics. (Only with Mask field present)",defaultValue = "false") boolean useROIAccessor,
+            @DescribeParameter(name = "roi", description = "Optional roi object, if the zones parameter is not used") Polygon roi,
             @DescribeParameter(name = "statistics", description = "Statistics to calculate (default are min,max,sum,avg,stddev)") StatsType[] stats,
             @DescribeParameter(name = "minbounds", description = "Minimum bounds used for calculating Histogram, median and mode operations (for each band)") double[] minbounds,
             @DescribeParameter(name = "maxbounds", description = "Maximum bounds used for calculating Histogram, median and mode operations (for each band)") double[] maxbounds,
@@ -125,6 +128,8 @@ public class RasterZonalStatistics2 implements RasterProcess {
         param.parameter("roi").setValue(roi);
         param.parameter("roilist").setValue(zones);
         param.parameter("NoData").setValue(nodata);
+        param.parameter("mask").setValue(mask);
+        param.parameter("useROIAccessor").setValue(useROIAccessor);
         param.parameter("stats").setValue(stats);
         param.parameter("minbound").setValue(minbounds);
         param.parameter("maxbound").setValue(maxbounds);

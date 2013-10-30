@@ -161,7 +161,7 @@ public class ZonalStatsProcess2Test extends Assert {
 
             // invoke the process
             List<ZoneGeometry> zoneListStart = process.execute(coverage2D, null, zones,
-                    covClassificator, null, null, def, null, null, null, null, false);
+                    covClassificator, null, null, false, null, def, null, null, null, null, false);
 
             // Reverse of the list due to a variation on the code
             List<ZoneGeometry> zoneList = new ArrayList<ZoneGeometry>(zoneListStart);
