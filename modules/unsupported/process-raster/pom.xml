@@ -118,6 +118,11 @@
           <artifactId>jt-utils</artifactId>
           <version>${jt.version}</version>
         </dependency>
+        <dependency>
+          <groupId>it.geosolutions-jai-ext</groupId>
+          <artifactId>change-matrix</artifactId>
+          <version>${jaiext.version}</version>
+        </dependency>
         
         <!-- Test dependencies -->
         <dependency>
