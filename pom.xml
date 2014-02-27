@@ -712,7 +712,12 @@
         <groupId>it.geosolutions.imageio-ext</groupId>
         <artifactId>imageio-ext-grib1</artifactId>
         <version>${imageio.ext.version}</version>
-      </dependency>                          
+      </dependency>   
+      <dependency>
+        <groupId>it.geosolutions.imageio-ext</groupId>
+        <artifactId>imageio-ext-png</artifactId>
+        <version>${imageio.ext.version}</version>
+      </dependency> 	  
 
       <!-- JAITools -->
       <dependency>
