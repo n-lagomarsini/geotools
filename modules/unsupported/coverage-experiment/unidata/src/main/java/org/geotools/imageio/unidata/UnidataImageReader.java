@@ -40,6 +40,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -101,7 +104,9 @@ public abstract class UnidataImageReader extends GeoSpatialImageReader implement
     private static final int INTERNAL_INDEX_CREATION_PAGE_SIZE = 1000;
 
     private final static Logger LOGGER = Logging.getLogger(UnidataImageReader.class.toString());
-
+    /** Lock used for thread-safety*/
+    private final ReadWriteLock rwLock = new ReentrantReadWriteLock(true);
+    
     /** 
      * An instance of {@link AncillaryFileManager} which takes care of handling all the auxiliary index
      * files and initializations.
@@ -883,16 +888,26 @@ public abstract class UnidataImageReader extends GeoSpatialImageReader implement
         final String typeName = indexSchema.getTypeName();
         final CoverageSlicesCatalog catalog = getCatalog();
         if (typeName != null) {
-            // Check if already existing
-            String[] typeNames = catalog.getTypeNames();
-            if (typeNames != null) {
-                for (String tn : typeNames) {
-                    if (tn.equalsIgnoreCase(typeName)) {
-                        return;
+            // Selection of the write lock
+//            Lock lock = rwLock.writeLock();            
+            try{
+             // lock on writing in order to avoid concurrent modifications
+//                lock.lock();
+                // Check if already existing
+                String[] typeNames = catalog.getTypeNames();
+                if (typeNames != null) {
+                    for (String tn : typeNames) {
+                        if (tn.equalsIgnoreCase(typeName)) {
+                            return;
+                        }
                     }
                 }
+                catalog.createType(indexSchema);
+            }finally{
+                // Release of the lock
+//                lock.unlock();
             }
-            catalog.createType(indexSchema);
+
         }
     }
 

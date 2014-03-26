@@ -20,6 +20,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import junit.framework.Assert;
@@ -36,6 +42,7 @@ import org.geotools.data.Query;
 import org.geotools.feature.NameImpl;
 import org.geotools.imageio.unidata.reader.DummyUnidataImageReader;
 import org.geotools.imageio.unidata.reader.DummyUnidataImageReaderSpi;
+import org.geotools.imageio.unidata.utilities.UnidataUtilities;
 import org.geotools.test.TestData;
 import org.junit.After;
 import org.junit.Test;
@@ -43,6 +50,8 @@ import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.Name;
 import org.opengis.filter.Filter;
+
+import ucar.nc2.dataset.CoordinateSystem;
 
 /**
  * Testing Low Level Unidata reader infrastructure.
@@ -508,6 +517,112 @@ public final class UnidataTest extends Assert {
 
             // specific clean up
             FileUtils.deleteDirectory(TestData.file(this,".polyphemus"));
+        }
+    }
+    
+    @Test
+    public void testSchemaConcurrency() throws FileNotFoundException, IOException, InterruptedException{
+        // Selection of a file and copy into another temporary file which will be deleted on exit
+        File file=null;
+        try{
+            file = TestData.file(this, "20130101.METOPA.GOME2.NO2.DUMMY.nc");
+        } catch (IOException e) {
+            LOGGER.warning("Unable to find file 20130101.METOPA.GOME2.NO2.DUMMY.nc");
+            return;
+        }
+        if(!file.exists()){
+            LOGGER.warning("Unable to find file 20130101.METOPA.GOME2.NO2.DUMMY.nc");
+            return;
+        }
+        FileUtils.copyFile(file, new File(TestData.file(this,null),"dummy.nc"));
+        final File copiedFile=TestData.file(this,"dummy.nc");
+        //Number of all the concurrent threads
+        int numThreads = 10;
+        // Launching multiple threads reading the same file with a ThreadPoolExecutor
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(numThreads, numThreads, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1000000));
+        // Latch used for monitoring the multiple threads
+        final CountDownLatch latch = new CountDownLatch(numThreads);
+        // Boolean indicating that no exception has been found
+        final AtomicBoolean exceptions = new AtomicBoolean(false);
+        //Reader instantiation
+        final DummyUnidataImageReaderSpi unidataImageReaderSpi = new DummyUnidataImageReaderSpi();
+        DummyUnidataImageReader reader =null;        
+        try{
+            // Reader creation
+            reader = (DummyUnidataImageReader) unidataImageReaderSpi.createReaderInstance();
+            reader.setInput(copiedFile);
+            //reader.dispose();
+            //reader = (DummyUnidataImageReader) unidataImageReaderSpi.createReaderInstance();
+            //reader.setInput(copiedFile, false, true);
+            // Selection of the first coverage name
+//            Name coverageName = reader.getCoveragesNames().get(0);
+            // Selection of the first coordinate system used
+            CoordinateSystem cs = UnidataUtilities.getDataset(copiedFile).getCoordinateSystems().get(0);
+            
+            // Cycle for launching all the threads
+            for(int i = 0; i < numThreads; i++){
+                executor.execute(new TestRunnable(reader, latch, exceptions, new NameImpl("z"), cs));
+            }
+            // Waiting all the threads have completed
+            latch.await();
+            // Executor shutdown
+            executor.shutdown();
+            executor.awaitTermination(60, TimeUnit.SECONDS);
+            // Check if no exception has been thrown
+            assertFalse(exceptions.get());
+        }finally {
+            // close reader
+            if (reader != null) {
+                try {
+                    reader.dispose();
+                } catch (Throwable t) {
+                    // Does nothing
+                }
+            }
+            // specific clean up
+            FileUtils.deleteQuietly(TestData.file(this,"dummy.nc"));
+        }
+    }
+    
+    /**
+     * Helper class used for testing the schema concurrency
+     * 
+     * @author Nicola Lagomarsini, Geosolutions S.A.S.
+     *
+     */
+    static class TestRunnable implements Runnable{
+
+        /** Unidata reader to test*/
+        private UnidataImageReader reader;
+        /** Latch to countdown for each thread*/
+        private CountDownLatch latch;
+        /** AtomicBoolean which must be set to true if an exception is thrown*/
+        private AtomicBoolean exceptions;
+        /** Coverage Name used*/
+        private Name coverageName;
+        /** CoordinateSystem object used for selecting the schema*/
+        private CoordinateSystem cs;
+
+        TestRunnable(UnidataImageReader reader, CountDownLatch latch, AtomicBoolean exceptions, Name coverageName, CoordinateSystem cs){
+            this.reader=reader;
+            this.latch=latch;
+            this.exceptions = exceptions;
+            this.coverageName=coverageName;
+            this.cs=cs;
+        }
+        
+        @Override
+        public void run() {
+            try{
+                // Schema request
+                reader.getIndexSchema(coverageName, cs);                
+            } catch (Exception e) {
+                // Any exception is logged and the "exceptions" boolean is atomically set to true
+                LOGGER.log(Level.WARNING, e.getMessage());
+                exceptions.getAndSet(true);
+            }  
+            // Latch countdown
+            latch.countDown();
         }
     }
 }
