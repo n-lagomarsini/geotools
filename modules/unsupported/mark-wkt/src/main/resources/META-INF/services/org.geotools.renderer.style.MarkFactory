@@ -1,2 +1,3 @@
 org.geotools.renderer.markwkt.WKTMarkFactory
 org.geotools.renderer.markwkt.MeteoMarkFactory
+org.geotools.renderer.markwkt.WindBarbsFactory
