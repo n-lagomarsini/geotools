@@ -2,14 +2,18 @@ package org.geotools.renderer.windbarbs;
 
 import java.awt.Graphics2D;
 import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.geotools.renderer.style.MarkFactory;
+import org.geotools.util.KVP;
 import org.opengis.feature.Feature;
 import org.opengis.filter.expression.Expression;
 
@@ -56,8 +60,9 @@ public class WindBarbsFactory implements MarkFactory {
             throws Exception {
 
         // cannot handle a null url
-        if (symbolUrl == null)
+        if (symbolUrl == null){
             return null;
+        }
 
         // see if it's a shape
         if (LOGGER.isLoggable(Level.FINE)) {
@@ -83,7 +88,12 @@ public class WindBarbsFactory implements MarkFactory {
         if (wellKnownName.contains("(")) {
             windBarbName = wellKnownName.substring(WINDBARBS_PREFIX.length() , wellKnownName.indexOf("("));
         }
+
+        ////
+        //
         // Looking for speed value
+        //
+        ////        
         Matcher matcher = SPEED_PATTERN.matcher(wellKnownName);
         double speed = 0;
         if (matcher.find()) {
@@ -91,7 +101,11 @@ public class WindBarbsFactory implements MarkFactory {
             speed = Double.parseDouble(speedString.substring(1, speedString.length() - 1));
         }
 
+        ////
+        //
         // Looking for unit value (one of km/h, m/s, kts, knots)
+        //
+        ////
         matcher = UNIT_PATTERN.matcher(wellKnownName);
         if (matcher.find()) {
             String unitString = matcher.group();
@@ -100,8 +114,61 @@ public class WindBarbsFactory implements MarkFactory {
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine("Speed value = " + speed + " " + units);
         }
-
+        
+        ////
+        //
+        // Params
+        //
+        ////
+        int index=wellKnownName.lastIndexOf('?');
+        if( index>0){
+            final Map<String,String> params= new HashMap<String, String>();
+            final String kvp=wellKnownName.substring(index+1);
+            String[] pairs = kvp.split("&");
+            if(pairs!=null&&pairs.length>0){
+                for(String pair:pairs){
+                    // split
+                    String[] splitPair = pair.split("=");
+                    if(splitPair!=null&&splitPair.length>0){
+                        params.put(splitPair[0].toLowerCase(),splitPair[1]);
+                    }else{
+                        if(LOGGER.isLoggable(Level.FINE)){
+                            LOGGER.fine("Skipping pair "+pair);
+                        }
+                    }
+                }
+                
+                // checks
+                if(!params.isEmpty()){
+                    return getWindBarb(windBarbName, speed, units,params);
+                }
+            }
+        }
+        
+        ////
+        //
+        // Get shape if possible
+        //
+        ////
         return getWindBarb(windBarbName, speed, units);
+
+
+    }
+
+    /**
+     * @param windBarbName
+     * @param speed
+     * @param units
+     * @param params
+     * @return
+     */
+    private Shape getWindBarb(String windBarbName, double speed, String units, Map<String,String> params) {
+        // speed
+        int knots = SpeedConverter.toKnots(speed, units);
+        
+        // shape
+        return getWindBarbForKnots(windBarbName, knots,params);
+      
     }
 
     /**
@@ -111,15 +178,27 @@ public class WindBarbsFactory implements MarkFactory {
      * @return
      */
     private Shape getWindBarb(final String windBarbName, final double speed, final String units) {
-        int knots = SpeedConverter.toKnots(speed, units);
-        return getWindBarbForKnots(windBarbName, knots);
+        return getWindBarb(windBarbName, speed, units, null);
     }
 
-    private Shape getWindBarbForKnots(final String windBarbName, final int knots) {
+    private Shape getWindBarbForKnots(final String windBarbName, final int knots, Map<String, String> params) {
+        
         // We may revisit this in case windBarbs validity is across values, using the nearest...
         // as an instance, windBarb for 10 knots is valid for speed between 8 and 12 knots
         if (windBarbName.equalsIgnoreCase(DEFAULT_NAME)) {
-            return DEFAULT_CACHED_BARBS.get(knots / 5);
+            if(params==null||params.isEmpty()){
+                return DEFAULT_CACHED_BARBS.get(knots / 5);
+            }
+
+            boolean southern=false;
+            if(params.containsKey("emisphere")&&params.get("emisphere").equalsIgnoreCase("s")){
+                southern=true;
+            }
+            if(southern){
+                // flip shape on Y axis
+                final Shape shp=DEFAULT_CACHED_BARBS.get(knots / 5);
+                return AffineTransform.getScaleInstance(-1, 1).createTransformedShape(shp);
+            }
         }
         // TODO:
         // We may refers to a different name such as "custom1",

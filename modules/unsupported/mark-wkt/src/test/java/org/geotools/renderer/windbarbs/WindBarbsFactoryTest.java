@@ -83,7 +83,7 @@ public class WindBarbsFactoryTest extends TestCase {
     public void testWellKnownTextLineString() {
         WindBarbsFactory wbf = new WindBarbsFactory();
         try {
-            this.exp = ff.literal(WindBarbsFactory.WINDBARBS_PREFIX + "default(145)[kts]");
+            this.exp = ff.literal(WindBarbsFactory.WINDBARBS_PREFIX + "default(20)[kts]?emisphere=S");
             Shape shp = (Shape) wbf.getShape(null, this.exp, this.feature);
             System.out.println(shp.getBounds());
             ShapePanel p = new ShapePanel();

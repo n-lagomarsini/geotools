@@ -4,6 +4,7 @@ import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
+import java.util.logging.Logger;
 
 /**
  * A WindBarb object made of reference speed in knots, and related number of longBarbs (10 kts), 
@@ -12,27 +13,9 @@ import java.awt.geom.Path2D;
  * @author Daniele Romagnoli, GeoSolutions SAS
  */
 class WindBarb {
-    static class Pennant{
-        final int pennantBaseLength;
-        
-        final int pennantEdgeLength;
-        
-        Pennant(final int pennantBaseLength,final int pennantEdgeLength){
-            this.pennantBaseLength=pennantBaseLength;
-            this.pennantEdgeLength=pennantEdgeLength;
-        }
-        
-        public Shape getShape(){
-            Path2D path = new Path2D.Double();
-            path.moveTo(0, 0);
-            
-            path.lineTo(0, pennantBaseLength);
-            path.lineTo(pennantEdgeLength, 0);
-            path.closePath();
-            return path;
-        }
-        
-    }
+
+    /** The logger. */
+    private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger(WindBarb.class);
     
     /**
      * A WindBarbDefinition contains parameters used to build the WindBarb, such as the 
@@ -163,16 +146,12 @@ class WindBarb {
      * @return
      */
     private int drawShortBarb(Path2D path, int positionOnPath) {
-        
-        final int basePennantLength = windBarbDefinition.basePennantLength;
-        final int shortBarbLength = windBarbDefinition.shortBarbLength;
-        
         if (pennants == 0 && longBarbs == 0) {
             positionOnPath = DEFAULT_ELEMENTS_SPACING;
         } 
 
         path.moveTo(0, positionOnPath);
-        path.lineTo(shortBarbLength, positionOnPath - basePennantLength / 4.0 );
+        path.lineTo(windBarbDefinition.shortBarbLength, positionOnPath - windBarbDefinition.basePennantLength / 4.0 );
         return positionOnPath;
     }
 
@@ -184,24 +163,19 @@ class WindBarb {
      * @return
      */
     private int drawLongBarbs(Path2D path, int positionOnPath) {
-        
-        final int basePennantLength = windBarbDefinition.basePennantLength;
-        final int longBarbLength = windBarbDefinition.longBarbLength;
-        final int elementsSpacing = windBarbDefinition.elementsSpacing;
-        
-        
-        int appendedLongBarbs = 0;
-        while (appendedLongBarbs < longBarbs) {
+        if(longBarbs<=0){
+            return positionOnPath;
+        }
+        for (int elements=0;elements < longBarbs;elements++) {
             
-            if(appendedLongBarbs>=1){
-                // spacing
-                positionOnPath += elementsSpacing;
+            if(elements>=1){
+                // spacing if neede
+                positionOnPath += windBarbDefinition.elementsSpacing;
             }
             // draw long barb
             path.moveTo(0,positionOnPath);
-            path.lineTo(longBarbLength,positionOnPath - basePennantLength / 2.0 );
-            appendedLongBarbs++;
-            
+            path.lineTo(windBarbDefinition.longBarbLength,positionOnPath - windBarbDefinition.basePennantLength / 2.0 );
+           
         }
         return positionOnPath;
     }
@@ -218,22 +192,18 @@ class WindBarb {
             return positionOnPath;
         }
         
-        final int basePennantLength = windBarbDefinition.basePennantLength;
-        final int longBarbLength = windBarbDefinition.longBarbLength;
-        
-        int appendedPennants = 0;
-        while (appendedPennants < pennants) {
+        for (int elements=0;elements < pennants;elements++) {
             // move forward one pennant at a time
+            
             // draw pennant
             path.moveTo(0, positionOnPath);
-            positionOnPath  +=basePennantLength / 2.0;
-            path.lineTo(longBarbLength , positionOnPath) ; // first edge
-            positionOnPath += basePennantLength / 2.0;
+            positionOnPath  +=windBarbDefinition.basePennantLength / 2.0;
+            path.lineTo(windBarbDefinition.longBarbLength , positionOnPath) ; // first edge
+            positionOnPath += windBarbDefinition.basePennantLength / 2.0;
             path.lineTo(0,positionOnPath); //second edge
             path.closePath();
             
-            // move
-            appendedPennants++;
+            // pennants are drawn one after the other
         }
         return positionOnPath;
     }
