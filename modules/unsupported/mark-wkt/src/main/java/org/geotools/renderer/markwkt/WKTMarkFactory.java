@@ -18,31 +18,26 @@ package org.geotools.renderer.markwkt;
 
 import java.awt.Graphics2D;
 import java.awt.Shape;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Properties;
-import java.io.File;
-import java.io.InputStream;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.geometry.jts.LiteShape;
 import org.geotools.geometry.jts.WKTReader2;
+import org.geotools.renderer.style.MarkFactory;
+import org.geotools.util.SoftValueHashMap;
 import org.opengis.feature.Feature;
 import org.opengis.filter.FilterFactory;
 import org.opengis.filter.expression.Expression;
-
-import org.geotools.renderer.style.ExpressionExtractor;
-import org.geotools.renderer.style.MarkFactory;
-import org.geotools.util.SoftValueHashMap;
 
 /**
  * Factory to produce marks based on WKT representation of symbols. WKT geometries may be defined
