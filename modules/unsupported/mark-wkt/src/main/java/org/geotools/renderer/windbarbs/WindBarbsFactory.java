@@ -13,7 +13,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.geotools.renderer.style.MarkFactory;
-import org.geotools.util.KVP;
 import org.opengis.feature.Feature;
 import org.opengis.filter.expression.Expression;
 
@@ -28,6 +27,12 @@ import org.opengis.filter.expression.Expression;
  */
 public class WindBarbsFactory implements MarkFactory {
 
+    /** WINDBARB_DEFINITION */
+    private static final String WINDBARB_DEFINITION = "windbarbs://.*\\(\\d+\\.?\\d*\\)\\[.{1,5}\\]\\??.*";
+
+    /** SOUTHERN_EMISPHERE_FLIP */
+    private static final AffineTransform SOUTHERN_EMISPHERE_FLIP = AffineTransform.getScaleInstance(-1, 1);
+
     /** The loggermodule. */
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger(WindBarbsFactory.class);
 
@@ -35,15 +40,17 @@ public class WindBarbsFactory implements MarkFactory {
 
     private static final String DEFAULT_NAME = "default";
 
-    private static Pattern SPEED_PATTERN = Pattern.compile("\\((.*?)\\)");
+    private static Pattern SPEED_PATTERN = Pattern.compile("(.*?)(\\d+\\.?\\d*)(.*)");
+    
+    private static Pattern WINDBARB_SET_PATTERN = Pattern.compile("(.*?)://(.*)\\((.*)");
 
-    private static Pattern UNIT_PATTERN = Pattern.compile("\\[(.*?)\\]");
+    private static Pattern UNIT_PATTERN = Pattern.compile("(.*?)\\[(.*)\\](.*)");
 
     private static List<Shape> DEFAULT_CACHED_BARBS;
 
     static {
         DEFAULT_CACHED_BARBS = new ArrayList<Shape>();
-        for (int i = 0; i <= 150; i += 5) {
+        for (int i = 0; i <= 199; i += 5) {
             DEFAULT_CACHED_BARBS.add(new WindBarb(i).build());
         }
     }
@@ -59,60 +66,127 @@ public class WindBarbsFactory implements MarkFactory {
     public Shape getShape(Graphics2D graphics, Expression symbolUrl, Feature feature)
             throws Exception {
 
+        // CHECKS
         // cannot handle a null url
         if (symbolUrl == null){
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Provided null symbol to the WindBarbs Factory");
+            }            
+            return null;
+        }
+        // cannot handle a null feature
+        if (feature == null){
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Provided null feature to the WindBarbs Factory");
+            }            
             return null;
         }
 
-        // see if it's a shape
+        //
+        // START PARSING CODE
+        //
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine("Trying to resolve symbol:" + symbolUrl.toString());
         }
 
+        // evaluate string from feature to extract all values
         final String wellKnownName = symbolUrl.evaluate(feature, String.class);
-        if (wellKnownName == null || !wellKnownName.startsWith(WINDBARBS_PREFIX)) {
+        if (wellKnownName == null || wellKnownName.length()<=0) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Unable to resolve symbol provided to WindBarbs Factory");
+            }
+            return null;
+        }
+        
+        ////
+        //
+        // Basic Syntax
+        //
+        ////    
+        if (!wellKnownName.matches(WindBarbsFactory.WINDBARB_DEFINITION)) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.fine("Unable to resolve symbol");
             }
             return null;
         }
-
         if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("Resolved symbol");
+            LOGGER.fine("Resolved symbol "+wellKnownName);
         }
-
-        String units = "kts";
-
-        String windBarbName = DEFAULT_NAME; 
-
-        if (wellKnownName.contains("(")) {
-            windBarbName = wellKnownName.substring(WINDBARBS_PREFIX.length() , wellKnownName.indexOf("("));
-        }
-
+        
+        // ok from now on we should have a real windbarb, let's lower the log level
+        
         ////
         //
-        // Looking for speed value
+        // WindBarbs set
+        //
+        ////    
+        String windBarbName = null; 
+        Matcher matcher = WINDBARB_SET_PATTERN.matcher(wellKnownName);
+        if (matcher.matches()) {
+            try {
+                windBarbName = matcher.group(2);
+            }catch (Exception e) {
+                if (LOGGER.isLoggable(Level.INFO)) {
+                    LOGGER.log(Level.INFO,"Unable to parse windbarb set from string: "+wellKnownName,e);
+                }
+
+                return null;
+            }
+        } else {
+            if (LOGGER.isLoggable(Level.INFO)) {
+                LOGGER.fine("Unable to parse speed from string: "+wellKnownName);
+            }
+            return null;
+        }
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("Resolved windBarbName "+windBarbName);
+        }        
+            
+        ////
+        //
+        // Looking for speed
         //
         ////        
-        Matcher matcher = SPEED_PATTERN.matcher(wellKnownName);
-        double speed = 0;
-        if (matcher.find()) {
-            String speedString = matcher.group();
-            speed = Double.parseDouble(speedString.substring(1, speedString.length() - 1));
-        }
+        matcher = SPEED_PATTERN.matcher(wellKnownName);
+        double speed = Double.NaN;
+        if (matcher.matches()) {
+            String speedString="";
+            try {
+                speedString = matcher.group(2);
+                speed = Double.parseDouble(speedString);
+            }catch (Exception e) {
+                if (LOGGER.isLoggable(Level.INFO)) {
+                    LOGGER.log(Level.INFO,"Unable to parse speed from string: "+speedString,e);
+                }
+                return null;
+            }
+        }else{
+            if (LOGGER.isLoggable(Level.INFO)) {
+                LOGGER.fine("Unable to parse speed from string: "+wellKnownName);
+            }
+            return null;
+        } 
 
         ////
         //
-        // Looking for unit value (one of km/h, m/s, kts, knots)
+        // Looking for unit value 
         //
         ////
+        String uom = null;// no default
         matcher = UNIT_PATTERN.matcher(wellKnownName);
-        if (matcher.find()) {
-            String unitString = matcher.group();
-            units = unitString.substring(1, unitString.length() - 1);
+        if (matcher.matches()) {
+            uom = matcher.group(2);
         }
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("Speed value = " + speed + " " + units);
+        if(uom==null||uom.length()<=0){
+            if (LOGGER.isLoggable(Level.INFO)) {
+                LOGGER.info("Unable to parse UoM from "+ wellKnownName);
+            }
+            return null;
+        }
+        
+        // so far so good
+        if (LOGGER.isLoggable(Level.INFO)) {
+            LOGGER.info("Speed value = " + speed + " " + uom);
         }
         
         ////
@@ -120,7 +194,7 @@ public class WindBarbsFactory implements MarkFactory {
         // Params
         //
         ////
-        int index=wellKnownName.lastIndexOf('?');
+        int index=wellKnownName.indexOf('?');
         if( index>0){
             final Map<String,String> params= new HashMap<String, String>();
             final String kvp=wellKnownName.substring(index+1);
@@ -137,10 +211,10 @@ public class WindBarbsFactory implements MarkFactory {
                         }
                     }
                 }
-                
+                                
                 // checks
                 if(!params.isEmpty()){
-                    return getWindBarb(windBarbName, speed, units,params);
+                    return getWindBarb(windBarbName, speed, uom,params);
                 }
             }
         }
@@ -150,7 +224,7 @@ public class WindBarbsFactory implements MarkFactory {
         // Get shape if possible
         //
         ////
-        return getWindBarb(windBarbName, speed, units);
+        return getWindBarb(windBarbName, speed, uom);
 
 
     }
@@ -164,11 +238,17 @@ public class WindBarbsFactory implements MarkFactory {
      */
     private Shape getWindBarb(String windBarbName, double speed, String units, Map<String,String> params) {
         // speed
-        int knots = SpeedConverter.toKnots(speed, units);
-        
-        // shape
-        return getWindBarbForKnots(windBarbName, knots,params);
-      
+        try{
+            double knots = SpeedConverter.toKnots(speed, units);
+            
+            // shape
+            return getWindBarbForKnots(windBarbName, knots,params);
+        }catch (Exception e) {
+            if(LOGGER.isLoggable(Level.INFO)){
+                LOGGER.log(Level.INFO,e.getLocalizedMessage(),e);
+            }
+            return null;
+        }
     }
 
     /**
@@ -181,24 +261,33 @@ public class WindBarbsFactory implements MarkFactory {
         return getWindBarb(windBarbName, speed, units, null);
     }
 
-    private Shape getWindBarbForKnots(final String windBarbName, final int knots, Map<String, String> params) {
+    private Shape getWindBarbForKnots(final String windBarbName, final double knots, Map<String, String> params) {
         
-        // We may revisit this in case windBarbs validity is across values, using the nearest...
-        // as an instance, windBarb for 10 knots is valid for speed between 8 and 12 knots
+        // checking the barbs using our own limits
+        int index = -1;
+        if(knots<3){
+            index=0;
+        } else {
+            index=(int)((knots-3.0)/5.0+1);
+        }
+        
+        // get the barb
         if (windBarbName.equalsIgnoreCase(DEFAULT_NAME)) {
+
+            final Shape shp=DEFAULT_CACHED_BARBS.get(index);
             if(params==null||params.isEmpty()){
-                return DEFAULT_CACHED_BARBS.get(knots / 5);
+                return shp;
             }
 
-            boolean southern=false;
             if(params.containsKey("emisphere")&&params.get("emisphere").equalsIgnoreCase("s")){
-                southern=true;
-            }
-            if(southern){
                 // flip shape on Y axis
-                final Shape shp=DEFAULT_CACHED_BARBS.get(knots / 5);
-                return AffineTransform.getScaleInstance(-1, 1).createTransformedShape(shp);
+                return SOUTHERN_EMISPHERE_FLIP.createTransformedShape(shp);
             }
+            if(params.containsKey("hemisphere")&&params.get("hemisphere").equalsIgnoreCase("s")){
+                // flip shape on Y axis
+                return SOUTHERN_EMISPHERE_FLIP.createTransformedShape(shp);
+            }
+            return shp;
         }
         // TODO:
         // We may refers to a different name such as "custom1",
@@ -214,6 +303,6 @@ public class WindBarbsFactory implements MarkFactory {
         // ELEMENTS_SPACING = The distances between the various barbs composing the shape
         // ZERO_RADIUS = The radius of the circle used to represent air calm.
         // 
-        return DEFAULT_CACHED_BARBS.get(knots / 5);
+        return DEFAULT_CACHED_BARBS.get(index);
     }
 }

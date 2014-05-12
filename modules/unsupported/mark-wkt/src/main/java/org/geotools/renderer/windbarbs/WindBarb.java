@@ -1,10 +1,15 @@
 package org.geotools.renderer.windbarbs;
 
 import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.util.logging.Logger;
+
+import org.geotools.geometry.jts.TransformedShape;
+import org.geotools.renderer.style.shape.ExplicitBoundsShape;
 
 /**
  * A WindBarb object made of reference speed in knots, and related number of longBarbs (10 kts), 
@@ -62,22 +67,23 @@ class WindBarb {
 
     int shortBarbs;
 
+    int squares;
 
-    static int DEFAULT_BARB_LENGTH = 10;
+    static int DEFAULT_BARB_LENGTH = 20;
 
     static int DEFAULT_BASE_PENNANT_LENGTH = 5;
 
     static int DEFAULT_ELEMENTS_SPACING = 5;
 
-    static int DEFAULT_VECTOR_LENGTH = 40;
+    static int DEFAULT_FLAGPOLE_LENGTH = 40;
 
-    static int DEFAULT_ZERO_WIND_RADIUS = 10;
+    static int DEFAULT_ZERO_WIND_RADIUS = 5;
     
     /** A {@link WindBarbDefinition} instance reporting structural values for a WindBarb (vector length, sizes, ...) */
     WindBarbDefinition windBarbDefinition;
 
     static WindBarbDefinition DEFAULT_WINDBARB_DEFINITION = new WindBarbDefinition(
-            WindBarb.DEFAULT_VECTOR_LENGTH,
+            WindBarb.DEFAULT_FLAGPOLE_LENGTH,
             WindBarb.DEFAULT_BASE_PENNANT_LENGTH, 
             WindBarb.DEFAULT_ELEMENTS_SPACING, 
             WindBarb.DEFAULT_BARB_LENGTH, 
@@ -90,9 +96,13 @@ class WindBarb {
     public WindBarb(final WindBarbDefinition definition, final int knots) {
         this.windBarbDefinition = definition;
         this.knots = knots;
-        pennants = knots / 50;
-        longBarbs = (knots - (pennants * 50)) / 10;
-        shortBarbs = (knots - (pennants * 50) - (longBarbs * 10)) / 5;
+        squares = knots / 100;
+        if(squares>1){
+            throw new IllegalStateException("We can't render wind speeds that require more than 1 square!");
+        }
+        pennants = (knots - (squares * 100)) / 50;
+        longBarbs = (knots - (squares * 100) - (pennants * 50)) / 10;
+        shortBarbs = (knots - (squares * 100) - (pennants * 50) - (longBarbs * 10)) / 5;
     }
 
     /**
@@ -101,7 +111,7 @@ class WindBarb {
      * @return
      */
     Shape build() {
-        int positionOnPath = 0;
+        int positionOnPath =-windBarbDefinition.vectorLength;
 
         // Base barb
         Path2D path = new Path2D.Double();
@@ -109,15 +119,23 @@ class WindBarb {
         // Initialize Barb
         if (knots < 5) {
             // let's use a circle for Calm
-            final Area output= new Area(new Ellipse2D.Float(0, 0, windBarbDefinition.zeroWindRadius, windBarbDefinition.zeroWindRadius));
-            return output;
+            return new Ellipse2D.Float(
+                    -windBarbDefinition.zeroWindRadius/2.0f,  //  the X coordinate of the upper-left corner of the specified rectangular area
+                    -windBarbDefinition.zeroWindRadius/2.0f,  //  the Y coordinate of the upper-left corner of the specified rectangular area
+                    windBarbDefinition.zeroWindRadius, 
+                    windBarbDefinition.zeroWindRadius);
         } else {
             
             // draw wind barb line
             path.moveTo(0, 0);
-            path.lineTo(0, windBarbDefinition.vectorLength);
+            path.lineTo(0, -windBarbDefinition.vectorLength);
         }
-
+        // pennants management
+        if (squares > 0) {
+            positionOnPath = drawSquares(path, positionOnPath);
+            positionOnPath+=windBarbDefinition.elementsSpacing; // add spacing
+        }
+        
         // pennants management
         if (pennants > 0) {
             positionOnPath = drawPennants(path, positionOnPath);
@@ -134,8 +152,36 @@ class WindBarb {
         if (shortBarbs > 0) {
             positionOnPath = drawShortBarb(path, positionOnPath);
         }
+        
+        // FLIP for geotools
+        final Shape createTransformedShape = path.createTransformedShape(AffineTransform.getScaleInstance(1, -1));
+        return createTransformedShape;
+    }
 
-        return path;
+    /**
+     * @param path
+     * @param positionOnPath
+     * @return
+     */
+    private int drawSquares(Path2D path, int positionOnPath) {
+        if(squares<=0){
+            return positionOnPath;
+        }
+        
+        for (int elements=0;elements < squares;elements++) {
+            // move forward one pennant at a time
+            
+            // draw pennant
+            path.moveTo(0, positionOnPath);
+            path.lineTo(windBarbDefinition.longBarbLength , positionOnPath) ; // first edge
+            positionOnPath += windBarbDefinition.longBarbLength;
+            path.lineTo(windBarbDefinition.longBarbLength,positionOnPath); //second edge
+            path.lineTo(0,positionOnPath);
+            path.closePath();
+            
+            // squares are drawn one after the other
+        }
+        return positionOnPath;
     }
 
     /**
@@ -147,7 +193,7 @@ class WindBarb {
      */
     private int drawShortBarb(Path2D path, int positionOnPath) {
         if (pennants == 0 && longBarbs == 0) {
-            positionOnPath = DEFAULT_ELEMENTS_SPACING;
+            positionOnPath = -windBarbDefinition.vectorLength+DEFAULT_ELEMENTS_SPACING;
         } 
 
         path.moveTo(0, positionOnPath);
@@ -203,7 +249,7 @@ class WindBarb {
             path.lineTo(0,positionOnPath); //second edge
             path.closePath();
             
-            // pennants are drawn one after the other
+            // only one square
         }
         return positionOnPath;
     }

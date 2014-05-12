@@ -46,6 +46,7 @@ import com.vividsolutions.jts.geom.LineString;
  * 
  */
 public class WindBarbsFactoryTest extends TestCase {
+    
     public class ShapePanel extends JPanel {
 
         private Shape shp;
@@ -56,6 +57,7 @@ public class WindBarbsFactoryTest extends TestCase {
             g2d.setColor(Color.black);
             g2d.setTransform(AffineTransform.getTranslateInstance(-shp.getBounds().getMinX(), -shp.getBounds().getMinY()));
             g2d.draw(shp);
+            g2d.dispose();
         }
     }
     
@@ -83,7 +85,7 @@ public class WindBarbsFactoryTest extends TestCase {
     public void testWellKnownTextLineString() {
         WindBarbsFactory wbf = new WindBarbsFactory();
         try {
-            this.exp = ff.literal(WindBarbsFactory.WINDBARBS_PREFIX + "default(20)[kts]?emisphere=S");
+            this.exp = ff.literal(WindBarbsFactory.WINDBARBS_PREFIX + "default(15)[kts]");
             Shape shp = (Shape) wbf.getShape(null, this.exp, this.feature);
             System.out.println(shp.getBounds());
             ShapePanel p = new ShapePanel();
@@ -91,7 +93,7 @@ public class WindBarbsFactoryTest extends TestCase {
             
             JFrame frame = new JFrame("Draw Shapes") ;
             frame.getContentPane().add( p );
-            frame.setSize(600, 600);
+            frame.setSize(100, 100);
             frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE);
             frame.setVisible( true );
             System.in.read();
