@@ -2,14 +2,12 @@ package org.geotools.renderer.windbarbs;
 
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.geotools.geometry.jts.TransformedShape;
-import org.geotools.renderer.style.shape.ExplicitBoundsShape;
+import org.geotools.util.Utilities;
 
 /**
  * A WindBarb object made of reference speed in knots, and related number of longBarbs (10 kts), 
@@ -31,8 +29,33 @@ class WindBarb {
      */
     static class WindBarbDefinition {
     
-        public WindBarbDefinition(final int vectorLength, final int basePennantLength, final int elementsSpacing,
-                final int longBarbLength, final int zeroWindRadius) {
+        public WindBarbDefinition(
+                final int vectorLength, 
+                final int basePennantLength, 
+                final int elementsSpacing,
+                final int longBarbLength, 
+                final int zeroWindRadius) {
+            // checks
+            if(vectorLength<=0){
+                throw new IllegalArgumentException("Invalid vectorLength:"+vectorLength);
+            }
+            if(basePennantLength<=0){
+                throw new IllegalArgumentException("Invalid basePennantLength:"+vectorLength);
+            }
+            if(elementsSpacing<=0){
+                throw new IllegalArgumentException("Invalid elementsSpacing:"+vectorLength);
+            }
+            if(vectorLength<elementsSpacing+basePennantLength){
+                throw new IllegalArgumentException("Invalid vectorLength<elementsSpacing+basePennantLength : "+vectorLength);
+            }
+            if(longBarbLength<=0){
+                throw new IllegalArgumentException("Invalid longBarbLength:"+vectorLength);
+            }  
+            if(zeroWindRadius<=0){
+                throw new IllegalArgumentException("Invalid zeroWindRadius:"+vectorLength);
+            }   
+            
+            // code
             this.vectorLength = vectorLength;
             this.basePennantLength = basePennantLength;
             this.elementsSpacing = elementsSpacing;
@@ -57,6 +80,25 @@ class WindBarb {
         int shortBarbLength;
     
         int zeroWindRadius;
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("WindBarbDefinition [vectorLength=");
+            builder.append(vectorLength);
+            builder.append(", basePennantLength=");
+            builder.append(basePennantLength);
+            builder.append(", elementsSpacing=");
+            builder.append(elementsSpacing);
+            builder.append(", longBarbLength=");
+            builder.append(longBarbLength);
+            builder.append(", shortBarbLength=");
+            builder.append(shortBarbLength);
+            builder.append(", zeroWindRadius=");
+            builder.append(zeroWindRadius);
+            builder.append("]");
+            return builder.toString();
+        }
     }
 
     int knots;
@@ -94,11 +136,22 @@ class WindBarb {
     }
 
     public WindBarb(final WindBarbDefinition definition, final int knots) {
+        Utilities.ensureNonNull("definition", definition);
+        if(LOGGER.isLoggable(Level.FINE)){
+            LOGGER.fine("Creating WindBarb for knots: "+knots+" and WindBarbDefinition:"+definition.toString());
+        }
         this.windBarbDefinition = definition;
         this.knots = knots;
+        if(knots==-1){
+            return;
+        }else{
+            if(knots<0){
+                throw new  IllegalArgumentException("Illegal wind speeds(kn): "+knots);
+            }
+        }
         squares = knots / 100;
         if(squares>1){
-            throw new IllegalStateException("We can't render wind speeds that require more than 1 square!");
+            throw new IllegalArgumentException("We can't render wind speeds that require more than 1 square!");
         }
         pennants = (knots - (squares * 100)) / 50;
         longBarbs = (knots - (squares * 100) - (pennants * 50)) / 10;
@@ -111,6 +164,19 @@ class WindBarb {
      * @return
      */
     Shape build() {
+        if(knots<0){
+            return buildAbsentModule();
+        }else{
+            return buildStandardBarb();
+        }
+        
+    }
+    
+    /**
+     * @return 
+     * 
+     */
+    private Shape buildStandardBarb() {
         int positionOnPath =-windBarbDefinition.vectorLength;
 
         // Base barb
@@ -128,11 +194,11 @@ class WindBarb {
             
             // draw wind barb line
             path.moveTo(0, 0);
-            path.lineTo(0, -windBarbDefinition.vectorLength);
+            path.lineTo(0, positionOnPath);
         }
         // pennants management
         if (squares > 0) {
-            positionOnPath = drawSquares(path, positionOnPath);
+            positionOnPath = drawSquare(path, positionOnPath);
             positionOnPath+=windBarbDefinition.elementsSpacing; // add spacing
         }
         
@@ -156,6 +222,34 @@ class WindBarb {
         // FLIP for geotools
         final Shape createTransformedShape = path.createTransformedShape(AffineTransform.getScaleInstance(1, -1));
         return createTransformedShape;
+        
+    }
+
+    /**
+     * Build a {@Shape} WindBarb
+     * 
+     * @return
+     */
+    Shape buildAbsentModule() {
+
+        // Base barb
+        Path2D path = new Path2D.Double();
+        int positionOnPath =0;
+        
+        // draw wind barb line
+        path.moveTo(0, positionOnPath);
+        positionOnPath-=windBarbDefinition.vectorLength;
+        path.lineTo(0, positionOnPath);
+        
+        path.moveTo(windBarbDefinition.shortBarbLength/2.0f, positionOnPath-windBarbDefinition.shortBarbLength/2.0f);
+        path.lineTo(-windBarbDefinition.shortBarbLength/2.0f,positionOnPath+windBarbDefinition.shortBarbLength/2.0f);
+        
+        path.moveTo(-windBarbDefinition.shortBarbLength/2.0f, positionOnPath-windBarbDefinition.shortBarbLength/2.0f);
+        path.lineTo(windBarbDefinition.shortBarbLength/2.0f,positionOnPath+windBarbDefinition.shortBarbLength/2.0f);
+        
+        // FLIP for geotools
+        final Shape createTransformedShape = path.createTransformedShape(AffineTransform.getScaleInstance(1, -1));
+        return createTransformedShape;
     }
 
     /**
@@ -163,7 +257,7 @@ class WindBarb {
      * @param positionOnPath
      * @return
      */
-    private int drawSquares(Path2D path, int positionOnPath) {
+    private int drawSquare(Path2D path, int positionOnPath) {
         if(squares<=0){
             return positionOnPath;
         }
@@ -173,9 +267,9 @@ class WindBarb {
             
             // draw pennant
             path.moveTo(0, positionOnPath);
-            path.lineTo(windBarbDefinition.longBarbLength , positionOnPath) ; // first edge
-            positionOnPath += windBarbDefinition.longBarbLength;
-            path.lineTo(windBarbDefinition.longBarbLength,positionOnPath); //second edge
+            path.lineTo(windBarbDefinition.longBarbLength /2.0d , positionOnPath) ; // first edge
+            positionOnPath += windBarbDefinition.longBarbLength/2.0d;
+            path.lineTo(windBarbDefinition.longBarbLength/2.0d,positionOnPath); //second edge
             path.lineTo(0,positionOnPath);
             path.closePath();
             

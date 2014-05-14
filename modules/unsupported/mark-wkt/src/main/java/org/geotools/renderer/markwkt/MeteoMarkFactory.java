@@ -99,12 +99,13 @@ public class MeteoMarkFactory implements MarkFactory {
      */
     public Shape getShape(Graphics2D graphics, Expression symbolUrl, Feature feature) throws Exception {
         // cannot handle a null url
-        if(symbolUrl == null)
+        if(symbolUrl == null){
             return null;
+        }
 
         // see if it's a shape
         if(LOGGER.isLoggable(Level.FINE)){
-        	LOGGER.fine("Trying to resolve symbol:"+symbolUrl.toString());
+        	LOGGER.fine("Trying to resolve symbol: "+symbolUrl.toString());
         }
         String wellKnownName = symbolUrl.evaluate(feature, String.class);
         if(wellKnownName==null||!wellKnownName.startsWith(SHAPE_PREFIX)) {

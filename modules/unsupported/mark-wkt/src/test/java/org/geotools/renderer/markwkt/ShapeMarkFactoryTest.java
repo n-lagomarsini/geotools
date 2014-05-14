@@ -14,7 +14,7 @@
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *    Lesser General Public License for more details.
  */
-package org.geotools.renderer.markwkt.test;
+package org.geotools.renderer.markwkt;
 
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -34,9 +34,6 @@ import junit.framework.TestCase;
  * Unit tests for shape mark factory
  * 
  * @author Luca Morandini lmorandini@ieee.org
- * 
- *
- *
  *
  * @source $URL$
  */

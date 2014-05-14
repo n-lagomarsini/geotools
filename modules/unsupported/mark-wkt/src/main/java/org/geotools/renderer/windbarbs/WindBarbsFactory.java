@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.geotools.referencing.operation.transform.AffineTransform2D;
 import org.geotools.renderer.style.MarkFactory;
 import org.opengis.feature.Feature;
 import org.opengis.filter.expression.Expression;
@@ -28,10 +29,10 @@ import org.opengis.filter.expression.Expression;
 public class WindBarbsFactory implements MarkFactory {
 
     /** WINDBARB_DEFINITION */
-    private static final String WINDBARB_DEFINITION = "windbarbs://.*\\(\\d+\\.?\\d*\\)\\[.{1,5}\\]\\??.*";
+    private static final String WINDBARB_DEFINITION = "windbarbs://.*\\(.{1,}\\)\\[.{1,5}\\]\\??.*";//"windbarbs://.*\\(\\d+\\.?\\d*\\)\\[.{1,5}\\]\\??.*";
 
     /** SOUTHERN_EMISPHERE_FLIP */
-    private static final AffineTransform SOUTHERN_EMISPHERE_FLIP = AffineTransform.getScaleInstance(-1, 1);
+    public static final AffineTransform SOUTHERN_EMISPHERE_FLIP = new AffineTransform2D(AffineTransform.getScaleInstance(-1, 1));
 
     /** The loggermodule. */
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger(WindBarbsFactory.class);
@@ -40,7 +41,7 @@ public class WindBarbsFactory implements MarkFactory {
 
     private static final String DEFAULT_NAME = "default";
 
-    private static Pattern SPEED_PATTERN = Pattern.compile("(.*?)(\\d+\\.?\\d*)(.*)");
+    private static Pattern SPEED_PATTERN = Pattern.compile("(.*?)\\((.{1,})\\)(.*)");//Pattern.compile("(.*?)(\\d+\\.?\\d*)(.*)");
     
     private static Pattern WINDBARB_SET_PATTERN = Pattern.compile("(.*?)://(.*)\\((.*)");
 
@@ -50,9 +51,12 @@ public class WindBarbsFactory implements MarkFactory {
 
     static {
         DEFAULT_CACHED_BARBS = new ArrayList<Shape>();
-        for (int i = 0; i <= 199; i += 5) {
+        for (int i = 0; i <= 100; i += 5) {
             DEFAULT_CACHED_BARBS.add(new WindBarb(i).build());
         }
+        
+        //no module x----- symbol
+        DEFAULT_CACHED_BARBS.add(new WindBarb(-1).build());
     }
 
     
@@ -63,8 +67,7 @@ public class WindBarbsFactory implements MarkFactory {
      * @see org.geotools.renderer.style.MarkFactory#getShape(java.awt.Graphics2D, org.opengis.filter.expression.Expression,
      *      org.opengis.feature.Feature)
      */
-    public Shape getShape(Graphics2D graphics, Expression symbolUrl, Feature feature)
-            throws Exception {
+    public Shape getShape(Graphics2D graphics, Expression symbolUrl, Feature feature){
 
         // CHECKS
         // cannot handle a null url
@@ -105,7 +108,7 @@ public class WindBarbsFactory implements MarkFactory {
         ////    
         if (!wellKnownName.matches(WindBarbsFactory.WINDBARB_DEFINITION)) {
             if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Unable to resolve symbol");
+                LOGGER.fine("Unable to resolve symbol: "+wellKnownName);
             }
             return null;
         }
@@ -132,9 +135,10 @@ public class WindBarbsFactory implements MarkFactory {
 
                 return null;
             }
-        } else {
+        } 
+        if(windBarbName==null||windBarbName.length()<=0){
             if (LOGGER.isLoggable(Level.INFO)) {
-                LOGGER.fine("Unable to parse speed from string: "+wellKnownName);
+                LOGGER.fine("Unable to parse windBarbName from string: "+wellKnownName);
             }
             return null;
         }
@@ -185,8 +189,8 @@ public class WindBarbsFactory implements MarkFactory {
         }
         
         // so far so good
-        if (LOGGER.isLoggable(Level.INFO)) {
-            LOGGER.info("Speed value = " + speed + " " + uom);
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("WindBarbs name "+windBarbName+"with Speed " + speed + "[" + uom+ "]");
         }
         
         ////
@@ -262,13 +266,20 @@ public class WindBarbsFactory implements MarkFactory {
     }
 
     private Shape getWindBarbForKnots(final String windBarbName, final double knots, Map<String, String> params) {
-        
+        // No module is signalled by NaN       
         // checking the barbs using our own limits
         int index = -1;
-        if(knots<3){
-            index=0;
-        } else {
-            index=(int)((knots-3.0)/5.0+1);
+        if(!Double.isNaN(knots)){
+            if(knots<3){
+                index=0;
+            } else {
+                index=(int)((knots-3.0)/5.0+1);
+            }   
+        }else{
+            index=DEFAULT_CACHED_BARBS.size()-1;// no wind module is the last symbol
+        }
+        if(DEFAULT_CACHED_BARBS.size()<=index||index<-1){
+            throw new IllegalArgumentException("Unable to find windbarb symbol for speed "+knots+ " kn");
         }
         
         // get the barb

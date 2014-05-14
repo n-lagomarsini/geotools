@@ -69,7 +69,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.5</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -79,18 +78,16 @@
     </dependency>
     <dependency>
       <groupId>org.geotools</groupId>
+      <artifactId>gt-sample-data</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>    
+    <dependency>
+      <groupId>org.geotools</groupId>
       <artifactId>gt-render</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
-
-  <build>
-    <testResources>
-      <testResource>
-        <directory>./src/test/java</directory>
-      </testResource>
-    </testResources>
-  </build>
 
 </project>
 

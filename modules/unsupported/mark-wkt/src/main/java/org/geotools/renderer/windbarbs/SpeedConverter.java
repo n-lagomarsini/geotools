@@ -16,6 +16,7 @@
  */
 package org.geotools.renderer.windbarbs;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.measure.converter.UnitConverter;
@@ -68,8 +69,12 @@ class SpeedConverter {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     static double toKnots(double speed, String uom) {
-        // checks
         Utilities.ensureNonNull("uom", uom);
+        if(LOGGER.isLoggable(Level.FINE)){
+            LOGGER.fine("Convert speed: " +speed+ " ("+uom+")");
+        }
+        
+        // checks
         if(Double.isNaN(speed)){
             return Double.NaN;
         }
