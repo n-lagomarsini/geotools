@@ -3,9 +3,7 @@ package org.geotools.renderer.windbarbs;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,6 +12,8 @@ import java.util.regex.Pattern;
 
 import org.geotools.referencing.operation.transform.AffineTransform2D;
 import org.geotools.renderer.style.MarkFactory;
+import org.geotools.renderer.windbarbs.WindBarb.WindBarbDefinition;
+import org.geotools.util.SoftValueHashMap;
 import org.opengis.feature.Feature;
 import org.opengis.filter.expression.Expression;
 
@@ -29,7 +29,7 @@ import org.opengis.filter.expression.Expression;
 public class WindBarbsFactory implements MarkFactory {
 
     /** WINDBARB_DEFINITION */
-    private static final String WINDBARB_DEFINITION = "windbarbs://.*\\(.{1,}\\)\\[.{1,5}\\]\\??.*";//"windbarbs://.*\\(\\d+\\.?\\d*\\)\\[.{1,5}\\]\\??.*";
+    private static final String WINDBARB_DEFINITION = "windbarbs://.*\\(.{1,}\\)\\[.{1,5}\\]\\??.*";
 
     /** SOUTHERN_EMISPHERE_FLIP */
     public static final AffineTransform SOUTHERN_EMISPHERE_FLIP = new AffineTransform2D(AffineTransform.getScaleInstance(-1, 1));
@@ -47,18 +47,18 @@ public class WindBarbsFactory implements MarkFactory {
 
     private static Pattern UNIT_PATTERN = Pattern.compile("(.*?)\\[(.*)\\](.*)");
 
-    private static List<Shape> DEFAULT_CACHED_BARBS;
-
-    static {
-        DEFAULT_CACHED_BARBS = new ArrayList<Shape>();
-        for (int i = 0; i <= 100; i += 5) {
-            DEFAULT_CACHED_BARBS.add(new WindBarb(i).build());
+    private static final SoftValueHashMap<WindBarbDefinition, Map<Integer,Shape>> CACHE;
+    static{
+        CACHE = new SoftValueHashMap<WindBarb.WindBarbDefinition, Map<Integer,Shape>>(1);// make room for the default definition
+        final Map<Integer,Shape> defaultBarbsDefinition= new HashMap<Integer, Shape>();
+        CACHE.put(WindBarb.DEFAULT_WINDBARB_DEFINITION, defaultBarbsDefinition);
+        for (int i = 0; i <= 20; i ++) { // we don't go over 100 knots (a square)
+            defaultBarbsDefinition.put(i,new WindBarb(i*5).build()); // pass over the knots definition
         }
         
         //no module x----- symbol
-        DEFAULT_CACHED_BARBS.add(new WindBarb(-1).build());
+        defaultBarbsDefinition.put(-1,new WindBarb(-1).build());
     }
-
     
 
     /**
@@ -221,6 +221,14 @@ public class WindBarbsFactory implements MarkFactory {
                     return getWindBarb(windBarbName, speed, uom,params);
                 }
             }
+        }else{
+            // make sure we close with ] and nothing else after
+            if(!wellKnownName.endsWith("]")){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("The provided symbol may be missing a ? before the KVP part.");
+                }
+                return null;
+            }
         }
         
         ////
@@ -268,24 +276,36 @@ public class WindBarbsFactory implements MarkFactory {
     private Shape getWindBarbForKnots(final String windBarbName, final double knots, Map<String, String> params) {
         // No module is signalled by NaN       
         // checking the barbs using our own limits
-        int index = -1;
+        int index = -1;// no wind module is -1
         if(!Double.isNaN(knots)){
             if(knots<3){
                 index=0;
             } else {
                 index=(int)((knots-3.0)/5.0+1);
             }   
-        }else{
-            index=DEFAULT_CACHED_BARBS.size()-1;// no wind module is the last symbol
-        }
-        if(DEFAULT_CACHED_BARBS.size()<=index||index<-1){
-            throw new IllegalArgumentException("Unable to find windbarb symbol for speed "+knots+ " kn");
         }
         
         // get the barb
         if (windBarbName.equalsIgnoreCase(DEFAULT_NAME)) {
 
-            final Shape shp=DEFAULT_CACHED_BARBS.get(index);
+            WindBarbDefinition definition= parseWindBarbsDefinition(params);
+            Map<Integer, Shape> windbarbs=null;
+            synchronized (CACHE) {
+                windbarbs= CACHE.get(definition);
+                if(windbarbs==null){
+                    windbarbs= new HashMap<Integer, Shape>();
+                    CACHE.put(definition, windbarbs);
+                    for (int i = 0; i <= 20; i ++) { // we don't go over 100 knots (a square)
+                        windbarbs.put(i,new WindBarb(definition,i*5).build()); // pass over the knots definition
+                    }
+                    
+                    //no module x----- symbol
+                    windbarbs.put(-1,new WindBarb(definition,-1).build());                    
+                }          
+            }
+                
+            // get shape from cached definitions.
+            final Shape shp=windbarbs.get(index);
             if(params==null||params.isEmpty()){
                 return shp;
             }
@@ -314,6 +334,222 @@ public class WindBarbsFactory implements MarkFactory {
         // ELEMENTS_SPACING = The distances between the various barbs composing the shape
         // ZERO_RADIUS = The radius of the circle used to represent air calm.
         // 
-        return DEFAULT_CACHED_BARBS.get(index);
+        throw new IllegalArgumentException("Wrong windbard name:"+windBarbName);
+    }
+
+    /**
+     * @param params
+     * @return a {@link WindBarbDefinition} for the provided params
+     */
+    private WindBarbDefinition parseWindBarbsDefinition(
+            Map<String, String> params) {
+        final WindBarbDefinition retValue=WindBarb.DEFAULT_WINDBARB_DEFINITION;
+        if(params==null||params.size()<=0){
+            return retValue;
+        }
+        
+        // parse
+        String temp=null;
+        
+        ////
+        //
+        // vectorLength
+        //
+        ////
+        int vectorLength=retValue.vectorLength;
+        if(params.containsKey("vectorlength")){
+            // get value
+            temp=params.get("vectorlength");
+            
+            // check and parse
+            if(temp==null||temp.length()<=0){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong vectorLength provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            try{
+                vectorLength=Integer.parseInt(temp);
+            }catch (Exception e) {
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong vectorLength provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            if(vectorLength<=0){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong vectorLength provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+        }
+        
+        ////
+        //
+        // basePennantLength
+        //
+        ////
+        int basePennantLength=retValue.basePennantLength;
+        if(params.containsKey("basepennantlength")){
+            // get value
+            temp=params.get("basepennantlength");
+            
+            // check and parse
+            if(temp==null||temp.length()<=0){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong basePennantLength provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            try{
+                basePennantLength=Integer.parseInt(temp);
+            }catch (Exception e) {
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong basePennantLength provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            if(basePennantLength<=0||basePennantLength>=vectorLength){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong basePennantLength provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+        }
+        
+        ////
+        //
+        // elementsSpacing
+        //
+        ////
+        int elementsSpacing=retValue.elementsSpacing;
+        if(params.containsKey("elementsspacing")){
+            // get value
+            temp=params.get("elementsspacing");
+            
+            // check and parse
+            if(temp==null||temp.length()<=0){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong elementsSpacing provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            try{
+                elementsSpacing=Integer.parseInt(temp);
+            }catch (Exception e) {
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong elementsSpacing provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            if(elementsSpacing<=0||elementsSpacing>=vectorLength||elementsSpacing+basePennantLength>=vectorLength){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong elementsSpacing provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+        }
+        
+        ////
+        //
+        // longBarbLength
+        //
+        ////
+        int longBarbLength=retValue.longBarbLength;
+        if(params.containsKey("longbarblength")){
+            // get value
+            temp=params.get("longbarblength");
+            
+            // check and parse
+            if(temp==null||temp.length()<=0){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong longBarbLength provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            try{
+                longBarbLength=Integer.parseInt(temp);
+            }catch (Exception e) {
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong longBarbLength provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            if(longBarbLength<=0){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong longBarbLength provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+        }        
+        
+//        ////
+//        //
+//        // shortBarbLength
+//        //
+//        ////
+//        int shortBarbLength=retValue.shortBarbLength;
+//        if(params.containsKey("shortbarblength")){
+//            // get value
+//            temp=params.get("shortbarblength");
+//            
+//            // check and parse
+//            if(temp==null||temp.length()<=0){
+//                if(LOGGER.isLoggable(Level.INFO)){
+//                    LOGGER.info("Wrong shortBarbLength provided: "+temp+ " resorting to default wind barb definition");
+//                }
+//                return retValue;// default
+//            }
+//            try{
+//                shortBarbLength=Integer.parseInt(temp);
+//            }catch (Exception e) {
+//                if(LOGGER.isLoggable(Level.INFO)){
+//                    LOGGER.info("Wrong shortBarbLength provided: "+temp+ " resorting to default wind barb definition");
+//                }
+//                return retValue;// default
+//            }
+//            if(shortBarbLength<=0||shortBarbLength>=vectorLength){
+//                if(LOGGER.isLoggable(Level.INFO)){
+//                    LOGGER.info("Wrong shortBarbLength provided: "+temp+ " resorting to default wind barb definition");
+//                }
+//                return retValue;// default
+//            }
+//        }       
+        
+        ////
+        //
+        // zeroWindRadius
+        //
+        ////
+        int zeroWindRadius=retValue.zeroWindRadius;
+        if(params.containsKey("zerowindradius")){
+            // get value
+            temp=params.get("zerowindradius");
+            
+            // check and parse
+            if(temp==null||temp.length()<=0){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong zeroWindRadius provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            try{
+                zeroWindRadius=Integer.parseInt(temp);
+            }catch (Exception e) {
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong zeroWindRadius provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+            if(zeroWindRadius<=0){
+                if(LOGGER.isLoggable(Level.INFO)){
+                    LOGGER.info("Wrong zeroWindRadius provided: "+temp+ " resorting to default wind barb definition");
+                }
+                return retValue;// default
+            }
+        }             
+        
+        // new definition
+        return new WindBarbDefinition(vectorLength, basePennantLength, elementsSpacing, longBarbLength, zeroWindRadius);
     }
 }

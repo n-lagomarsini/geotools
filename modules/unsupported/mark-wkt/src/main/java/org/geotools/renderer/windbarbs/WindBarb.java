@@ -63,7 +63,7 @@ class WindBarb {
             this.shortBarbLength = longBarbLength / 2;
             this.zeroWindRadius = zeroWindRadius;
         }
-    
+        
         /** The main vector length */
         int vectorLength;
     
@@ -98,6 +98,52 @@ class WindBarb {
             builder.append(zeroWindRadius);
             builder.append("]");
             return builder.toString();
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + basePennantLength;
+            result = prime * result + elementsSpacing;
+            result = prime * result + longBarbLength;
+            result = prime * result + shortBarbLength;
+            result = prime * result + vectorLength;
+            result = prime * result + zeroWindRadius;
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (!(obj instanceof WindBarbDefinition)) {
+                return false;
+            }
+            WindBarbDefinition other = (WindBarbDefinition) obj;
+            if (basePennantLength != other.basePennantLength) {
+                return false;
+            }
+            if (elementsSpacing != other.elementsSpacing) {
+                return false;
+            }
+            if (longBarbLength != other.longBarbLength) {
+                return false;
+            }
+            if (shortBarbLength != other.shortBarbLength) {
+                return false;
+            }
+            if (vectorLength != other.vectorLength) {
+                return false;
+            }
+            if (zeroWindRadius != other.zeroWindRadius) {
+                return false;
+            }
+            return true;
         }
     }
 
@@ -147,6 +193,9 @@ class WindBarb {
         }else{
             if(knots<0){
                 throw new  IllegalArgumentException("Illegal wind speeds(kn): "+knots);
+            }
+            if(knots>100){
+                throw new  IllegalArgumentException("Illegal wind speeds(kn): "+knots+ ", max allowed value is 100");
             }
         }
         squares = knots / 100;
