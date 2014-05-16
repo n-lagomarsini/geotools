@@ -94,7 +94,7 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
             throw new ProcessException("Invalid input, source grid coverage should be not null");
         }
         
-        if(scaleFactor!=null){
+        if(scaleFactor!=null&&Math.abs(scaleFactor-1.0f)>1E-12){
             
             final ParameterValueGroup param = AFFINE.getParameters();
             param.parameter("Source").setValue(gc2d);
