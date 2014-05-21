@@ -1,1 +1,2 @@
 org.geotools.util.InterpolationConverterFactory
+org.geotools.util.CRSConverterFactory

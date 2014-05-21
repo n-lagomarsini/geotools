@@ -39,6 +39,7 @@ import org.geotools.feature.collection.AdaptorFeatureCollection;
 import org.geotools.feature.collection.BaseSimpleFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -54,7 +55,6 @@ import org.opengis.coverage.processing.Operation;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
-import org.opengis.geometry.MismatchedDimensionException;
 import org.opengis.metadata.spatial.PixelOrientation;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.FactoryException;
@@ -64,7 +64,6 @@ import org.opengis.referencing.cs.CoordinateSystem;
 import org.opengis.referencing.cs.CoordinateSystemAxis;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.MathTransform2D;
-import org.opengis.referencing.operation.TransformException;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -80,12 +79,13 @@ import com.vividsolutions.jts.geom.Point;
  */
 @DescribeProcess(title = "Raster As Point Collection", description = "Returns a collection of point features for the pixels of a raster.  The band values are provided as attributes.")
 public class RasterAsPointCollectionProcess implements RasterProcess {
-    
+
     protected static final Operation AFFINE = CoverageProcessor.getInstance().getOperation("Affine");
     
     @DescribeResult(name = "result", description = "Point features")
     public SimpleFeatureCollection execute(
             @DescribeParameter(name = "data", description = "Input raster") GridCoverage2D gc2d,
+            @DescribeParameter(name = "targetCRS", description = "CRS in which the points will be displayed", min=0) CoordinateReferenceSystem targetCRS,
             @DescribeParameter(name = "scale", description = "scale",min=0, defaultValue="1.0f") Float scaleFactor,
             @DescribeParameter(name = "interpolation", description = "interpolation",min=0, defaultValue="InterpolationNearest") Interpolation interpolation,
             @DescribeParameter(name = "emisphere", description = "Add Emishpere",min=0, defaultValue="False" ) Boolean emisphere)
@@ -94,6 +94,11 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
             throw new ProcessException("Invalid input, source grid coverage should be not null");
         }
         
+        ////
+        //
+        // scale if/as needed
+        //
+        ////
         if(scaleFactor!=null&&Math.abs(scaleFactor-1.0f)>1E-12){
             
             final ParameterValueGroup param = AFFINE.getParameters();
@@ -106,7 +111,7 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
         
         //return value
         try {
-			return new RasterAsPointFeatureCollection(gc2d,emisphere);
+			return new RasterAsPointFeatureCollection(gc2d,emisphere,targetCRS);
 		} catch (IOException e) {
 			 throw new ProcessException("Unable to wrap provided grid coverage",e);
 		}
@@ -161,20 +166,30 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
         private MathTransform transformToWGS84;
 
         private int northDimension=-1;
+
+        private CoordinateReferenceSystem targetCRS;
+
+        private MathTransform reprojectionTransformation;
+
+        private boolean gridConvergenceAngleCorrectionNeeded;
+
+        private GridConvergenceAngleCalc gridConvergenceAngleManager;
 		
 		public RasterAsPointFeatureCollection(final GridCoverage2D gc2d) throws IOException {
-        	this(gc2d,false);
+        	this(gc2d,false,gc2d.getCoordinateReferenceSystem2D());
             
         }
         
         /**
          * @param gc2d2
          * @param emisphere
+         * @param targetCRS 
          */
-        public RasterAsPointFeatureCollection(GridCoverage2D gc2d, boolean emisphere)throws IOException {
-            super(modify(CoverageUtilities.createFeatureType(gc2d, Point.class),emisphere));
+        public RasterAsPointFeatureCollection(GridCoverage2D gc2d, boolean emisphere, CoordinateReferenceSystem targetCRS)throws IOException {
+            super(modify(CoverageUtilities.createFeatureType(gc2d, Point.class),emisphere,targetCRS));
             this.gc2d=gc2d;
             this.emisphere=emisphere;
+            this.targetCRS=targetCRS;
             
             //
             // get various elements from this coverage
@@ -183,7 +198,7 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
             final RenderedImage raster=gc2d.getRenderedImage();
             size=raster.getWidth()*raster.getHeight();
             
-            // GRID TO WORLD
+            // GRID TO WORLD for transforming raster points into model points
             mt2D= gc2d.getGridGeometry().getGridToCRS2D(PixelOrientation.UPPER_LEFT);
             
             // BOUNDS take into account that we want to map center coordinates
@@ -191,23 +206,66 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
             final XRectangle2D rasterBounds_=new XRectangle2D(raster.getMinX()+0.5, raster.getMinY()+0.5, raster.getWidth()-1,  raster.getHeight()-1);
             try {
                                 bounds = new ReferencedEnvelope(CRS.transform(mt2D, rasterBounds_, null),gc2d.getCoordinateReferenceSystem2D());
-                        } catch (MismatchedDimensionException e) {
+                        } catch (Exception e) {
                                 final IOException ioe= new IOException();
                                 ioe.initCause(e);
                                 throw ioe;
-                        } catch (TransformException e) {
-                                final IOException ioe= new IOException();
-                                ioe.initCause(e);
-                                throw ioe;
-                        }
+                        } 
                         
                         // BANDS
                         numBands = gc2d.getNumSampleDimensions();
-            
+
+            final CoordinateReferenceSystem coverageCRS=gc2d.getCoordinateReferenceSystem2D();
             //
             // Emisphere management
             //
-            CoordinateReferenceSystem coverageCRS = gc2d.getCoordinateReferenceSystem2D();
+            emisphereManagement(coverageCRS);
+            
+            //
+            // Grid Convergence Angle correction
+            //
+            gridConvergenceAngle(coverageCRS);
+        }
+
+        /**
+         * Prepare for Managing the GridConvergenceAngle
+         * @param coverageCRS the {@link GridCoverage2D} {@link CoordinateReferenceSystem}
+         */
+        private void gridConvergenceAngle(final CoordinateReferenceSystem coverageCRS) {
+            if(targetCRS!=null){
+                
+                // there is a real reprojection?
+                if(!CRS.equalsIgnoreMetadata(coverageCRS, targetCRS)){
+                    
+                    // get the transformation and check if that is not the identity
+                    try {
+                        reprojectionTransformation= CRS.findMathTransform(coverageCRS, targetCRS,true);
+                        gridConvergenceAngleCorrectionNeeded=!reprojectionTransformation.isIdentity();
+                        if(gridConvergenceAngleCorrectionNeeded){
+
+                            // 
+                            // Instantiate calculator to use to determine convergence angle at 
+                            // each point for the request CRS. 
+                            //
+                            gridConvergenceAngleManager = new GridConvergenceAngleCalc(targetCRS);
+                        }
+                        
+                    } catch (Exception e) {
+                        new IOException(e);
+                    }
+                }
+            }
+            
+            
+        }
+
+        /**
+         * @param gc2d
+         * @throws IndexOutOfBoundsException
+         * @throws UnsupportedOperationException
+         * @throws IOException
+         */
+        private void emisphereManagement(CoordinateReferenceSystem coverageCRS) throws IOException {
             if(!CRS.equalsIgnoreMetadata(DefaultGeographicCRS.WGS84, coverageCRS)){
                 try {
                     
@@ -241,11 +299,12 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
         /**
          * @param createFeatureType
          * @param emisphere
+         * @param targetCRS 
          * @return
          */
         private static SimpleFeatureType modify(SimpleFeatureType featureType,
-                boolean emisphere) {
-            if(!emisphere){
+                boolean emisphere, CoordinateReferenceSystem targetCRS) {
+            if(!emisphere&&targetCRS==null){
                 return featureType;
             }
             
@@ -264,8 +323,16 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
                 ftBuilder.add(atd);
             }
             
-            // add emisphere
-            ftBuilder.add("emisphere",String.class); //valid values N/S
+            if(emisphere){
+                // add emisphere
+                ftBuilder.add("emisphere",String.class); //valid values N/S
+            }
+            
+            if(targetCRS!=null){
+                // add gridConvergenceAngle correction
+                ftBuilder.add("gridConvergenceAngleCorrection",Double.class); // degrees
+            }
+            
             return ftBuilder.buildFeatureType();
         }
 
@@ -299,15 +366,19 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
 
 		private final RectIter iterator;
 
-		private final Coordinate coord= new Coordinate();
+		private final Coordinate sourceCoordinate= new Coordinate();
+
+        private DirectPosition2D sourceCRSPosition;
+
+        private DirectPosition2D targetCRSPosition;
 
         public RasterAsPointFeatureIterator(final RasterAsPointFeatureCollection fc) {
 
-        	//checks
-        	Utilities.ensureNonNull("fc", fc);
-        	
-        	//get elements
-        	this.fc= fc;
+            // checks
+            Utilities.ensureNonNull("fc", fc);
+
+            // get elements
+            this.fc = fc;
             this.fb = new SimpleFeatureBuilder(fc.getSchema());
             this.size=fc.size;
             
@@ -318,14 +389,22 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
             //start the iterator
             //
             iterator.startLines();
-            if(iterator.finishedLines())
-            	throw new NoSuchElementException("Index beyond size:"+index+">"+size);
+            if(iterator.finishedLines()){
+                throw new NoSuchElementException("Index beyond size:"+index+">"+size);
+            }
             iterator.startPixels();
-            if(iterator.finishedPixels())
-            	throw new NoSuchElementException("Index beyond size:"+index+">"+size);   
+            if(iterator.finishedPixels()){
+                throw new NoSuchElementException("Index beyond size:"+index+">"+size);   
+            }
             
             // appo
             temp= new double[fc.numBands];
+            
+            // grid convergence angle manager
+            if(fc.gridConvergenceAngleCorrectionNeeded){
+                sourceCRSPosition = new DirectPosition2D(); 
+                targetCRSPosition = new DirectPosition2D(fc.targetCRS);                
+            }
         }
 
         /**
@@ -343,72 +422,51 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
         }
 
         public SimpleFeature next() throws NoSuchElementException {
-            if(!hasNext())
-            	throw new NoSuchElementException("Index beyond size:"+index+">"+size);
+            if(!hasNext()){
+                throw new NoSuchElementException("Index beyond size:"+index+">"+size);
+            }
             
             // iterate
-            if(iterator.finishedPixels())
-            	throw new NoSuchElementException("Index beyond size:"+index+">"+size);
-            if(iterator.finishedLines())
-            	throw new NoSuchElementException("Index beyond size:"+index+">"+size);                    
+            if(iterator.finishedPixels()){
+                throw new NoSuchElementException("Index beyond size:"+index+">"+size);
+            }
+            if(iterator.finishedLines()){
+                throw new NoSuchElementException("Index beyond size:"+index+">"+size);                    
+            }
             
             // ID
             final int id=index;
             
             // POINT
             // can we reuse the coord?
-            coord.x= 0.5+fc.rasterBounds.x+index%fc.rasterBounds.width;
-            coord.y=0.5+ fc.rasterBounds.y+index/fc.rasterBounds.width ;
-            final Point point = RasterAsPointFeatureCollection.geometryFactory.createPoint( coord );
+            sourceCoordinate.x= 0.5+ fc.rasterBounds.x+index%fc.rasterBounds.width;
+            sourceCoordinate.y= 0.5+ fc.rasterBounds.y+index/fc.rasterBounds.width ;
+            Point point = RasterAsPointFeatureCollection.geometryFactory.createPoint( sourceCoordinate );
             try {
-				fb.add(JTS.transform(point, fc.mt2D));
-			} catch (MismatchedDimensionException e) {
-				final NoSuchElementException nse= new NoSuchElementException();
-				nse.initCause(e);
-				throw nse;
-			} catch (TransformException e) {
-				final NoSuchElementException nse= new NoSuchElementException();
-				nse.initCause(e);
-				throw nse;
-			}
-            
-			// VALUES
-            // loop on bands
-			iterator.getPixel(temp);
-			for(double d:temp){
-				// I exploit the internal converters to go from double to whatever the type is
-				// TODO is this correct or we can do more.
-				fb.add(d);
-			}
-			
-			// emisphere??
-			if(fc.emisphere){
-			    if(fc.transformToWGS84==null){
-			       if(point.getY()>=0){
-			           fb.add("N");
-			       }else {
-			           fb.add("S");
-			       }
-			    }else{
-			            try {
-			                Point wgs84Point = (Point) JTS.transform(point, fc.transformToWGS84);
-                                        if (wgs84Point.getCoordinate().getOrdinate(fc.northDimension) >= 0) {
-                                            fb.add("N");
-                                        } else {
-                                            fb.add("S");
-                                        }			                
-	                        } catch (MismatchedDimensionException e) {
-	                                final NoSuchElementException nse= new NoSuchElementException();
-	                                nse.initCause(e);
-	                                throw nse;
-	                        } catch (TransformException e) {
-	                                final NoSuchElementException nse= new NoSuchElementException();
-	                                nse.initCause(e);
-	                                throw nse;
-	                        }			        
-			    }
-			}
-			
+                point=(Point) JTS.transform(point, fc.mt2D);
+                fb.add(point);
+
+                // VALUES
+                // loop on bands
+                iterator.getPixel(temp);
+                for (double d : temp) {
+                    // I exploit the internal converters to go from double to whatever the type is
+                    // TODO is this correct or we can do more.
+                    fb.add(d);
+                }
+
+                // emisphere manager
+                emisphereAttributeManagement(point);
+
+                // grid convergence angle correction
+                gridConvergenceAngleManagement(point);
+
+            } catch (Exception e) {
+                final NoSuchElementException nse = new NoSuchElementException();
+                nse.initCause(e);
+                throw nse;
+            }
+
             
             // do we need to wrap the line??
             if(iterator.nextPixelDone()){
@@ -423,6 +481,51 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
             index++;
             
             return returnValue;
+        }
+
+        /**
+         * @param point
+         */
+        private void gridConvergenceAngleManagement(Point point) throws Exception {
+            if(fc.gridConvergenceAngleCorrectionNeeded){
+
+                //
+                // Calculate convergence angle
+                //
+                sourceCRSPosition.setLocation(point.getX(), point.getY());
+                fc.reprojectionTransformation.transform(sourceCRSPosition, targetCRSPosition);
+
+                double convAngle = fc.gridConvergenceAngleManager.getConvergenceAngle(targetCRSPosition);
+                fb.add(convAngle);
+            }
+            
+        }
+
+        /**
+         * @param point
+         * @throws NoSuchElementException
+         */
+        private void emisphereAttributeManagement(final Point point) throws IOException {
+            if(fc.emisphere){
+                if (fc.transformToWGS84 == null) {
+                    if (point.getY() >= 0) {
+                        fb.add("N");
+                    } else {
+                        fb.add("S");
+                    }
+                } else {
+                    try {
+                        Point wgs84Point = (Point) JTS.transform(point, fc.transformToWGS84);
+                        if (wgs84Point.getCoordinate().getOrdinate(fc.northDimension) >= 0) {
+                            fb.add("N");
+                        } else {
+                            fb.add("S");
+                        }
+                    } catch (Exception e) {
+                        throw new IOException(e);
+                    }
+                }
+            }
         }
 
     }
