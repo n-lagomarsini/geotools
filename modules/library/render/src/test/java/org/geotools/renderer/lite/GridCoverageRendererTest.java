@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
@@ -54,6 +55,7 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.referencing.crs.DefaultProjectedCRS;
 import org.geotools.referencing.cs.DefaultCartesianCS;
 import org.geotools.referencing.operation.DefaultMathTransformFactory;
+import org.geotools.renderedimage.viewer.RenderedImageBrowser;
 import org.geotools.styling.RasterSymbolizer;
 import org.geotools.styling.Style;
 import org.geotools.styling.StyleBuilder;
@@ -325,6 +327,23 @@ public class GridCoverageRendererTest  {
         // there used to be a white triangle in the lower right corner of the output
         ImageAssert.assertEquals(new File("src/test/resources/org/geotools/renderer/lite/reprojectBuffer.png"), result, 0);
 	}
+
+    @Test
+    public void barbs() throws Exception {
+        // prepare the layer
+        GeoTiffReader reader = new GeoTiffReader(TestData.file(this, "wind.tiff"));
+        MapContent content = new MapContent();
+        content.addLayer(new GridReaderLayer(reader, RendererBaseTest.loadStyle(this, "wind.sld")));
+        
+        final StreamingRenderer renderer = new StreamingRenderer();
+        renderer.setMapContent(content);
+        renderer.setRendererHints(Collections.singletonMap("renderingBuffer", 100));
+        renderer.setJava2DHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
+    
+        BufferedImage image = RendererBaseTest.renderImage(renderer, content.getViewport().getBounds(),null);
+        RenderedImageBrowser.showChain(image);
+        System.in.read();
+    }
 
 
 }
