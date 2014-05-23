@@ -24,25 +24,25 @@ import org.opengis.referencing.cs.CoordinateSystemAxis;
  * conventions define the angle's direction (+/-) and beginning point / 
  * ending point differently.  Therefore, for the purposes of this code, the 
  * Grid Convergence Angle is defined as the angle (C) FROM true north TO 
- * grid north with 0º up and angles increasing positively clockwise.  So, 
- * for the example below, C would be approximately -33º, since the angle FROM
+ * grid north with 0 deg up and angles increasing positively clockwise.  So, 
+ * for the example below, C would be approximately -33deg, since the angle FROM
  * true north TO grid north is Counter-Clockwise. 
  *<pre>
  * 
  *                         Up
  *                     Grid North
- *                         0º    True North
+ *                         0 deg   True North
  *                         |       .
  *                         |  C  .
  *                         |   .
  *                         | . 
- *       270º--------------O--------------90º
+ *       270 deg ----------O---------90 deg
  *                         |
  *                         |
  *                         |
  *                         |
  *                         |
- *                         180º
+ *                         180 deg
  * 
  * </pre>
  * This class uses the GeoTools GeodeticCalculator for performing underlying 
