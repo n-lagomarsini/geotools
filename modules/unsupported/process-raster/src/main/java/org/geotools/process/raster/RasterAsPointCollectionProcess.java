@@ -20,6 +20,7 @@ package org.geotools.process.raster;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.RenderedImage;
+import java.awt.image.SampleModel;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 
@@ -99,11 +100,26 @@ public class RasterAsPointCollectionProcess implements RasterProcess {
         // scale if/as needed
         //
         ////
+        Float scaleX = scaleFactor;
+        Float scaleY = scaleFactor;
         if(scaleFactor!=null&&Math.abs(scaleFactor-1.0f)>1E-12){
             
+            final RenderedImage imageToBescaled = gc2d.getRenderedImage();
+            if (imageToBescaled != null) {
+                final SampleModel sampleModel = imageToBescaled.getSampleModel();
+                final int height = sampleModel.getHeight();
+                final int width = sampleModel.getWidth();
+                if (height * scaleFactor < 1) {
+                    scaleY = 1f;
+                }
+                if (width * scaleFactor < 1) {
+                    scaleX = 1f;
+                }
+            }
+
             final ParameterValueGroup param = AFFINE.getParameters();
             param.parameter("Source").setValue(gc2d);
-            param.parameter("transform").setValue(AffineTransform.getScaleInstance(scaleFactor, scaleFactor));
+            param.parameter("transform").setValue(AffineTransform.getScaleInstance(scaleX, scaleY));
             param.parameter("Interpolation").setValue(new InterpolationNearest());
 
             gc2d = (GridCoverage2D) CoverageProcessor.getInstance().doOperation(param);
