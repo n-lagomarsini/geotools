@@ -39,8 +39,6 @@ import javax.media.jai.operator.TranslateDescriptor;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.GridFormatFinder;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.resources.coverage.CoverageUtilities;
@@ -50,8 +48,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.opengis.coverage.grid.GridCoverageReader;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.geometry.MismatchedDimensionException;
 import org.opengis.metadata.spatial.PixelOrientation;
 import org.opengis.referencing.operation.MathTransform;
@@ -192,7 +188,7 @@ public class BandProcessTest {
         coverages.add(coverage2);
 
         // Creation of a Geometry to use as ROI
-        SimpleFeature feature = createFeature(coverage1);
+        Geometry geo = createGeometry(coverage1);
 
         // ///////////////
         //
@@ -203,7 +199,7 @@ public class BandProcessTest {
         // Call of the bandmerge process
         BandMergeProcess bandmerge = new BandMergeProcess();
         // Execution of the process
-        GridCoverage2D merged = bandmerge.execute(coverages, feature, null, null);
+        GridCoverage2D merged = bandmerge.execute(coverages, geo, null, null);
 
         // Checks on the new Coverage
         Assert.assertEquals(2, merged.getNumSampleDimensions());
@@ -258,7 +254,7 @@ public class BandProcessTest {
         // World to grid transform for mapping the ROI in the Raster apsce
         MathTransform2D tr = coverage1.getGridGeometry().getCRSToGrid2D(PixelOrientation.UPPER_LEFT);
         // ROI object inthe Raster Space
-        ROI roi = new ROIGeometry(JTS.transform((Geometry)feature.getDefaultGeometry(), tr));
+        ROI roi = new ROIGeometry(JTS.transform(geo, tr));
         // This ROI is a Rectangle so we can get its bounds
         Rectangle roiBounds = roi.getBounds();
         // Crop the source image with the ROI Bounds
@@ -268,10 +264,10 @@ public class BandProcessTest {
         // Coverage Crop for the final coverages
         CropCoverage crop = new CropCoverage();
         
-        RenderedImage cropSel1 = crop.execute(selected1, (Geometry) feature.getDefaultGeometry(),
+        RenderedImage cropSel1 = crop.execute(selected1, geo,
                 null).getRenderedImage();
 
-        RenderedImage cropSel2 = crop.execute(selected2, (Geometry) feature.getDefaultGeometry(),
+        RenderedImage cropSel2 = crop.execute(selected2, geo,
                 null).getRenderedImage();
         
         // Ensure that the images are equals on the cropped selection (The new images contains no data outside of the selection)
@@ -279,8 +275,8 @@ public class BandProcessTest {
         ensureEqualImages(cropSrc, cropSel2);
 
         // Ensure that the images contain No Data outside of the ROI bounds
-        ensureNoDataOutside(selected1, feature);
-        ensureNoDataOutside(selected2, feature);
+        ensureNoDataOutside(selected1, geo);
+        ensureNoDataOutside(selected2, geo);
     }
 
     // Ensure that the merging and selecting two images where one of them is translated, returns the two images, each of the placed
@@ -417,12 +413,12 @@ public class BandProcessTest {
     }
 
     /**
-     * Method for creating the SimpleFeature to test
+     * Method for creating the ROI to test
      * 
      * @param coverage
      * @return
      */
-    private SimpleFeature createFeature(GridCoverage2D coverage) {
+    private Geometry createGeometry(GridCoverage2D coverage) {
         // Selection of the Envelope associated to the Coverage
         Envelope2D envelope = coverage.getEnvelope2D();
 
@@ -454,20 +450,8 @@ public class BandProcessTest {
         // polygon creation from the coordinate array
         Polygon poly = fact.createPolygon(coordinates);
 
-        // SimpleFeature creation
-        SimpleFeatureTypeBuilder b = new SimpleFeatureTypeBuilder();
-
-        // set the name
-        b.setName("type");
-        b.add("location", Polygon.class); // then add geometry
-
-        // build the type
-        final SimpleFeatureType featureType = b.buildFeatureType();
-        // Builder for the feature
-        SimpleFeatureBuilder builder = new SimpleFeatureBuilder(featureType);
-        builder.add(poly);
-        // Build feature
-        return builder.buildFeature("id");
+        // Return feature
+        return poly;
     }
 
     /**
@@ -478,12 +462,12 @@ public class BandProcessTest {
      * @throws MismatchedDimensionException
      * @throws TransformException
      */
-    private void ensureNoDataOutside(GridCoverage2D coverage, SimpleFeature feature)
+    private void ensureNoDataOutside(GridCoverage2D coverage, Geometry geom)
             throws MismatchedDimensionException, TransformException {
         // World to Grid transform used to project the Geometry to the RasterSpace
         MathTransform w2g = coverage.getGridGeometry().getCRSToGrid2D(PixelOrientation.UPPER_LEFT);
         // ROI in raster space
-        ROI roi = new ROIGeometry(JTS.transform((Geometry) feature.getDefaultGeometry(), w2g));
+        ROI roi = new ROIGeometry(JTS.transform(geom, w2g));
         // Approximate bounds by expanding them by one (coordinates are taken with a 0.5 offset)
         Rectangle rect = roi.getBounds();
         rect.grow(1, 1);
