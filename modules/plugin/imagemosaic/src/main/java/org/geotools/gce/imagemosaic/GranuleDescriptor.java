@@ -291,6 +291,8 @@ public class GranuleDescriptor {
         ImageInputStreamSpi cachedStreamSPI;
 
         private GridToEnvelopeMapper geMapper;
+
+        private boolean heterogeneousGranules;
         
 	private void init(final BoundingBox granuleBBOX, final URL granuleUrl,
 			final ImageReaderSpi suggestedSPI, final MultiLevelROI roiProvider,
@@ -299,6 +301,7 @@ public class GranuleDescriptor {
 		this.granuleUrl = granuleUrl;
 		this.roiProvider = roiProvider;
 		this.handleArtifactsFiltering = handleArtifactsFiltering;
+		this.heterogeneousGranules = heterogeneousGranules;
     		filterMe = handleArtifactsFiltering && roiProvider != null;
                 
 		
@@ -436,6 +439,7 @@ public class GranuleDescriptor {
                     try {
                         String auxiliaryFilePath = (String) hints.get(Utils.AUXILIARY_FILES_PATH);
                         MethodUtils.invokeMethod(reader, "setAuxiliaryFilesPath", auxiliaryFilePath);
+                        heterogeneousGranules = false;
                         return true;
                     } catch (NoSuchMethodException e) {
                         throw new RuntimeException(e);
@@ -696,7 +700,7 @@ public class GranuleDescriptor {
 			reader.setInput(inStream);
 			
 			// Checking for heterogeneous granules
-			if (request.isHeterogeneousGranules()){
+			if (request.isHeterogeneousGranules() && heterogeneousGranules){
 			    // create read parameters
 			    readParameters = new ImageReadParam();
 			    
