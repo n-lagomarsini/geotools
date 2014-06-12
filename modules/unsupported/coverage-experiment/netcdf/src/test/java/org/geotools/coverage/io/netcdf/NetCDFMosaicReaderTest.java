@@ -34,6 +34,9 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.media.jai.PlanarImage;
+import javax.media.jai.RenderedOp;
+import javax.media.jai.operator.MeanDescriptor;
+import javax.media.jai.operator.SubtractDescriptor;
 import javax.swing.JFrame;
 
 import junit.framework.JUnit4TestAdapter;
@@ -54,6 +57,7 @@ import org.geotools.data.Query;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.factory.GeoTools;
 import org.geotools.factory.Hints;
 import org.geotools.gce.imagemosaic.ImageMosaicFormat;
 import org.geotools.gce.imagemosaic.ImageMosaicReader;
@@ -506,7 +510,120 @@ public class NetCDFMosaicReaderTest extends Assert {
             reader.dispose();
         }
     }
-    
+
+    @Test
+    public void testMultipleGranules() throws IOException, ParseException {
+        // prepare a "mosaic" with just one NetCDF
+        File nc1 = TestData.file(this, "20130101.METOPA.GOME2.NO2.DUMMY.nc");
+        File nc2 = TestData.file(this, "20130108.METOPA.GOME2.NO2.DUMMY.nc");
+        File mosaic = new File(TestData.file(this, "."), "nc_harvest");
+        if (mosaic.exists()) {
+            FileUtils.deleteDirectory(mosaic);
+        }
+        assertTrue(mosaic.mkdirs());
+        FileUtils.copyFileToDirectory(nc1, mosaic);
+        FileUtils.copyFileToDirectory(nc2, mosaic);
+
+        File xml = TestData.file(this, ".DUMMY.GOME2.NO2.PGL/GOME2.NO2.xml");
+        FileUtils.copyFileToDirectory(xml, mosaic);
+
+        // The indexer
+        String indexer = "TimeAttribute=time\n"
+                + "Schema=the_geom:Polygon,location:String,imageindex:Integer,time:java.util.Date\n"
+                + "PropertyCollectors=TimestampFileNameExtractorSPI[timeregex](time)\n";
+        indexer += Prop.AUXILIARY_FILE + "=" + "GOME2.NO2.xml";
+        FileUtils.writeStringToFile(new File(mosaic, "indexer.properties"), indexer);
+
+        String timeregex = "regex=[0-9]{8}";
+        FileUtils.writeStringToFile(new File(mosaic, "timeregex.properties"), timeregex);
+
+        // the datastore.properties file is also mandatory...
+        File dsp = TestData.file(this, "datastore.properties");
+        FileUtils.copyFileToDirectory(dsp, mosaic);
+
+        // have the reader harvest it
+        ImageMosaicFormat format = new ImageMosaicFormat();
+        ImageMosaicReader reader = format.getReader(mosaic);
+        SimpleFeatureIterator it = null;
+        assertNotNull(reader);
+        try {
+            // use imageio with defined tiles
+            final ParameterValue<Boolean> useJai = AbstractGridFormat.USE_JAI_IMAGEREAD
+                    .createValue();
+            useJai.setValue(false);
+            // specify time
+            ParameterValue<List> time = ImageMosaicFormat.TIME.createValue();
+            final Date timeD = parseTimeStamp("2013-01-01T00:00:00.000Z");
+            time.setValue(new ArrayList() {
+                {
+                    add(timeD);
+                }
+            });
+            GeneralParameterValue[] params = new GeneralParameterValue[] { useJai, time };
+            GridCoverage2D coverage1 = reader.read(params);
+            // Specify a new time (Check if two times returns two different coverages)
+            final Date timeD2 = parseTimeStamp("2013-01-08T00:00:00.000Z");
+            time.setValue(new ArrayList() {
+                {
+                    add(timeD2);
+                }
+            });
+            params = new GeneralParameterValue[] { useJai, time };
+            GridCoverage2D coverage2 = reader.read(params);
+            // Specify the old time (Check if the same time return the same coverages)
+            final Date timeD3 = parseTimeStamp("2013-01-01T00:00:00.000Z");
+            time.setValue(new ArrayList() {
+                {
+                    add(timeD3);
+                }
+            });
+            params = new GeneralParameterValue[] { useJai, time };
+            GridCoverage2D coverage3 = reader.read(params);
+
+            // Get the images associated to each time
+            RenderedImage image1 = coverage1.getRenderedImage();
+            RenderedImage image2 = coverage2.getRenderedImage();
+            RenderedImage image3 = coverage3.getRenderedImage();
+
+            // Check they have the same dimensions
+            assertEquals(image1.getMinX(), image2.getMinX());
+            assertEquals(image1.getMinY(), image2.getMinY());
+            assertEquals(image1.getWidth(), image2.getWidth());
+            assertEquals(image1.getHeight(), image2.getHeight());
+
+            assertEquals(image1.getMinX(), image3.getMinX());
+            assertEquals(image1.getMinY(), image3.getMinY());
+            assertEquals(image1.getWidth(), image3.getWidth());
+            assertEquals(image1.getHeight(), image3.getHeight());
+
+            // Subtraction of the first and second images
+            RenderedOp sub = SubtractDescriptor.create(image1, image2, GeoTools.getDefaultHints());
+            // Calculation of the mean value
+            RenderedOp stats = MeanDescriptor.create(sub, null, 1, 1, GeoTools.getDefaultHints());
+            double mean = ((double[]) stats.getProperty("mean"))[0];
+            // Check that the two images are not the same
+            assertTrue(mean != 0);
+
+            // Subtraction of the first and last images
+            sub = SubtractDescriptor.create(image1, image3, GeoTools.getDefaultHints());
+            // Calculation of the mean value
+            stats = MeanDescriptor.create(sub, null, 1, 1, GeoTools.getDefaultHints());
+            mean = ((double[]) stats.getProperty("mean"))[0];
+            // Check that the two images are the same
+            assertEquals(mean, 0d, 1E-6d);
+
+            // Ensure that only one coverage is present
+            String[] names = reader.getGridCoverageNames();
+            assertEquals(1, names.length);
+            assertEquals("NO2", names[0]);
+        } finally {
+            if (it != null) {
+                it.close();
+            }
+            reader.dispose();
+        }
+    }
+
     @Test
     public void testHarvest3Gome() throws IOException {
         // prepare a "mosaic" with just one NetCDF
