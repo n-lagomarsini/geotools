@@ -23,36 +23,33 @@ import org.geotools.coverage.io.CoverageAccess.AccessType;
  * 
  * @author Simone Giannecchini, GeoSolutions SAS
  *
- *
- *
- *
  * @source $URL$
  */
 public enum CoverageCapabilities {
-	READ_SUBSAMPLING(AccessType.READ_ONLY),
-	READ_RANGE_SUBSETTING(AccessType.READ_ONLY),
-	READ_HORIZONTAL_DOMAIN_SUBSAMBLING(AccessType.READ_ONLY),
-	READ_REPROJECTION(AccessType.READ_ONLY),
-	WRITE_HORIZONTAL_DOMAIN_SUBSAMBLING(AccessType.READ_WRITE),
-	WRITE_RANGE_SUBSETTING(AccessType.READ_WRITE),
-	WRITE_SUBSAMPLING(AccessType.READ_WRITE);
-	
-	/**
-	 * Access requirement for this capability to be allowed.
-	 */
-	final AccessType access;
-	
-	private CoverageCapabilities(AccessType accessType) {
-		access = accessType;
-	}
-	
-	/**
-	 * Check if this capability is permissible for the provided access type.
-	 * 
-	 * @param type
-	 * @return true if capability is permissible
-	 */
-	public boolean isSupported( AccessType type ){
-		return access.compareTo(type) <= 0;
-	}
+    READ_SUBSAMPLING(AccessType.READ_ONLY),
+    READ_RANGE_SUBSETTING(AccessType.READ_ONLY),
+    READ_HORIZONTAL_DOMAIN_SUBSAMBLING(AccessType.READ_ONLY),
+    READ_REPROJECTION(AccessType.READ_ONLY),
+    WRITE_HORIZONTAL_DOMAIN_SUBSAMBLING(AccessType.READ_WRITE),
+    WRITE_RANGE_SUBSETTING(AccessType.READ_WRITE),
+    WRITE_SUBSAMPLING(AccessType.READ_WRITE);
+
+    /**
+     * Access requirement for this capability to be allowed.
+     */
+    final AccessType access;
+
+    private CoverageCapabilities(AccessType accessType) {
+        access = accessType;
+    }
+
+    /**
+     * Check if this capability is permissible for the provided access type.
+     * 
+     * @param type
+     * @return true if capability is permissible
+     */
+    public boolean isSupported( AccessType type ){
+        return access.compareTo(type) <= 0;
+    }
 }

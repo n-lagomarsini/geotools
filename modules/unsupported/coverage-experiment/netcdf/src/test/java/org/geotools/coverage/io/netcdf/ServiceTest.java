@@ -16,12 +16,21 @@
  */
 package org.geotools.coverage.io.netcdf;
 
-import java.util.Set;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.Assert;
+import java.io.File;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.logging.Logger;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 
 import org.geotools.coverage.io.Driver;
 import org.geotools.coverage.io.impl.CoverageIO;
+import org.geotools.imageio.netcdf.NetCDFImageReader;
+import org.geotools.test.TestData;
+import org.geotools.util.logging.Logging;
 import org.junit.Test;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
@@ -31,23 +40,46 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
  * 
  * @author Simone Giannecchini
  * @author Daniele Romagnoli
- *
+ * 
  * @source $URL$
  */
-public class ServiceTest extends Assert {
+public class ServiceTest {
 
-	@Test
-    public void isAvailable() throws NoSuchAuthorityCodeException,
-            FactoryException {
+    private final static Logger LOGGER = Logging.getLogger(ServiceTest.class.toString());
+
+    @Test
+    public void isAvailable() throws NoSuchAuthorityCodeException, FactoryException {
         CoverageIO.scanForPlugins();
         Set<Driver> drivers = CoverageIO.getAvailableDrivers();
         Driver driverFound = null;
-        for (Driver driver: drivers)
+        for (Driver driver : drivers)
             if (driver instanceof NetCDFDriver) {
                 driverFound = driver;
                 break;
-        }
-        assertTrue("NetCDFDriver not registered", driverFound!=null);
+            }
+        assertTrue("NetCDFDriver not registered", driverFound != null);
         assertTrue("NetCDFDriver not available", driverFound.isAvailable());
+    }
+
+    @Test
+    public void isAvailableFromFile() throws Exception {
+        final File file = TestData.file(this, "O3-NO2.nc");
+        if (!file.exists()) {
+
+            LOGGER.severe("Unable to locate test data O3-NO2.nc. Test aborted!");
+            return;
+        }
+        Iterator<ImageReader> readers = ImageIO.getImageReaders(file);
+        assertTrue("No valid readers found", readers.hasNext());
+
+        boolean found = false;
+        while (readers.hasNext()) {
+            ImageReader reader = readers.next();
+            if (reader instanceof NetCDFImageReader) {
+                found = true;
+            }
+
+        }
+        assertTrue("DummyUnidataReader not registered", found);
     }
 }

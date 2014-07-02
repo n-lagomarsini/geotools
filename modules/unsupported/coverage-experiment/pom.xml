@@ -100,10 +100,7 @@
   <!-- =========================================================== -->
       <modules>
         <module>coverage-api</module>
-        <module>unidata</module>
-        <!--module>geotiff</module-->
-		<module>grib</module>
+        <module>grib</module>
         <module>netcdf</module>
-        <!--module>hdf4</module-->
   </modules>
  </project>

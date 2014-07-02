@@ -26,8 +26,6 @@ import org.opengis.feature.type.Name;
  * @author Simone Giannecchini, GeoSolutions
  * @author Jody Garnett
  *
- *
- *
  * @source $URL$
  */
 public abstract class CoverageRequest  {

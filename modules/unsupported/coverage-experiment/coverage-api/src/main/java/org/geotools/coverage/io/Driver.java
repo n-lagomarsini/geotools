@@ -31,22 +31,17 @@ import org.opengis.util.ProgressListener;
 /**
  * A driver adding the ability to work with a new coverage format or service.
  * <p>
- * Classes implementing this interface basically act as factory for creating
- * connections to coverage sources like files, WCS services, WMS services,
+ * Classes implementing this interface basically act as factory for creating connections to coverage sources like files, WCS services, WMS services,
  * databases, etc...
  * <p>
- * This class also offers basic create / delete functionality (which can be
- * useful for file based coverage formats).
+ * This class also offers basic create / delete functionality (which can be useful for file based coverage formats).
  * <p>
- * Purpose of this class is to provide basic information about a certain
- * coverage service/format as well as about the parameters needed in order to
+ * Purpose of this class is to provide basic information about a certain coverage service/format as well as about the parameters needed in order to
  * connect to a source which such a service/format is able to work against.
  * 
  * <p>
- * Notice that as part as the roll of a "factory" interface this class makes
- * available an {@link #isAvailable()} method which should check if all the
- * needed dependencies which can be jars as well as native libs or configuration
- * files.
+ * Notice that as part as the roll of a "factory" interface this class makes available an {@link #isAvailable()} method which should check if all the
+ * needed dependencies which can be jars as well as native libs or configuration files.
  * 
  * 
  * @author Simone Giannecchini, GeoSolutions.
@@ -56,23 +51,18 @@ import org.opengis.util.ProgressListener;
  * @source $URL$
  */
 public interface Driver extends OptionalFactory, Factory {
-	
-	public enum DriverCapabilities{
-		CONNECT,
-		CREATE,
-		DELETE;
-		
-	}
+
+    public enum DriverCapabilities {
+        CONNECT, CREATE, DELETE;
+
+    }
 
     /**
-     * Unique name (non human readable) that can be used to refer to this
-     * implementation.
+     * Unique name (non human readable) that can be used to refer to this implementation.
      * <p>
-     * While the Title and Description will change depending on the users local
-     * this name will be consistent.
+     * While the Title and Description will change depending on the users local this name will be consistent.
      * </p>
-     * Please note that a given file may be readable by several Drivers (the
-     * description of each implementation should be provided to the user so they
+     * Please note that a given file may be readable by several Drivers (the description of each implementation should be provided to the user so they
      * can make an intellegent choice in the matter).
      * 
      * @return name of this {@link Driver}
@@ -111,13 +101,13 @@ public interface Driver extends OptionalFactory, Factory {
      *         appropriate dependencies on the classpath to create DataStores.
      */
     public boolean isAvailable();
-    
-    public boolean canAccess(DriverCapabilities operation,Map<String, Serializable> params);
-    
+
+    public boolean canAccess(DriverCapabilities operation, Map<String, Serializable> params);
+
     public Map<String, Parameter<?>> getParameterInfo(DriverCapabilities operation);
-    
+
     public EnumSet<DriverCapabilities> getDriverCapabilities();
-    
+
     /**
      * 
      * 

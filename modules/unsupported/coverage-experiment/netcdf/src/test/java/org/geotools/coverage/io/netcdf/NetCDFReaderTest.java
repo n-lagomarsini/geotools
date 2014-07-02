@@ -18,10 +18,8 @@ package org.geotools.coverage.io.netcdf;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
-import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -33,8 +31,6 @@ import java.util.TimeZone;
 
 import javax.media.jai.PlanarImage;
 
-import junit.framework.Assert;
-
 import org.apache.commons.io.FileUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
@@ -43,7 +39,6 @@ import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.DimensionDescriptor;
 import org.geotools.coverage.grid.io.GridFormatFinder;
 import org.geotools.coverage.grid.io.StructuredGridCoverage2DReader;
-import org.geotools.data.DataSourceException;
 import org.geotools.factory.Hints;
 import org.geotools.gce.imagemosaic.ImageMosaicFormat;
 import org.geotools.gce.imagemosaic.Utils;
@@ -54,6 +49,7 @@ import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.resources.coverage.CoverageUtilities;
 import org.geotools.resources.coverage.FeatureUtilities;
 import org.geotools.test.TestData;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.opengis.coverage.grid.GridEnvelope;

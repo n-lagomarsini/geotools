@@ -43,7 +43,7 @@ import org.geotools.coverage.io.FileDriver;
 import org.geotools.coverage.io.impl.DefaultFileDriver;
 import org.geotools.factory.Hints;
 import org.geotools.imageio.netcdf.NetCDFImageReaderSpi;
-import org.geotools.imageio.unidata.utilities.UnidataUtilities;
+import org.geotools.imageio.netcdf.utilities.NetCDFUtilities;
 import org.opengis.util.ProgressListener;
 
 /**
@@ -52,7 +52,7 @@ import org.opengis.util.ProgressListener;
  */
 public class NetCDFDriver extends DefaultFileDriver implements FileDriver, Driver {
 
-    private static final List<String> EXTENSIONS = UnidataUtilities.isGribAvailable() ? Arrays
+    private static final List<String> EXTENSIONS = NetCDFUtilities.isGribAvailable() ? Arrays
             .asList("nc", "grb", "grb2", "grib") : Arrays.asList("nc");
 
     /** Logger. */

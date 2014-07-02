@@ -38,17 +38,27 @@ public class NumberRangeComparator implements Comparator<Range< ? extends Number
         if (firstRangeMin == secondRangeMin && firstRangeMax == secondRangeMax) {
             return 0;
         }
-        if (firstRangeMin > secondRangeMin) {
+        if (firstRangeMin == secondRangeMin) {
             if (firstRangeMax > secondRangeMax) {
-                return +2;
-            } else {
                 return +1;
-            }
-        } else {
-            if (firstRangeMax <= secondRangeMax) {
-                return -2;
             } else {
                 return -1;
+            }
+        } else if (firstRangeMin < secondRangeMin) {
+            if (firstRangeMax > secondRangeMax) {
+                return -3;
+            } else if (firstRangeMax < secondRangeMax){
+                return -4;
+            } else {
+                return -2;
+            }
+        } else {
+            if (firstRangeMax < secondRangeMax) {
+                return +3;
+            } else if (firstRangeMax > secondRangeMax) {
+                return +4;
+            } else {
+                return +2;
             }
         }
     }

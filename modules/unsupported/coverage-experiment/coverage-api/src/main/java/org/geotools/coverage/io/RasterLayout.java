@@ -342,9 +342,6 @@ public class RasterLayout{
        return this;
     }
 
-
-
-
     /** Returns a String containing the values of all valid fields. */
     public String toString() {
         String s = "RasterLayout[";
@@ -403,22 +400,22 @@ public class RasterLayout{
      */
     public boolean equals(Object obj) {
 
-	if (this == obj)
-	    return true;
+    if (this == obj)
+        return true;
 
-	if (!(obj instanceof RasterLayout))
-	    return false;
+    if (!(obj instanceof RasterLayout))
+        return false;
 
-	RasterLayout il = (RasterLayout)obj;
+    RasterLayout il = (RasterLayout)obj;
 
-	return (width           == il.width          ) &&
-	       (height          == il.height         ) &&
-	       (minX            == il.minX           ) &&
-	       (minY            == il.minY           ) &&
-	       (tileHeight      == il.tileHeight     ) &&
-	       (tileWidth       == il.tileWidth      ) &&
-	       (tileGridXOffset == il.tileGridXOffset) &&
-	       (tileGridYOffset == il.tileGridYOffset) ;
+    return (width           == il.width          ) &&
+           (height          == il.height         ) &&
+           (minX            == il.minX           ) &&
+           (minY            == il.minY           ) &&
+           (tileHeight      == il.tileHeight     ) &&
+           (tileWidth       == il.tileWidth      ) &&
+           (tileGridXOffset == il.tileGridXOffset) &&
+           (tileGridYOffset == il.tileGridYOffset) ;
     }
 
 }

@@ -34,9 +34,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.media.jai.PlanarImage;
-import javax.media.jai.RenderedOp;
-import javax.media.jai.operator.MeanDescriptor;
-import javax.media.jai.operator.SubtractDescriptor;
 import javax.swing.JFrame;
 
 import junit.framework.JUnit4TestAdapter;
@@ -57,7 +54,6 @@ import org.geotools.data.Query;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.factory.GeoTools;
 import org.geotools.factory.Hints;
 import org.geotools.gce.imagemosaic.ImageMosaicFormat;
 import org.geotools.gce.imagemosaic.ImageMosaicReader;
@@ -579,7 +575,7 @@ public class NetCDFMosaicReaderTest extends Assert {
             // Ensure that only one coverage is present
             String[] names = reader.getGridCoverageNames();
             assertEquals(1, names.length);
-            assertEquals("z", names[0]);
+            assertEquals("NO2", names[0]);
         } finally {
             if (it != null) {
                 it.close();

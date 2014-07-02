@@ -14,17 +14,15 @@
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *    Lesser General Public License for more details.
  */
-package org.geotools.coverage.io.netcdf;
+package org.geotools.imageio.netcdf.utilities;
 
 import java.io.File;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.geotools.gce.imagemosaic.properties.PropertiesCollector;
 import org.geotools.gce.imagemosaic.properties.PropertiesCollectorSPI;
-import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeature;
 
 /**
@@ -34,8 +32,6 @@ import org.opengis.feature.simple.SimpleFeature;
  * 
  */
 class RuntimeExtractor extends PropertiesCollector {
-    private final static Logger LOGGER = Logging.getLogger(RuntimeExtractor.class);
-
     Date date;
 
     enum RuntimeType {

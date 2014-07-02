@@ -96,12 +96,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * 
- * 
  * @author Daniele Romagnoli, GeoSolutions
- * 
- * 
- * 
  * 
  * @source $URL$
  */
@@ -1215,12 +1210,12 @@ public class Utilities {
             return null;
         } finally {
 
-            if (stream != null)
+            if (stream != null) {
                 IOUtils.closeQuietly(stream);
-
-            if (openStream != null)
+            }
+            if (openStream != null) {
                 IOUtils.closeQuietly(openStream);
-
+            }
         }
         return properties;
     }

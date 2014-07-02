@@ -19,6 +19,7 @@ package org.geotools.coverage.io;
 
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -672,6 +673,21 @@ public class SpatialRequestHelper {
     
     public CoverageProperties getCoverageProperties() {
         return coverageProperties;
+    }
+
+    @Override
+    public String toString() {
+        return "SpatialRequestHelper [requestedBBox=" + requestedBBox + ", cropBBox=" + cropBBox
+                + ", requestedRasterArea=" + requestedRasterArea + ", destinationRasterArea="
+                + destinationRasterArea + ", requestCRS=" + requestCRS + ", requestedGridToWorld="
+                + requestedGridToWorld + ", requestedResolution="
+                + Arrays.toString(requestedResolution) + ", requestedBBOXInCoverageGeographicCRS="
+                + requestedBBOXInCoverageGeographicCRS + ", requestCRSToCoverageGeographicCRS2D="
+                + requestCRSToCoverageGeographicCRS2D + ", destinationToSourceTransform="
+                + destinationToSourceTransform + ", coverageProperties=" + coverageProperties
+                + ", empty=" + empty + ", needsReprojection=" + needsReprojection
+                + ", approximateRequestedBBoInNativeCRS=" + approximateRequestedBBoInNativeCRS
+                + "]";
     }
 
 }

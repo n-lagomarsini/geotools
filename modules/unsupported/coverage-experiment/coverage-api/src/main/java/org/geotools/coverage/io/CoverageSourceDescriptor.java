@@ -26,6 +26,10 @@ import org.geotools.coverage.io.CoverageSource.TemporalDomain;
 import org.geotools.coverage.io.CoverageSource.VerticalDomain;
 import org.geotools.coverage.io.range.RangeType;
 
+/**
+ * Describes a {@link CoverageSource} in terms of Name, {@link SpatialDomain}, {@link VerticalDomain}, {@link TemporalDomain},
+ * {@link AdditionalDomain}s, {@link DimensionDescriptor}s
+ */
 public class CoverageSourceDescriptor {
 
     private boolean hasTemporalDomain = false;
@@ -59,7 +63,7 @@ public class CoverageSourceDescriptor {
 
     protected void setName(String varName) {
         this.name = varName;
-    }    
+    }
 
     public RangeType getRangeType() {
         return rangeType;
@@ -138,8 +142,7 @@ public class CoverageSourceDescriptor {
      */
     public void dispose() {
         // default impl, do nothing
-        
-    }
-    
-}
 
+    }
+
+}

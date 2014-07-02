@@ -79,9 +79,9 @@ import org.geotools.factory.Hints;
 import org.geotools.feature.NameImpl;
 import org.geotools.gce.imagemosaic.ImageMosaicFormat;
 import org.geotools.geometry.GeneralEnvelope;
-import org.geotools.imageio.unidata.UnidataImageReader;
-import org.geotools.imageio.unidata.UnidataVariableAdapter;
-import org.geotools.imageio.unidata.UnidataVariableAdapter.UnidataSpatialDomain;
+import org.geotools.imageio.netcdf.NetCDFImageReader;
+import org.geotools.imageio.netcdf.VariableAdapter;
+import org.geotools.imageio.netcdf.VariableAdapter.UnidataSpatialDomain;
 import org.geotools.referencing.operation.transform.IdentityTransform;
 import org.geotools.referencing.operation.transform.ProjectiveTransform;
 import org.geotools.resources.coverage.CoverageUtilities;
@@ -724,7 +724,7 @@ public class NetCDFReader extends AbstractGridCoverage2DReader implements Struct
         coverageName = checkUnspecifiedCoverage(coverageName);
         try {
             CoverageSource source = getGridCoverageSource(coverageName);
-            UnidataVariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
+            VariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
             GeneralEnvelope generalEnvelope = new GeneralEnvelope(spatialDomain.getReferencedEnvelope());
             generalEnvelope.setCoordinateReferenceSystem(spatialDomain.getCoordinateReferenceSystem2D());
             return generalEnvelope;
@@ -743,7 +743,7 @@ public class NetCDFReader extends AbstractGridCoverage2DReader implements Struct
         coverageName = checkUnspecifiedCoverage(coverageName);
         try {
             final CoverageSource source = getGridCoverageSource(coverageName);
-            UnidataVariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
+            VariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
             return spatialDomain.getGridGeometry().getGridRange2D();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -766,7 +766,7 @@ public class NetCDFReader extends AbstractGridCoverage2DReader implements Struct
             // Currently we have no overviews support so we will return the highest resolution
         coverageName = checkUnspecifiedCoverage(coverageName);
         final CoverageSource source = getGridCoverageSource(coverageName);
-        UnidataVariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
+        VariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
         GeneralGridGeometry gridGeometry2D = spatialDomain.getGridGeometry();
         AffineTransform gridToCRS = (AffineTransform) gridGeometry2D.getGridToCRS();
         return CoverageUtilities.getResolution(gridToCRS);
@@ -815,7 +815,7 @@ public class NetCDFReader extends AbstractGridCoverage2DReader implements Struct
         coverageName = checkUnspecifiedCoverage(coverageName);
         try {
             final CoverageSource source = getGridCoverageSource(coverageName);
-            UnidataVariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
+            VariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
             GridEnvelope2D gridRange = spatialDomain.getGridGeometry().getGridRange2D();
             RasterLayout rasterElement = spatialDomain.getRasterElements(false, null).iterator().next();
             SampleModel sampleModel = new BandedSampleModel(DataBuffer.TYPE_DOUBLE, (int)gridRange.getWidth(), (int)gridRange.getHeight(), 1);
@@ -844,7 +844,7 @@ public class NetCDFReader extends AbstractGridCoverage2DReader implements Struct
         coverageName = checkUnspecifiedCoverage(coverageName);
         try {
             final CoverageSource source = getGridCoverageSource(coverageName);
-            UnidataVariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
+            VariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
             return spatialDomain.getCoordinateReferenceSystem2D();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -861,7 +861,7 @@ public class NetCDFReader extends AbstractGridCoverage2DReader implements Struct
         coverageName = checkUnspecifiedCoverage(coverageName);
         try {
             final CoverageSource source = getGridCoverageSource(coverageName);
-            UnidataVariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
+            VariableAdapter.UnidataSpatialDomain spatialDomain = (UnidataSpatialDomain) source.getSpatialDomain();
             MathTransform2D gridToWorld = spatialDomain.getGridToWorldTransform(null);
             if (pixInCell == PixelInCell.CELL_CENTER) {
                 return gridToWorld;
@@ -889,8 +889,8 @@ public class NetCDFReader extends AbstractGridCoverage2DReader implements Struct
     @Override
     public GranuleSource getGranules(String coverageName, boolean readOnly) throws IOException,
             UnsupportedOperationException {
-        UnidataImageReader unidataReader = (UnidataImageReader) ((NetCDFAccess)access).reader;
-        final CoverageSlicesCatalog catalog = unidataReader.getCatalog();
+        NetCDFImageReader reader = (NetCDFImageReader) ((NetCDFAccess)access).reader;
+        final CoverageSlicesCatalog catalog = reader.getCatalog();
         return new CoverageSlicesCatalogSource(catalog, coverageName);
     }
     

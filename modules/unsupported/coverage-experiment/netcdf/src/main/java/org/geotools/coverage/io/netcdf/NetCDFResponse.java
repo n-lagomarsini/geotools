@@ -49,22 +49,19 @@ import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.grid.io.DimensionDescriptor;
-import org.geotools.coverage.grid.io.GridCoverage2DReader;
 import org.geotools.coverage.io.CoverageReadRequest;
 import org.geotools.coverage.io.CoverageResponse;
 import org.geotools.coverage.io.SpatialRequestHelper.CoverageProperties;
-import org.geotools.coverage.io.catalog.CoverageSlice;
 import org.geotools.coverage.io.impl.DefaultGridCoverageResponse;
 import org.geotools.coverage.io.range.FieldType;
 import org.geotools.coverage.io.range.RangeType;
 import org.geotools.data.DataSourceException;
 import org.geotools.data.Query;
 import org.geotools.factory.Hints;
-import org.geotools.gce.imagemosaic.ImageMosaicFormat;
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.image.ImageWorker;
-import org.geotools.imageio.unidata.utilities.UnidataUtilities;
+import org.geotools.imageio.netcdf.utilities.NetCDFUtilities;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.operation.matrix.XAffineTransform;
 import org.geotools.referencing.operation.transform.AffineTransform2D;
@@ -166,7 +163,7 @@ class NetCDFResponse extends CoverageResponse{
 
         // is this query empty?
         if (request.spatialRequestHelper.isEmpty()) {
-            if (LOGGER.isLoggable(Level.FINE)){
+            if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.log(Level.FINE, "Request is empty: " + request.toString());
             }
             return;
@@ -176,14 +173,14 @@ class NetCDFResponse extends CoverageResponse{
         prepareParams();
         String timeFilterAttribute = null;
         String elevationFilterAttribute = null;
-        CoverageReadRequest readRequest = (CoverageReadRequest) /*response.*/getRequest();
+        CoverageReadRequest readRequest = (CoverageReadRequest) getRequest();
         RangeType rangeType = request.source.getRangeType(null);
         List<DimensionDescriptor> dimensionDescriptors = request.source.getDimensionDescriptors();
         for (DimensionDescriptor dimensionDescriptor : dimensionDescriptors) {
-            if (dimensionDescriptor.getName().equalsIgnoreCase(UnidataUtilities.ELEVATION_DIM)) {
+            if (dimensionDescriptor.getName().equalsIgnoreCase(NetCDFUtilities.ELEVATION_DIM)) {
                 // TODO Update this with ranged attributes
                 elevationFilterAttribute = dimensionDescriptor.getStartAttribute();
-            } else if (dimensionDescriptor.getName().equalsIgnoreCase(UnidataUtilities.TIME_DIM)) {
+            } else if (dimensionDescriptor.getName().equalsIgnoreCase(NetCDFUtilities.TIME_DIM)) {
                 // TODO Update this with ranged attributes
                 timeFilterAttribute = dimensionDescriptor.getStartAttribute();
             }
@@ -198,92 +195,91 @@ class NetCDFResponse extends CoverageResponse{
         // adding GridCoverages to the results list
         //
         // //
-       Set<SampleDimension> sampleDims = null;
-       for (FieldType fieldType : fieldTypes) {
-           final Name name = fieldType.getName();
-           sampleDims = fieldType.getSampleDimensions();
-           if (rangeType != null) {
-               final FieldType ft = rangeType.getFieldType(name.getLocalPart());
-               if (ft != null)
-                   sampleDims = ft.getSampleDimensions();
-           }
-       }
-       final GridSampleDimension[] sampleDimensions = sampleDims.toArray(new GridSampleDimension[sampleDims.size()]);
+        Set<SampleDimension> sampleDims = null;
+        for (FieldType fieldType : fieldTypes) {
+            final Name name = fieldType.getName();
+            sampleDims = fieldType.getSampleDimensions();
+            if (rangeType != null) {
+                final FieldType ft = rangeType.getFieldType(name.getLocalPart());
+                if (ft != null)
+                    sampleDims = ft.getSampleDimensions();
+            }
+        }
+        final GridSampleDimension[] sampleDimensions = sampleDims
+                .toArray(new GridSampleDimension[sampleDims.size()]);
 
-       // Forcing creation of subsets (even with a single null element)
-       Set<DateRange> tempSubset = null;
-       if (!temporalSubset.isEmpty()) {
-           tempSubset = temporalSubset;
-       } else {
-           tempSubset = new HashSet<DateRange>();
-           tempSubset.add(null);
-       }
+        // Forcing creation of subsets (even with a single null element)
+        Set<DateRange> tempSubset = null;
+        if (!temporalSubset.isEmpty()) {
+            tempSubset = temporalSubset;
+        } else {
+            tempSubset = new HashSet<DateRange>();
+            tempSubset.add(null);
+        }
 
-       Set<NumberRange<Double>> vertSubset = null;
-       if (!verticalSubset.isEmpty()) {
-           vertSubset = verticalSubset;
-       } else {
-           vertSubset = new HashSet<NumberRange<Double>>();
-           vertSubset.add(null);
-       }
-       
+        Set<NumberRange<Double>> vertSubset = null;
+        if (!verticalSubset.isEmpty()) {
+            vertSubset = verticalSubset;
+        } else {
+            vertSubset = new HashSet<NumberRange<Double>>();
+            vertSubset.add(null);
+        }
 
-       Map<String, Set<?>> domainsSubset = readRequest.getAdditionalDomainsSubset();     
-       Filter requestFilter = request.originalRequest.getFilter();
+        Map<String, Set<?>> domainsSubset = readRequest.getAdditionalDomainsSubset();
+        Filter requestFilter = request.originalRequest.getFilter();
 
-       // handling date and time
-       for (DateRange timeRange : tempSubset) {
-           for (NumberRange<Double> elevation : vertSubset) {
+        // handling date and time
+        for (DateRange timeRange : tempSubset) {
+            for (NumberRange<Double> elevation : vertSubset) {
 
-               Query query = new Query();
-               // handle time and elevation
-               createTimeElevationQuery(timeRange, elevation, query, requestFilter, timeFilterAttribute, elevationFilterAttribute);
+                Query query = new Query();
+                // handle time and elevation
+                createTimeElevationQuery(timeRange, elevation, query, requestFilter,
+                        timeFilterAttribute, elevationFilterAttribute);
 
-               // handle additional params
-               additionalParamsManagement(query,domainsSubset, dimensionDescriptors);
-               
-               // bbox
-               query.setFilter(
-                       FeatureUtilities.DEFAULT_FILTER_FACTORY.and(
-                               query.getFilter(),
-                               FeatureUtilities.DEFAULT_FILTER_FACTORY.bbox(
-                                       FeatureUtilities.DEFAULT_FILTER_FACTORY.property("the_geom"),
-                                       targetBBox)));
-                
-               
-               
-               query.setTypeName(request.name);
-               List<Integer> indexes = request.source.reader.getImageIndex(query);
-               if (indexes == null || indexes.isEmpty()) {
-                   if (LOGGER.isLoggable(Level.FINE)) {
-                       LOGGER.fine(" No indexes found for this query: " + query.toString());
-                   }
-                   continue;
-               } 
-               int imageIndex = indexes.get(0);
-               final RenderedImage image = loadRaster(baseReadParameters, imageIndex, targetBBox, finalWorldToGridCorner, hints);
+                // handle additional params
+                additionalParamsManagement(query, domainsSubset, dimensionDescriptors);
 
-               // postproc
-               RenderedImage finalRaster = postProcessRaster(image);
-               // create the coverage
-               GridCoverage2D gridCoverage = prepareCoverage(finalRaster, sampleDimensions);
+                // bbox
+                query.setFilter(FeatureUtilities.DEFAULT_FILTER_FACTORY.and(query.getFilter(),
+                        FeatureUtilities.DEFAULT_FILTER_FACTORY.bbox(
+                                FeatureUtilities.DEFAULT_FILTER_FACTORY.property("the_geom"),
+                                targetBBox)));
 
-               // Adding coverage domain
-               if (gridCoverage != null) {
-                   GridCoverage gcResponse = new DefaultGridCoverageResponse(gridCoverage, timeRange, elevation);
-                   addResult(gcResponse);
-               }
-           }
-       }
-       
-       // success
-       setStatus(Status.SUCCESS);
+                query.setTypeName(request.name);
+                List<Integer> indexes = request.source.reader.getImageIndex(query);
+                if (indexes == null || indexes.isEmpty()) {
+                    if (LOGGER.isLoggable(Level.FINE)) {
+                        LOGGER.fine(" No indexes found for this query: " + query.toString());
+                    }
+                    continue;
+                }
+                int imageIndex = indexes.get(0);
+                final RenderedImage image = loadRaster(baseReadParameters, imageIndex, targetBBox,
+                        finalWorldToGridCorner, hints);
+
+                // postproc
+                RenderedImage finalRaster = postProcessRaster(image);
+                // create the coverage
+                GridCoverage2D gridCoverage = prepareCoverage(finalRaster, sampleDimensions);
+
+                // Adding coverage domain
+                if (gridCoverage != null) {
+                    GridCoverage gcResponse = new DefaultGridCoverageResponse(gridCoverage,
+                            timeRange, elevation);
+                    addResult(gcResponse);
+                }
+            }
+        }
+
+        // success
+        setStatus(Status.SUCCESS);
 
     }
-    
+
     /**
      * @param query
-     * @param domainsSubset 
+     * @param domainsSubset
      */
     private void additionalParamsManagement(Query query, Map<String, Set<?>> domainsSubset,  List<DimensionDescriptor> dimensionDescriptors) {
         if (domainsSubset.isEmpty()){
@@ -428,8 +424,8 @@ class NetCDFResponse extends CoverageResponse{
         // creating source grid to world corrected to the pixel corner
         final AffineTransform sourceGridToWorld = new AffineTransform(
                 (AffineTransform) finalGridToWorldCorner);
-        
-//        AffineTransform finalGridToWorldCorner = new AffineTransform((AffineTransform) finalGridToWorldCorner);
+
+        // AffineTransform finalGridToWorldCorner = new AffineTransform((AffineTransform) finalGridToWorldCorner);
 
         // target world to grid at the corner
         final AffineTransform targetGridToWorld = new AffineTransform(
@@ -486,8 +482,8 @@ class NetCDFResponse extends CoverageResponse{
 
         g2w = new AffineTransform((AffineTransform) baseGridToWorld);
         g2w.concatenate(CoverageUtilities.CENTER_TO_CORNER);
-        
-        if ((requestRes[0] < resX || requestRes[1] < resY) ) {
+
+        if ((requestRes[0] < resX || requestRes[1] < resY)) {
             // Using the best available resolution
             oversampledRequest = true;
         } else {

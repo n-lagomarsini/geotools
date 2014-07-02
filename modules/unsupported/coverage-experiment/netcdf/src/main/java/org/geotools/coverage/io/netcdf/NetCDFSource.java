@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.geotools.coverage.io.CoverageReadRequest;
@@ -56,7 +57,9 @@ public class NetCDFSource extends DefaultCoverageSource {
     public CoverageResponse read(CoverageReadRequest request, ProgressListener listener)
             throws IOException {
         ensureNotDisposed();
-
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("Reading NetCDFSource with request: " + request);
+        }
         NetCDFRequest coverageRequest = new NetCDFRequest(this, request);
         NetCDFResponse netCDFresponse = new NetCDFResponse(coverageRequest);
         return netCDFresponse.createResponse();

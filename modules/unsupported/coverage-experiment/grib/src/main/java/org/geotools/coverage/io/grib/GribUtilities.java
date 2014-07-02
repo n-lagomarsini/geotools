@@ -17,10 +17,10 @@ import ucar.nc2.util.DiskCache2;
 public class GribUtilities {
 
     /** The LOGGER for this class. */
-    private static final Logger LOGGER = Logger.getLogger(GribUtilities.class.toString());
-    
+    private static final Logger LOGGER = Logger.getLogger("org.geotools.coverage.io.grib.GribUtilities");
+
     /** String associated to the grib cache directory property */
-    private static final String GRIB_CACHE_DIR = "GRIB_CACHE_DIR";
+    public static final String GRIB_CACHE_DIR = "GRIB_CACHE_DIR";
 
     /**
      * Static initialization of the GRIB cache directory if set as JAVA argument
@@ -31,7 +31,7 @@ public class GribUtilities {
         if (cacheDir != null) {
             String dir = (String) cacheDir;
             final File file = new File(dir);
-            if (isValid(file, GRIB_CACHE_DIR)) {
+            if (isValid(file)) {
                 DiskCache2 cache = new DiskCache2();
                 cache.setRootDirectory(dir);
                 cache.setAlwaysUseCache(true);
@@ -47,24 +47,24 @@ public class GribUtilities {
      * @param property
      * @return
      */
-    public static boolean isValid(File file, String property) {
+    public static boolean isValid(File file) {
         String dir = file.getAbsolutePath();
         if (!file.exists()) {
             if (LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.warning("The specified " + property + " property doesn't refer "
+                LOGGER.warning("The specified path doesn't refer "
                         + "to an existing folder. Please check the path: " + dir);
             }
             return false;
         } else if (!file.isDirectory()) {
             if (LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.warning("The specified " + property + " property doesn't refer "
+                LOGGER.warning("The specified path doesn't refer "
                         + "to a directory. Please check the path: " + dir);
             }
             return false;
         } else if (!file.canWrite()) {
             if (LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.warning("The specified " + property + " property refers to "
-                        + "a directory which can't be write. Please check the path and"
+                LOGGER.warning("The specified path refers to "
+                        + "a directory which can't be written. Please check the path and"
                         + " the permissions for: " + dir);
             }
             return false;

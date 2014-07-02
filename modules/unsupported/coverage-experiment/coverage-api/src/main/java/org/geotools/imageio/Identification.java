@@ -76,16 +76,6 @@ public class Identification implements CharSequence, Serializable {
         this.identifier = null;
     }
 
-//    /**
-//     * Creates an identification from the specified accessor.
-//     */
-//    public Identification(final MetadataAccessor accessor) {
-//        name = accessor.getString(GeoSpatialMetadataFormat.MD_COMM_NAME);
-//        remarks = accessor.getString(GeoSpatialMetadataFormat.MD_COMM_REMARKS);
-//        alias = accessor.getString(GeoSpatialMetadataFormat.MD_COMM_ALIAS);
-//        identifier = accessor.getString(GeoSpatialMetadataFormat.MD_COMM_IDENTIFIER);
-//    }
-
     /**
      * Returns the {@linkplain #name} length.
      */

@@ -27,7 +27,7 @@ import org.geotools.util.Utilities;
 public class DateRangeComparator implements Comparator<DateRange> {
 
     @Override
-    public int compare( DateRange firstDateRange, DateRange secondDateRange ) {
+    public int compare(DateRange firstDateRange, DateRange secondDateRange) {
         Utilities.ensureNonNull("firstDateRange", firstDateRange);
         Utilities.ensureNonNull("secondDateRange", secondDateRange);
         final long beginFirst = firstDateRange.getMinValue().getTime();
@@ -36,5 +36,5 @@ public class DateRangeComparator implements Comparator<DateRange> {
         final long endSecond = secondDateRange.getMaxValue().getTime();
         return NumberRangeComparator.doubleCompare(beginFirst, endFirst, beginSecond, endSecond);
     }
-    
+
 }
