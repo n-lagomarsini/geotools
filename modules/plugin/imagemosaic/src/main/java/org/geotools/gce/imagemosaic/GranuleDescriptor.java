@@ -438,6 +438,13 @@ public class GranuleDescriptor {
                 if (classString.equalsIgnoreCase("org.geotools.imageio.unidata.UnidataImageReader")) {
                     try {
                         String auxiliaryFilePath = (String) hints.get(Utils.AUXILIARY_FILES_PATH);
+                        if (hints.containsKey(Utils.PARENT_DIR)) {
+                            String parentDir = (String) hints.get(Utils.PARENT_DIR);
+                            // if the path stars with the parentDir, it's already absolute (old configuration file)
+                            if (!auxiliaryFilePath.startsWith(parentDir)) {
+                                auxiliaryFilePath = parentDir + File.separatorChar + auxiliaryFilePath;
+                            }
+                        }
                         MethodUtils.invokeMethod(reader, "setAuxiliaryFilesPath", auxiliaryFilePath);
                         singleDimensionalGranule = false;
                         return true;
@@ -706,7 +713,7 @@ public class GranuleDescriptor {
 			    
 			    //override the overviews controller for the base layer
 			    imageIndex = ReadParamsController.setReadParams(
-			            request.spatialRequestHelper.getRequestedResolution(),
+			            request.spatialRequestHelper.getComputedResolution(),
 			            request.getOverviewPolicy(),
 			            request.getDecimationPolicy(), 
 			            readParameters,
