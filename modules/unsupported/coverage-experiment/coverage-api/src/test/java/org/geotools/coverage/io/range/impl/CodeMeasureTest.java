@@ -26,6 +26,7 @@ import javax.measure.quantity.Dimensionless;
 import javax.measure.unit.SI;
 import javax.measure.unit.Unit;
 
+import org.geotools.coverage.io.range.impl.EnumMeasureTest.Band;
 import org.geotools.feature.NameImpl;
 import org.geotools.referencing.crs.DefaultEngineeringCRS;
 import org.geotools.referencing.cs.DefaultCoordinateSystemAxis;
@@ -96,6 +97,23 @@ public class CodeMeasureTest extends Assert {
 
         assertEquals(lightCRS, axis.getCoordinateReferenceSystem());
         assertEquals(7, axis.getKeys().size());
+        
+        // Ensure that the equals method is correct
+        CodeMeasure<Code> code = (CodeMeasure<Code>) CodeMeasure.valueOf(codes.get(0));
+        CodeMeasure<Code> code2 = (CodeMeasure<Code>) CodeMeasure.valueOf(codes.get(1));
+        assertFalse(code.equals(code2));
+        
+        // Check if the ordinal value is correct
+        assertNotEquals(code.doubleValue(null), code2.doubleValue(null), 0.01d);
+        
+        // Ensure the Unit is one
+        assertEquals(Unit.ONE, code.getUnit());
+        
+        // Check if the value is correct
+        assertSame(codes.get(0), code.getValue());
+        
+        // Check if the TO method is correct
+        assertSame(code.to(null), code);
     }
 
 }

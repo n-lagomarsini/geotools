@@ -18,8 +18,11 @@ package org.geotools.coverage.io.range.impl;
 
 import javax.measure.Measure;
 import javax.measure.unit.Unit;
+import javax.media.jai.RenderedOp;
+import javax.media.jai.operator.ConstantDescriptor;
 
 import org.geotools.coverage.io.range.Axis;
+import org.geotools.factory.GeoTools;
 import org.geotools.feature.NameImpl;
 import org.geotools.util.SimpleInternationalString;
 import org.junit.Assert;
@@ -66,6 +69,25 @@ public class DimensionlessAxisTest extends Assert {
         Measure measure = axis.getKey(0);
         assertEquals(Unit.ONE, measure.getUnit());
         assertEquals("0", key.getValue());
+    }
+    
+    /**
+     * Test which creates a {@link DimensionlessAxis} from an Image
+     */
+    @Test
+    public void testImage() {
+        // Image creation
+        RenderedOp constant = ConstantDescriptor.create(20f, 20f, new Byte[] { 1 },
+                GeoTools.getDefaultHints());
+        // Axis creation
+        DimensionlessAxis sample = DimensionlessAxis.createFromRenderedImage(constant);
+        // Minor checks
+        assertTrue(sample.getName().equals(new NameImpl("GRAY-AXIS")));
+        assertTrue(sample.getDescription().compareTo(new SimpleInternationalString("Axis for GRAY bands")) == 0);
+        assertNotNull(sample.getKeys());
+        BandIndexMeasure band = sample.getKey(0);
+        assertTrue(band != null);
+        constant.dispose();
     }
 
 }
