@@ -74,6 +74,22 @@ public class EnumMeasureTest extends Assert {
                 Unit.ONE);
 
         Map<Measure<Integer, Dimensionless>, SampleDimension> samples = new HashMap<Measure<Integer, Dimensionless>, SampleDimension>();
+        
+        // Ensure that the equals method is correct
+        EnumMeasure<Band> band = EnumMeasure.valueOf(Band.BLUE);
+        assertTrue(band.equals(keys.get(0)));
+        
+        // Check if the ordinal value is correct
+        assertEquals(Band.BLUE.ordinal(), keys.get(0).doubleValue(null), 0.01d);
+        
+        // Check if the value is correct
+        assertEquals(Band.BLUE, keys.get(0).getValue());
+        
+        // Check if the TO method is correct
+        assertSame(keys.get(0), keys.get(0).to(null));
+        
+        // Ensure the Unit is one
+        assertEquals(Unit.ONE, keys.get(0).getUnit());
     }
 
 }

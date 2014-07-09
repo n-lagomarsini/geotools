@@ -24,6 +24,7 @@ import javax.measure.unit.Unit;
 import org.geotools.data.DataSourceException;
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.metadata.iso.citation.Citations;
+import org.geotools.referencing.CRS;
 import org.geotools.referencing.NamedIdentifier;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.referencing.crs.DefaultProjectedCRS;
@@ -128,4 +129,32 @@ public class UtilitiesTest extends Assert {
         assertFalse(is3D);
 
     }
+
+    @Test
+    public void testGetEnvelope() throws FactoryException, TransformException {
+
+        // Setup an envelope in WGS84
+        GeneralEnvelope envelope = new GeneralEnvelope(DefaultGeographicCRS.WGS84);
+        envelope.setEnvelope(0, 0, 10, 10);
+        
+        GeneralEnvelope wgs84 = new GeneralEnvelope(Utilities.getEnvelopeAsWGS84(envelope, true));
+        GeneralEnvelope wgs84_2 = new GeneralEnvelope(Utilities.getEnvelopeAsWGS84(envelope, false));
+        
+        // Ensure the 2 envelope contain the initial one
+        assertFalse(wgs84.isEmpty());
+        assertTrue(wgs84.contains(envelope, true));
+        assertFalse(wgs84_2.isEmpty());
+        assertTrue(wgs84_2.contains(envelope, true));
+        
+        // Setup an envelope in EPSG:3857
+        envelope = new GeneralEnvelope(CRS.decode("EPSG:3857"));
+        envelope.setEnvelope(0, 0, 10, 10);
+        
+        wgs84 = new GeneralEnvelope(Utilities.getEnvelopeAsWGS84(envelope, true));
+        wgs84_2 = new GeneralEnvelope(Utilities.getEnvelopeAsWGS84(envelope, false));
+        // Ensure the new envelopes are not empty
+        assertFalse(wgs84.isEmpty());
+        assertFalse(wgs84_2.isEmpty());
+    }
+
 }

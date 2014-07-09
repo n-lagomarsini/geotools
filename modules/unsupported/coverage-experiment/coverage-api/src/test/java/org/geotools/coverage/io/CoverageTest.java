@@ -50,6 +50,8 @@ import org.geotools.coverage.io.driver.TestDriver;
 import org.geotools.coverage.io.impl.DefaultCoverageSource;
 import org.geotools.coverage.io.impl.DefaultFileCoverageAccess;
 import org.geotools.coverage.io.impl.DefaultFileDriver;
+import org.geotools.coverage.io.metadata.MetadataAttribute;
+import org.geotools.coverage.io.metadata.MetadataNode;
 import org.geotools.coverage.io.util.DateRangeTreeSet;
 import org.geotools.coverage.io.util.DoubleRangeTreeSet;
 import org.geotools.data.DataSourceException;
@@ -63,6 +65,7 @@ import org.geotools.util.DateRange;
 import org.geotools.util.NumberRange;
 import org.junit.Test;
 import org.opengis.coverage.Coverage;
+import org.opengis.coverage.grid.GridCoverage;
 import org.opengis.feature.type.Name;
 import org.opengis.filter.Filter;
 import org.opengis.geometry.MismatchedDimensionException;
@@ -71,9 +74,14 @@ import org.opengis.referencing.operation.MathTransform2D;
 import org.opengis.referencing.operation.TransformException;
 import org.opengis.util.ProgressListener;
 
+/**
+ * 
+ * @author Nicola Lagomarsini Geosolutions
+ *
+ */
 public class CoverageTest {
 
-    private final static TestDriver driver = new TestDriverNew();
+    private final static TestDriverNew driver = new TestDriverNew();
 
     private static final Name TEST_NAME = new NameImpl("New Test Coverage");
 
@@ -101,6 +109,37 @@ public class CoverageTest {
         // Test additional domains Setter and getter
         assertTrue(!source.getAdditionalDomains().isEmpty());
         assertNotNull(source.getVerticalDomain());
+    }
+
+    @Test
+    public void testAttributes() throws IOException, MismatchedDimensionException, TransformException {
+        Map<String, Serializable> connectionParams = new HashMap<String, Serializable>();
+        connectionParams.put(DefaultFileDriver.URL.key, new URL(TEST_URL));
+
+        CoverageAccess access = driver.access(DriverCapabilities.CONNECT, connectionParams, null,
+                null);
+
+        final CoverageSource source = access.access(TEST_NAME, null, AccessType.READ_ONLY, null,
+                null);
+        
+        // Minor checks on the metadata node and attributes
+        MetadataNode metadata = source.getMetadata(null, null);
+        assertNotNull(metadata);
+        Map<String, MetadataAttribute> attributes = metadata.getAttributes();
+        assertNotNull(attributes);
+        assertTrue(!attributes.isEmpty());
+        MetadataAttribute metadataAttribute = attributes.get("testAttribute");
+        assertNotNull(metadataAttribute);
+        assertNotNull(metadata.getNodes());
+    }
+
+    @Test
+    public void testDomainTypes() {
+        assertTrue(DomainType.DATE.toString().equalsIgnoreCase("DATE"));
+        assertTrue(DomainType.DATERANGE.toString().equalsIgnoreCase("DATERANGE"));
+        assertTrue(DomainType.NUMBER.toString().equalsIgnoreCase("NUMBER"));
+        assertTrue(DomainType.NUMBERRANGE.toString().equalsIgnoreCase("NUMBERRANGE"));
+        assertTrue(DomainType.STRING.toString().equalsIgnoreCase("STRING"));
     }
 
     @Test
@@ -172,6 +211,47 @@ public class CoverageTest {
         assertTrue(results.iterator().next() instanceof GridCoverage2D);
     }
 
+    @Test
+    public void testUpdateRequestAndResponse() throws IOException, MismatchedDimensionException,
+            TransformException {
+        Map<String, Serializable> connectionParams = new HashMap<String, Serializable>();
+        connectionParams.put(DefaultFileDriver.URL.key, new URL(TEST_URL));
+
+        CoverageAccess access = driver.access(DriverCapabilities.CONNECT, connectionParams, null,
+                null);
+
+        final CoverageStore store = access.create(TEST_NAME, null, new Hints(), null);
+
+        // Creation of a dummy Request
+        CoverageUpdateRequest request = new CoverageUpdateRequest();
+
+        // Setting of the parameters
+        Map<String, String> metadata = new HashMap<String, String>();
+        metadata.put("testKey", "testMetadata");
+        List<GridCoverage2D> data = new ArrayList<GridCoverage2D>();
+        GridCoverage2D cov = new GridCoverageFactory().create(TEST_NAME.getLocalPart(),
+                new float[][] { { 1.0f, 1.0f } }, new ReferencedEnvelope(0.0d, 1.0d, 0.0d, 1.0d,
+                        null));
+        data.add(cov);
+        request.setMetadata(metadata);
+        request.setData(data);
+
+        // Get the response
+        CoverageResponse response = store.update(request, null);
+
+        Collection<? extends Coverage> results = response.getResults(null);
+        // Ensure the results are not null and it is not empty
+        assertTrue(results != null);
+        assertTrue(!results.isEmpty());
+        // Get the first result from the collection and ensure it is the same coverage of the input
+        GridCoverage2D covOutput = (GridCoverage2D) results.iterator().next();
+        assertSame(cov, covOutput);
+
+        // Ensure they have the same metadata
+        CoverageUpdateRequest request2 = (CoverageUpdateRequest) response.getRequest();
+        assertEquals(metadata.get("testKey"), request2.getMetadata().get("testKey"));
+    }
+
     static class TestVerticalDomain extends VerticalDomain {
 
         static Set<NumberRange<Double>> verticalSubset = new HashSet<NumberRange<Double>>();
@@ -231,14 +311,20 @@ public class CoverageTest {
 
     }
 
-    static class TestDriverNew extends TestDriver implements Driver {
+    public static class TestDriverNew extends DefaultFileDriver implements Driver {
+
+        public TestDriverNew() {
+            super(TestDriver.TEST_DRIVER, TestDriver.TEST_DRIVER, TestDriver.TEST_DRIVER, new Hints(), Collections
+                    .singletonList(".EXT"), EnumSet.of(DriverCapabilities.CONNECT,
+                            DriverCapabilities.CREATE, DriverCapabilities.DELETE));
+        }
 
         private static Map<String, Parameter<?>> emptyMap = Collections.emptyMap();
 
         @Override
         protected CoverageAccess connect(Map<String, Serializable> params, Hints hints,
                 ProgressListener listener) throws IOException {
-            return new TestCoverageAccessNew(this, EnumSet.of(AccessType.READ_ONLY), emptyMap,
+            return new TestCoverageAccessNew(this, EnumSet.of(AccessType.READ_WRITE), emptyMap,
                     params);
         }
     }
@@ -251,6 +337,12 @@ public class CoverageTest {
             return new TestCoverageSourceNew(name, new TestCoverageSourceDescriptorNew());
         }
 
+        @Override
+        public CoverageStore create(Name name, Map<String, Serializable> params, Hints hints,
+                ProgressListener listener) throws IOException {
+            return new TestCoverageSourceNew(name, new TestCoverageSourceDescriptorNew());
+        }
+
         public TestCoverageAccessNew(Driver driver, EnumSet<AccessType> allowedAccessTypes,
                 Map<String, Parameter<?>> accessParams,
                 Map<String, Serializable> connectionParameters) throws DataSourceException {
@@ -260,7 +352,7 @@ public class CoverageTest {
         }
     }
 
-    static class TestCoverageSourceNew extends DefaultCoverageSource implements CoverageSource {
+    static class TestCoverageSourceNew extends DefaultCoverageSource implements CoverageStore {
 
         protected TestCoverageSourceNew(Name name, CoverageSourceDescriptor descriptor) {
             super(name, descriptor);
@@ -281,6 +373,30 @@ public class CoverageTest {
                             1.0d, null)));
 
             return response;
+        }
+
+        @Override
+        public Map<String, Parameter<?>> getUpdateParameterInfo() {
+            Map<String, Parameter<?>> parameterInfo = new HashMap<String, Parameter<?>>();
+            return parameterInfo;
+        }
+
+        @Override
+        public CoverageResponse update(CoverageUpdateRequest writeRequest, ProgressListener progress) {
+            CoverageResponse response = new CoverageResponse();
+            response.setRequest(writeRequest);
+            response.addResults((Collection<GridCoverage>) writeRequest.getData());
+            return response;
+        }
+
+        @Override
+        public MetadataNode getMetadata( String metadataDomain, ProgressListener listener ) {
+            MetadataNode metadataNode = new MetadataNode();
+            Map<String, MetadataAttribute> attributes = new HashMap<String, MetadataAttribute>();
+            attributes.put("testAttribute", new MetadataAttribute());
+            metadataNode.setAttributes(attributes);
+            metadataNode.setNodes(new ArrayList<MetadataNode>());
+            return metadataNode;
         }
     }
 }

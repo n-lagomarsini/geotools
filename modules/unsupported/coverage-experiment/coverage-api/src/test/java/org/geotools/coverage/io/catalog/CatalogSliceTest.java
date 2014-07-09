@@ -20,7 +20,10 @@ import java.io.File;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.geotools.data.DataStore;
@@ -36,6 +39,7 @@ import org.geotools.feature.visitor.CountVisitor;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.test.TestData;
+import org.geotools.util.logging.Logging;
 import org.junit.Assert;
 import org.junit.Test;
 import org.opengis.feature.simple.SimpleFeature;
@@ -57,6 +61,11 @@ public class CatalogSliceTest extends Assert{
     final static PrecisionModel PRECISION_MODEL = new PrecisionModel(PrecisionModel.FLOATING);
 
     final static GeometryFactory GEOM_FACTORY = new GeometryFactory(PRECISION_MODEL);
+    
+    /** Default Logger * */
+    private static final Logger LOGGER = Logging.getLogger(CatalogSliceTest.class);
+
+    private static final double DELTA = 0.01d;
 
     @Test
     public void createTest() throws Exception {
@@ -109,7 +118,7 @@ public class CatalogSliceTest extends Assert{
 
             // create new schema 2
             final String schemaDef2 = "the_geom:Polygon,coverage:String,imageindex:Integer,new:Double";
-            sliceCat.createType("2", schemaDef1);
+            sliceCat.createType("2", schemaDef2);
             typeNames = sliceCat.getTypeNames();
             assertNotNull(typeNames);
             assertEquals(2, typeNames.length);
@@ -145,6 +154,27 @@ public class CatalogSliceTest extends Assert{
             q.setFilter(Filter.INCLUDE);
             sliceCat.computeAggregateFunction(q, cv);
             assertEquals(3, cv.getCount());
+            
+            // Get the CoverageSlices
+            List<CoverageSlice> slices = sliceCat.getGranules(q);
+            double[] news = new double[]{3.22, 1.12, 1.32};
+            for(int i = 0; i < news.length; i++){
+                CoverageSlice slice = slices.get(i);
+                assertTrue(slice.getGranuleBBOX().contains(referencedEnvelope));
+                double newAttr = (double) slice.getOriginator().getAttribute("new");
+                assertEquals(newAttr, news[i], DELTA);
+            }
+            
+            // Creating a CoverageSliceCatalogSource and check if it behaves correctly
+            CoverageSlicesCatalogSource src = new CoverageSlicesCatalogSource(sliceCat, "2");
+            assertEquals(3, src.getCount(q));
+            SimpleFeatureCollection coll = src.getGranules(q);
+            cv.reset();
+            coll.accepts(cv, null);
+            assertEquals(3, cv.getCount());
+            assertTrue(src.getBounds(q).contains(
+                    referencedEnvelope.toBounds(referencedEnvelope.getCoordinateReferenceSystem())));
+            assertEquals(src.getSchema(), schema);
 
             // remove
             sliceCat.removeGranules("1", Filter.INCLUDE, t);
@@ -160,7 +190,7 @@ public class CatalogSliceTest extends Assert{
             assertEquals(0, cv.getCount());
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, e.getMessage(), e);
             t.rollback();
         } finally {
             if (sliceCat != null) {
