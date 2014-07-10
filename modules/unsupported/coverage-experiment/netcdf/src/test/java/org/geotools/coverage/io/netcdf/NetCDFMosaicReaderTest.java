@@ -512,6 +512,7 @@ public class NetCDFMosaicReaderTest extends Assert {
     }
 
     @Test
+    @Ignore
     public void testMultipleGranules() throws IOException, ParseException {
         // prepare a "mosaic" with just one NetCDF
         File nc1 = TestData.file(this, "20130101.METOPA.GOME2.NO2.DUMMY_new.nc");
