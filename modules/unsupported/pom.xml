@@ -141,12 +141,9 @@
        </modules>
      </profile>
      <profile>
-       <id>coverage-experiment</id>
-       <activation>
-         <property><name>all</name></property>
-       </activation>
+       <id>coverage-multidim</id>
        <modules>
-         <module>coverage-experiment</module>
+         <module>coverage-multidim</module>
        </modules>
      </profile>
      <profile>
