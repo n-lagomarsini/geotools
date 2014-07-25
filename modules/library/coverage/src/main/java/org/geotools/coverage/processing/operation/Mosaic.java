@@ -609,6 +609,8 @@ public class Mosaic extends OperationJAI {
             RenderedImage img = rasters[i];
             // ImageWorker to use for elaborating each raster
             ImageWorker w = new ImageWorker(img);
+            // Check if the Transparent 
+            //boolean hasTransparency = w.isTranslucent();//w.getTransparentPixel() > 0; 
             // I have to force going to ComponentColorModel in
             // case the image is indexed.
             if (img.getSampleModel() instanceof MultiPixelPackedSampleModel
@@ -616,7 +618,7 @@ public class Mosaic extends OperationJAI {
                 w.forceComponentColorModel();
                 img = w.getRenderedImage();
             }
-            boolean hasAlpha = img.getColorModel().hasAlpha();
+            boolean hasAlpha = img.getColorModel() != null ? img.getColorModel().hasAlpha() : false;
             if (hasAlpha) {
                 alphaChannel &= hasAlpha;
                 alpha[i] = w.retainLastBand().getPlanarImage();
