@@ -33,6 +33,7 @@ import javax.media.jai.GeometricOpImage;
 import javax.media.jai.ImageLayout;
 import javax.media.jai.Interpolation;
 import javax.media.jai.InterpolationNearest;
+import javax.media.jai.JAI;
 import javax.media.jai.PlanarImage;
 import javax.media.jai.RasterAccessor;
 import javax.media.jai.RasterFormatTag;
@@ -45,6 +46,7 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.factory.GeoTools;
+import org.geotools.factory.Hints;
 import org.geotools.referencing.CRS;
 import org.geotools.util.Utilities;
 import org.opengis.metadata.spatial.PixelOrientation;
@@ -134,6 +136,46 @@ public class GridCoverage2DRIA extends GeometricOpImage {
         return new GridCoverage2DRIA(src, dst, vectorize(src.getRenderedImage()), imageLayout,
                 null, false, extender, Interpolation.getInstance(Interpolation.INTERP_NEAREST),
                 new double[] { nodata });
+    }
+    
+
+    public static RenderedImage create(GridCoverage2D src, GridGeometry2D dst,
+            double nodata, Hints hints) {
+        
+        Utilities.ensureNonNull("dst", dst);
+        
+     // === Create destination Layout, retaining source tiling to minimize quirks
+        // TODO allow to override tiling
+        final GridEnvelope2D destinationRasterDimension = dst.getGridRange2D();
+        final ImageLayout imageLayout = new ImageLayout();
+        imageLayout.setMinX(destinationRasterDimension.x).setMinY(destinationRasterDimension.y);
+        imageLayout.setWidth(destinationRasterDimension.width).setHeight(destinationRasterDimension.height);
+        
+        //
+        // SampleModel and ColorModel are related to data itself, so we
+        // copy them from the source
+
+        imageLayout.setColorModel(src.getRenderedImage().getColorModel());
+        imageLayout.setSampleModel(src.getRenderedImage().getSampleModel());
+        
+        if(hints != null && hints.containsKey(JAI.KEY_IMAGE_LAYOUT)){
+            ImageLayout l = (ImageLayout) hints.get(JAI.KEY_IMAGE_LAYOUT);
+            imageLayout.setTileHeight(Math.min(imageLayout.getHeight(null), l.getTileHeight(null)));
+            imageLayout.setTileWidth(Math.min(imageLayout.getWidth(null), l.getTileWidth(null)));
+        }
+
+        // === BorderExtender
+        //
+        // We have yet to check for it usefulness: it might be more convenient
+        // to check for region overlapping and return a nodata value by hand,
+        // so to avoid problems with interpolation at source raster borders.
+        //
+        BorderExtender extender = new BorderExtenderConstant(new double[] { nodata });
+        
+        return new GridCoverage2DRIA(src, dst, vectorize(src.getRenderedImage()), imageLayout,
+                null, false, extender, Interpolation.getInstance(Interpolation.INTERP_NEAREST),
+                new double[] { nodata });
+        
     }
     
     // need it
