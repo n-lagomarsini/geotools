@@ -63,6 +63,10 @@ public class XsDateTimeFormat extends Format {
     }
 
     public Object parseObject(String pString, ParsePosition pParsePosition) {
+        return parseObject(pString, pParsePosition, false);
+    }
+    
+    public Object parseObject(String pString, ParsePosition pParsePosition, boolean lenient) {
         if (pString == null) {
             throw new NullPointerException("The String argument must not be null.");
         }
@@ -126,8 +130,15 @@ public class XsDateTimeFormat extends Format {
 	            if (offset < length  &&  pString.charAt(offset) == 'T') {
 	                ++offset;
 	            } else {
-	                pParsePosition.setErrorIndex(offset);
-	                return null;
+                        // If lenient, add T
+                        if (lenient) {
+                            ++offset;
+                            pString = pString + "T";
+                            length = pString.length();
+                        } else {
+                            pParsePosition.setErrorIndex(offset);
+                            return null;
+                        }
 	            }
 	        }
         } else {
@@ -138,36 +149,71 @@ public class XsDateTimeFormat extends Format {
         if (parseTime) {
 	        offset = parseInt(pString, offset, digits);
 	        if (digits.length() != 2) {
-	            pParsePosition.setErrorIndex(offset);
-	            return null;
+                    // If lenient, add 00
+                    if (lenient) {
+                        ++offset;
+                        pString = pString + "00";
+                        length = pString.length();
+                    } else {
+                        pParsePosition.setErrorIndex(offset);
+                        return null;
+                    }
 	        }
 	        hour = Integer.parseInt(digits.toString());
 	
 	        if (offset < length  &&  pString.charAt(offset) == ':') {
 	            ++offset;
 	        } else {
-	            pParsePosition.setErrorIndex(offset);
-	            return null;
+                    // If lenient, add :
+                    if (lenient) {
+                        ++offset;
+                        pString = pString + ":";
+                        length = pString.length();
+                    } else {
+                        pParsePosition.setErrorIndex(offset);
+                        return null;
+                    }
 	        }
 	
 	        offset = parseInt(pString, offset, digits);
 	        if (digits.length() != 2) {
-	            pParsePosition.setErrorIndex(offset);
-	            return null;
+                    // If lenient, add 00
+                    if (lenient) {
+                        ++offset;
+                        pString = pString + "00";
+                        length = pString.length();
+                    } else {
+                        pParsePosition.setErrorIndex(offset);
+                        return null;
+                    }
 	        }
 	        minute = Integer.parseInt(digits.toString());
 	
 	        if (offset < length  &&  pString.charAt(offset) == ':') {
 	            ++offset;
 	        } else {
-	            pParsePosition.setErrorIndex(offset);
-	            return null;
+                    // If lenient, add :
+                    if (lenient) {
+                        ++offset;
+                        pString = pString + ":";
+                        length = pString.length();
+                    } else {
+                        pParsePosition.setErrorIndex(offset);
+                        return null;
+                    }
 	        }
 	
 	        offset = parseInt(pString, offset, digits);
 	        if (digits.length() != 2) {
-	            pParsePosition.setErrorIndex(offset);
-	            return null;
+                    // If lenient, add 00
+                    if (lenient) {
+                        ++offset;
+                        pString = pString + "00";
+                        length = pString.length();
+                    } else {
+                        pParsePosition.setErrorIndex(offset);
+                        return null;
+                    }
 	        }
 	        second = Integer.parseInt(digits.toString());
 	
@@ -177,8 +223,14 @@ public class XsDateTimeFormat extends Format {
 	            if (digits.length() > 0) {
 	                millis = Integer.parseInt(digits.toString());
                     if (millis > 999) {
-                        pParsePosition.setErrorIndex(offset);
-                        return null;
+                        // If lenient, add 000
+                        if (lenient) {
+                            pString = pString + "000";
+                            length = pString.length();
+                        } else {
+                            pParsePosition.setErrorIndex(offset);
+                            return null;
+                        }
                     }
                     for (int i = digits.length();  i < 3;  i++) {
                         millis *= 10;

@@ -107,7 +107,7 @@ public class DatatypeConverterImpl implements DatatypeConverterInterface {
         return new QName(uri, localName);
     }
 
-    public Calendar parseDateTime(String arg0) {
+    public Calendar parseDateTime(String arg0, boolean lenient) {
         XsDateTimeFormat format = new XsDateTimeFormat();
         ParsePosition pos = new ParsePosition(0);
         Calendar cal = (Calendar) format.parseObject(arg0, pos);
@@ -116,6 +116,10 @@ public class DatatypeConverterImpl implements DatatypeConverterInterface {
                     						   " at:" + arg0.substring(pos.getErrorIndex()));
         }
         return cal;
+    }
+
+    public Calendar parseDateTime(String arg0) {
+        return parseDateTime(arg0, false);
     }
 
     public byte[] parseBase64Binary(String arg0) {
