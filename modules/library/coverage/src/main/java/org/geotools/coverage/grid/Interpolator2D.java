@@ -251,31 +251,6 @@ public final class Interpolator2D extends Calculator2D {
 	    bounds = new Rectangle(0, 0, interpolation.getWidth(), interpolation.getHeight());
 	}
 
-	/**
-     * Invoked by <code>{@linkplain #view view}(type)</code> when the {@linkplain ViewType#PACKED
-     * packed}, {@linkplain ViewType#GEOPHYSICS geophysics} or {@linkplain ViewType#PHOTOGRAPHIC
-     * photographic} view of this grid coverage needs to be created. This method applies to the
-     * new grid coverage the same {@linkplain #getInterpolations interpolations} than this grid
-     * coverage.
-     *
-     * @param  view A view derived from the {@linkplain #source source} coverage.
-     * @return The grid coverage to be returned by {@link #view view}.
-     *
-     * @since 2.5
-     */
-    @Override
-    protected GridCoverage2D specialize(final GridCoverage2D view) {
-        return create(view, getInterpolations());
-    }
-
-    /**
-     * Returns the class of the view returned by {@link #specialize}.
-     */
-    @Override
-    Class<Interpolator2D> getViewClass() {
-        return Interpolator2D.class;
-    }
-
     /**
      * Returns interpolations. The first array's element is the interpolation for
      * this grid coverage. Other elements (if any) are fallbacks.

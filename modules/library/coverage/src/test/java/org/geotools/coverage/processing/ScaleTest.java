@@ -25,7 +25,7 @@ import org.opengis.parameter.ParameterValueGroup;
 import org.geotools.factory.Hints;
 import org.geotools.coverage.grid.Viewer;
 import org.geotools.coverage.grid.GridCoverage2D;
-import static org.geotools.coverage.grid.ViewType.*;
+
 
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -54,8 +54,7 @@ public class ScaleTest extends GridProcessingTestBase {
      */
     @Before
     public void setUp() {
-        Hints hints = new Hints(Hints.COVERAGE_PROCESSING_VIEW, PHOTOGRAPHIC);
-        processor = CoverageProcessor.getInstance(hints);
+        processor = CoverageProcessor.getInstance(null);
     }
 
     /**
@@ -76,28 +75,28 @@ public class ScaleTest extends GridProcessingTestBase {
         //
         ///////////////////////////////////////////////////////////////////////
         Interpolation interp = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
-        scale(originallyIndexedCoverage      .view(PACKED), interp);
-        scale(indexedCoverage                .view(PACKED), interp);
-        scale(indexedCoverageWithTransparency.view(PACKED), interp);
+        scale(originallyIndexedCoverage      , interp);
+        scale(indexedCoverage                , interp);
+        scale(indexedCoverageWithTransparency, interp);
+
+//        ///////////////////////////////////////////////////////////////////////
+//        //
+//        // Nearest neighbor interpolation and geophysics view.
+//        //
+//        ///////////////////////////////////////////////////////////////////////
+//        scale(originallyIndexedCoverage      .view(GEOPHYSICS), interp);
+//        scale(indexedCoverage                .view(GEOPHYSICS), interp);
+//        scale(indexedCoverageWithTransparency.view(GEOPHYSICS), interp);
 
         ///////////////////////////////////////////////////////////////////////
         //
-        // Nearest neighbor interpolation and geophysics view.
-        //
-        ///////////////////////////////////////////////////////////////////////
-        scale(originallyIndexedCoverage      .view(GEOPHYSICS), interp);
-        scale(indexedCoverage                .view(GEOPHYSICS), interp);
-        scale(indexedCoverageWithTransparency.view(GEOPHYSICS), interp);
-
-        ///////////////////////////////////////////////////////////////////////
-        //
-        // Bilinear interpolation and non-geo view
+        // Bilinear interpolation 
         //
         ///////////////////////////////////////////////////////////////////////
         interp = Interpolation.getInstance(Interpolation.INTERP_BILINEAR);
-//        scale(originallyIndexedCoverage      .view(PACKED), interp);
-        scale(indexedCoverage                .view(PACKED), interp);
-        scale(indexedCoverageWithTransparency.view(PACKED), interp);
+//        scale(originallyIndexedCoverage      , interp);
+        scale(indexedCoverage                , interp);
+        scale(indexedCoverageWithTransparency, interp);
 
         ///////////////////////////////////////////////////////////////////////
         //
@@ -105,12 +104,12 @@ public class ScaleTest extends GridProcessingTestBase {
         //
         ///////////////////////////////////////////////////////////////////////
 //        scale(originallyIndexedCoverage      .view(GEOPHYSICS), interp);
-        scale(indexedCoverage                .view(GEOPHYSICS), interp);
-        scale(indexedCoverageWithTransparency.view(GEOPHYSICS), interp);
+//        scale(indexedCoverage                .view(GEOPHYSICS), interp);
+//        scale(indexedCoverageWithTransparency.view(GEOPHYSICS), interp);
 
         ///////////////////////////////////////////////////////////////////////
         //
-        // Bilinear interpolation and non-geo view for a float coverage
+        // Bilinear interpolation  for a float coverage
         //
         ///////////////////////////////////////////////////////////////////////
         // on this one the subsample average should NOT go back to the
@@ -119,16 +118,16 @@ public class ScaleTest extends GridProcessingTestBase {
 
         ///////////////////////////////////////////////////////////////////////
         //
-        // Nearest neighbor  interpolation and non-geo view for a float coverage
+        // Nearest neighbor  interpolation  for a float coverage
         //
         ///////////////////////////////////////////////////////////////////////
         // on this one the subsample average should NOT go back to the
         // geophysiscs view before being applied
         interp = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
-        scale(floatCoverage.view(PACKED), interp);
+        scale(floatCoverage, interp);
 
         // Play with a rotated coverage
-        scale(rotate(floatCoverage.view(GEOPHYSICS), Math.PI/4), null);
+        scale(rotate(floatCoverage, Math.PI/4), null);
     }
 
     /**

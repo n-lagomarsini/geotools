@@ -1101,7 +1101,7 @@ public final class ImageWorkerTest extends GridProcessingTestBase {
     public void testOptimizedWarp() throws Exception {
         // do it again, make sure the image does not turn black since 
         GridCoverage2D ushortCoverage = EXAMPLES.get(5);
-       GridCoverage2D coverage = project(ushortCoverage,CRS.parseWKT(GOOGLE_MERCATOR_WKT), null,"nearest", null, true);
+       GridCoverage2D coverage = project(ushortCoverage,CRS.parseWKT(GOOGLE_MERCATOR_WKT), null,"nearest", null);
        RenderedImage ri = coverage.getRenderedImage();
        
        
