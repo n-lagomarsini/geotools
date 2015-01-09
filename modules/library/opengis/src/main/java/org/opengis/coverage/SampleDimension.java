@@ -206,7 +206,9 @@ public interface SampleDimension {
      * @see #getScale
      * @see #getOffset
      * @see #getNoDataValues
+     * @deprecated
      */
     @Extension
     MathTransform1D getSampleToGeophysics();
+
 }

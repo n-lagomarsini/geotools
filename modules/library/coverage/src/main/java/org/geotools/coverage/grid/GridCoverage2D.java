@@ -140,18 +140,6 @@ public class GridCoverage2D extends AbstractGridCoverage {
     final GridSampleDimension[] sampleDimensions;
 
     /**
-     * The views returned by {@link #views}. Constructed when first needed.
-     * Note that some views may appear in the {@link #sources} list.
-     */
-    private transient ViewsManager views;
-
-    /**
-     * The set of views that this coverage represents. Will be created
-     * by {@link #getViewTypes} only when first needed.
-     */
-    private transient Set<ViewType> viewTypes;
-
-    /**
      * The preferred encoding to use for serialization using the {@code writeObject} method,
      * or {@code null} for the default encoding. This value is set by {@link GridCoverageFactory}
      * according the hints provided to the factory.
@@ -703,11 +691,6 @@ public class GridCoverage2D extends AbstractGridCoverage {
      */
     @Override
     public void show(String title, final int xAxis, final int yAxis) {
-        final GridCoverage2D displayable = view(ViewType.RENDERED);
-        if (displayable != this) {
-            displayable.show(title, xAxis, yAxis);
-            return;
-        }
         if (title == null || (title = title.trim()).length() == 0) {
             final StringBuilder buffer = new StringBuilder(String.valueOf(getName()));
             final int visibleBandIndex = CoverageUtilities.getVisibleBand(this);
@@ -789,14 +772,6 @@ public class GridCoverage2D extends AbstractGridCoverage {
     }
 
     /**
-     * @deprecated Replaced by {@link #view}.
-     */
-    @Deprecated
-    public GridCoverage2D geophysics(final boolean geo) {
-        return view(geo ? ViewType.GEOPHYSICS : ViewType.PACKED);
-    }
-
-    /**
      * Returns a view of the specified type. Valid types are:
      * <ul>
      *   <li><p>
@@ -848,80 +823,11 @@ public class GridCoverage2D extends AbstractGridCoverage {
      * @see javax.media.jai.operator.PiecewiseDescriptor
      *
      * @since 2.5
+     * @deprecated
      */
     public GridCoverage2D view(final ViewType type) {
-        if (ViewType.SAME.equals(type)) {
-            return this;
-        }
-        synchronized (this) {
-            if (views == null) {
-                views = ViewsManager.create(this);
-            }
-        }
-        // Do not synchronize past this point, because ViewsManager.get is already
-        // synchronized. We need to rely on ViewsManager locking because the views
-        // are shared among many GridCoverage2D instances.
-        final Hints hints = null; // We may revisit that later.
-        return views.get(this, type, hints);
-    }
-
-    /**
-     * Returns the native view to be given to a newly created {@link ViewsManager}.  For
-     * {@link GridCoverage2D}, this is always {@code this} because the first coverage to
-     * instantiate a {@link ViewsManager} can not be anything else than native, since the
-     * views do not exist yet. For {@link Calculator2D} (which is a decorator around an
-     * other {@link GridCoverage2D}), we use the native view of its source.
-     */
-    GridCoverage2D getNativeView() {
+        LOGGER.fine("Views aren't supported anymore: returning \"this\"");
         return this;
-    }
-
-    /**
-     * Invoked (indirectly) by <code>{@linkplain #view view}(type)</code> when the
-     * {@linkplain ViewType#PACKED packed}, {@linkplain ViewType#GEOPHYSICS geophysics} or
-     * {@linkplain ViewType#PHOTOGRAPHIC photographic} view of this grid coverage needs to
-     * be created.
-     * <p>
-     * This method is defined here for {@link ViewsManager} needs, which invokes it. But it
-     * make sense only for {@link Calculator2D}, which override it with protected access.
-     * For other subclasses, we do not allow overriding (i.e. we keep this method package-
-     * privated) on purpose. See {@link #getViewClass} for the reason.
-     */
-    GridCoverage2D specialize(final GridCoverage2D view) {
-        return view;
-    }
-
-    /**
-     * Returns the base class of the view returned by {@link #specialize}, or {@code null} if
-     * unknown. This method is invoked by {@link ViewsManager#create} in order to determine
-     * if a given coverage can share its views with an other coverage. The condition tested
-     * by {@link ViewsManager} (namely: coverages have the same image, same grid geometry and
-     * same sample dimensions) are suffisient only if the coverages build the views in the same
-     * way. The last condition can be garantee only if we know how {@link #specialize} is
-     * implemented. It is safe for non-{@link Calculator2D} classes (because users can not
-     * override {@link #specialize} and for final classes like {@link Interpolator2D}, but
-     * the later must returns a different class in order to tells {@link ViewsManager} that
-     * it does not build the views in the same way.
-     */
-    Class<? extends GridCoverage2D> getViewClass() {
-        return GridCoverage2D.class;
-    }
-
-    /**
-     * Copies the views from this class into the specified coverage and returns them. The views
-     * are actually shared, i.e. views created for one coverage can be used by the other. This
-     * method is for internal use by {@link ViewsManager} only.
-     */
-    final synchronized ViewsManager copyViewsTo(final GridCoverage2D target) {
-        if (views == null) {
-            views = ViewsManager.create(this);
-        }
-        if (target.views == null) {
-            target.views = views;
-        } else if (target.views != views) {
-            throw new IllegalStateException(); // As a safety, but should never happen.
-        }
-        return views;
     }
 
     /**
@@ -930,22 +836,13 @@ public class GridCoverage2D extends AbstractGridCoverage {
      * PACKED} and {@link ViewType#RENDERED RENDERED} view.
      *
      * @return The set of views that this coverage represents.
-     *
+     * 
      * @since 2.5
+     * @deprecated 
      */
     public synchronized Set<ViewType> getViewTypes() {
-        if (viewTypes == null) {
-            final Set<ViewType> vtSet = EnumSet.allOf(ViewType.class);
-            vtSet.remove(ViewType.SAME); // Removes trivial view.
-            for (final Iterator<ViewType> it=vtSet.iterator(); it.hasNext();) {
-                if (view(it.next()) != this) {
-                    it.remove();
-                }
-            }
-            // Assign only in successful.
-            this.viewTypes = Collections.unmodifiableSet(vtSet);
-        }
-        return viewTypes;
+        LOGGER.fine("Views aren't supported anymore: returning empty set");
+        return Collections.EMPTY_SET;
     }
 
     /**
@@ -1025,14 +922,7 @@ public class GridCoverage2D extends AbstractGridCoverage {
      */
     @Override
     public synchronized boolean dispose(final boolean force) {
-        if (views != null) {
-            if (views.dispose(force).contains(this)) {
-                // The remaining GridCoverage2D include this one,
-                // which means that this view has not been disposed.
-                return false;
-            }
-            views = null;
-        } else if (!disposeImage(force)) {
+        if (!disposeImage(force)) {
             return false;
         }
         return super.dispose(force);

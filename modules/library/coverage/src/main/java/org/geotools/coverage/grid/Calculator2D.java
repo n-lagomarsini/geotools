@@ -28,6 +28,7 @@ package org.geotools.coverage.grid;
  * @source $URL$
  * @version $Id$
  * @author Martin Desruisseaux (IRD)
+ * @deprecated
  */
 public abstract class Calculator2D extends GridCoverage2D {
     /**
@@ -57,46 +58,4 @@ public abstract class Calculator2D extends GridCoverage2D {
         this.source = coverage;
     }
 
-    /**
-     * Invoked by <code>{@linkplain #view view}(type)</code> when the {@linkplain ViewType#PACKED
-     * packed}, {@linkplain ViewType#GEOPHYSICS geophysics} or {@linkplain ViewType#PHOTOGRAPHIC
-     * photographic} view of this grid coverage needs to be created. The {@link #view view} method
-     * first gets the desired view from the {@linkplain #source} coverage, then passes it as the
-     * argument to this method. Subclasses should define this method as below:
-     *
-     * <blockquote><code>
-     * return new MyCalculator2D(view, &lt;</code><var>any configuration to copy</var><code>&gt;);
-     * </code></blockquote>
-     *
-     * @param  view A view derived from the {@linkplain #source} coverage.
-     * @return The grid coverage to be returned by {@link #view view}, typically of the same
-     *         class than {@code this} (but this is not a strong requirement).
-     */
-    @Override
-    protected abstract GridCoverage2D specialize(GridCoverage2D view);
-
-    /**
-     * Returns the native view to be given to a newly created {@link ViewsManager}. We can not
-     * returns {@code this} like what {@link GridCoverage2D} does because this class is just a
-     * decorator around a {@linkplain #source}, and the later may not be a native view - it can
-     * be anything like a geophysics, a packed, <cite>etc</cite>. We can hardly call any instance
-     * of this decorator as "native", so the safest approach is to use the native view of the
-     * source. This is needed for proper working of {@link ViewsManager}: if this decorator stands
-     * between it and the views that it creates, it may not realize that a view was already created.
-     */
-    @Override
-    final GridCoverage2D getNativeView() {
-        return source.view(ViewType.NATIVE);
-    }
-
-    /**
-     * Returns the class of the view returned by {@link #specialize}, or {@code null} if unknown.
-     * Default implementation returns {@code null} because we don't know how the user will
-     * implement {@link #specialize}. GeoTools final subclasses like {@link Interpolator2D}
-     * will return their class.
-     */
-    @Override
-    Class<? extends Calculator2D> getViewClass() {
-        return null;
-    }
 }
