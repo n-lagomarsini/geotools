@@ -441,11 +441,12 @@ public class ProjectionHandler {
                 // go piecewise, the JTS intersection can be pretty fragile in these cases
                 // and take a lot of time
                 List<Geometry> elements = new ArrayList<>();
+                String geometryType = geometry.getGeometryN(0).getGeometryType();
                 for (int i = 0; i < geometry.getNumGeometries(); i++) {
                     Geometry g = geometry.getGeometryN(i);
                     if (g.getEnvelopeInternal().intersects(mask.getEnvelopeInternal())) {
                         Geometry intersected = intersect(g, mask);
-                        if (intersected != null) {
+                        if (intersected != null && intersected.getGeometryType().equals(geometryType)) {
                             elements.add(intersected);
                         }
                     }
