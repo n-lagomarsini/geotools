@@ -409,7 +409,7 @@ public class ProjectionHandler {
                     Geometry g = geometry.getGeometryN(i);
                     if (g.getEnvelopeInternal().intersects(mask.getEnvelopeInternal())) {
                         Geometry intersected = intersect(g, mask);
-                        if (intersected != null) {
+                        if (intersected != null && intersected.getGeometryType().equals(mask.getGeometryType())) {
                             elements.add(intersected);
                         }
                     }

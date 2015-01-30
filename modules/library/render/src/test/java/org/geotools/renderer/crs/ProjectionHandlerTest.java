@@ -528,4 +528,32 @@ public class ProjectionHandlerTest {
         assertTrue(CRS.getMapProjection(envelope.getCoordinateReferenceSystem()) instanceof PolarStereographic);
     }
 
+    @Test
+    public void testSkipInvalidGeometries() throws Exception {
+        ReferencedEnvelope world = new ReferencedEnvelope(160, 180, -40, 40, WGS84);
+        ReferencedEnvelope mercatorEnvelope = world.transform(MERCATOR, true);
+        // move it so that it crosses the dateline (measures are still accurate for something
+        // crossing the dateline
+        mercatorEnvelope.translate(mercatorEnvelope.getWidth() / 2, 0);
+
+        // a geometry that will cross the dateline and sitting in the same area as the
+        // rendering envelope
+        Geometry g = new WKTReader().read("LINESTRING(170 -40, 190 40)");
+
+        // make sure the geometry is not wrapped
+        ProjectionHandler handler = ProjectionHandlerFinder.getHandler(mercatorEnvelope, WGS84, true);
+        assertTrue(handler.requiresProcessing( g));
+        Geometry preProcessed = handler.preProcess(g);
+        // no cutting expected
+        assertEquals(g, preProcessed);
+        // transform and post process
+        MathTransform mt = CRS.findMathTransform(WGS84, MERCATOR, true);
+        Geometry transformed = JTS.transform(g, mt);
+        Geometry postProcessed = handler.postProcess(mt.inverse(), transformed);
+        Envelope env = postProcessed.getEnvelopeInternal();
+        // check the geometry is in the same area as the rendering envelope
+        assertEquals(mercatorEnvelope.getMinX(), env.getMinX(), EPS);
+        assertEquals(mercatorEnvelope.getMaxX(), env.getMaxX(), EPS);
+    }
+
 }
