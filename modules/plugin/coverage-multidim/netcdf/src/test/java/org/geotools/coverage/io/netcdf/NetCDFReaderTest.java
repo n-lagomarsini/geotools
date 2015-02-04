@@ -64,6 +64,8 @@ import org.opengis.referencing.NoSuchAuthorityCodeException;
 
 public class NetCDFReaderTest extends Assert {
 
+    private static final double DELTA = 1E-6;
+
     /**
      * Test using this netcdf image:
      *  data:
@@ -78,7 +80,8 @@ public class NetCDFReaderTest extends Assert {
      *
      * @throws IOException
      */
-    @Test  public void testHDF5Image() throws IOException, FactoryException {
+    @Test
+    public void testHDF5Image() throws IOException, FactoryException {
         final File testURL = TestData.file(this, "2DLatLonCoverage.nc");
         // Get format
         //final AbstractGridFormat format = (AbstractGridFormat)
@@ -113,7 +116,8 @@ public class NetCDFReaderTest extends Assert {
         }
     }
 
-    @Test  public void testFullReadOnCoverageWithIncreasingLat() throws IOException, FactoryException {
+    @Test
+    public void testFullReadOnCoverageWithIncreasingLat() throws IOException, FactoryException {
         final File testURL = TestData.file(this, "O3-NO2.nc");
         // Get format
         //final AbstractGridFormat format = (AbstractGridFormat)
@@ -135,7 +139,6 @@ public class NetCDFReaderTest extends Assert {
             value = grid.evaluate((DirectPosition) new
                     DirectPosition2D(DefaultGeographicCRS.WGS84, 5, 45.125), new float[1]);
             assertEquals(52.7991f, value[0],0.000001);
-
 
         } finally {
             if (reader != null) {
@@ -725,6 +728,7 @@ public class NetCDFReaderTest extends Assert {
                 assertEquals("false", reader.getMetadataValue(coverageName, "HAS_ELEVATION_DOMAIN"));
                 final String elevationMetadata = reader.getMetadataValue(coverageName, "ELEVATION_DOMAIN");
                 assertNull(elevationMetadata);
+
             }
         } catch (Throwable t) {
             throw new RuntimeException(t);
@@ -739,7 +743,46 @@ public class NetCDFReaderTest extends Assert {
         }
     }
 
-    
+    @Test
+    public void NetCDFNoData() throws NoSuchAuthorityCodeException, FactoryException, IOException, ParseException {
+        File mosaic = new File(TestData.file(this,"."),"NetCDFGOME2");
+        if (mosaic.exists()) {
+            FileUtils.deleteDirectory(mosaic);
+        }
+        assertTrue(mosaic.mkdirs());
+        File file = TestData.file(this, "DUMMY.GOME2.NO2.PGL.nc");
+        FileUtils.copyFileToDirectory(file, mosaic);
+        file = new File(mosaic, "DUMMY.GOME2.NO2.PGL.nc");
+
+        final Hints hints= new Hints(Hints.DEFAULT_COORDINATE_REFERENCE_SYSTEM, CRS.decode("EPSG:4326", true));
+        // Get format
+        final AbstractGridFormat format = (AbstractGridFormat) GridFormatFinder.findFormat(file.toURI().toURL(),hints);
+        final NetCDFReader reader = (NetCDFReader) format.getReader(file.toURI().toURL(), hints);
+
+        assertNotNull(format);
+        try {
+            String[] names = reader.getGridCoverageNames();
+            names = new String[] { names[0] };
+            GridCoverage2D gc = reader.read(null);
+            Object noData = gc.getProperty("GC_NODATA");
+            assertNotNull(noData);
+            assertTrue(noData instanceof Double);
+            Double d = (Double) noData;
+            assertEquals(d, -999d, DELTA);
+
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.dispose();
+                } catch (Throwable t) {
+                    // Does nothing
+                }
+            }
+        }
+    }
+
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Test
     @Ignore

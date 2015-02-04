@@ -1753,8 +1753,10 @@ class RasterLayerResponse{
 	        // set some no data values, as well as Min and Max values
 	        final double noData;
 	        double min=-Double.MAX_VALUE,max=Double.MAX_VALUE;
-	        if(backgroundValues!=null)
-	        {
+	        Double noDataAsProperty = getNoDataProperty(image);
+	        if (noDataAsProperty != null) {
+	            noData = noDataAsProperty.doubleValue();
+	        } else if(backgroundValues != null) {
 	        	// sometimes background values are not specified as 1 per each band, therefore we need to be careful
 	        	noData= backgroundValues[backgroundValues.length > i ? i:0];
 	        }
@@ -1852,5 +1854,15 @@ class RasterLayerResponse{
                 bands,
                 null, 
                 properties);
+    }
+
+    private Double getNoDataProperty(RenderedImage image) {
+        if (image != null) {
+            Object obj = image.getProperty("GC_NODATA");
+            if (obj != null && obj instanceof Double) {
+                return (Double) obj; 
+            }
+        }
+        return null;
     }
 }
