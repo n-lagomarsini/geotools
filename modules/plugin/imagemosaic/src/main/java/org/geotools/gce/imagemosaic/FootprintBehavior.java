@@ -24,7 +24,6 @@ import javax.media.jai.ImageLayout;
 import javax.media.jai.JAI;
 import javax.media.jai.PlanarImage;
 import javax.media.jai.ROI;
-import javax.media.jai.RenderedOp;
 import javax.media.jai.operator.MosaicDescriptor;
 
 import org.geotools.factory.Hints;
@@ -63,15 +62,16 @@ public enum FootprintBehavior {
             if (imageWorker.getRenderedImage().getColorModel().hasAlpha()) {
                 // if so we reuse it applying the ROI on top of it
                 RenderedImage alpha = imageWorker.retainLastBand().getRenderedImage();
-                RenderedOp maskedAlpha = MosaicDescriptor.create(
+                RenderedImage maskedAlpha = new ImageWorker(hints).
+                        mosaic(
+//                        MosaicDescriptor.create(
                         new RenderedImage[] {alpha}, 
                         MosaicDescriptor.MOSAIC_TYPE_OVERLAY, 
                         null, 
                         new ROI[] {overallROI}, 
                         null, 
-                        null, 
-                        hints);
-                
+                        null).getRenderedImage();
+
                 imageWorker.retainBands(mosaic.getColorModel().getNumColorComponents());
                 imageWorker.addBand(maskedAlpha, false);
             } else {
@@ -95,16 +95,15 @@ public enum FootprintBehavior {
                     final SampleModel sampleModel = mosaic.getSampleModel();
                     layout.setTileHeight(sampleModel.getWidth()).setTileWidth(sampleModel.getHeight());
                     hints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout));
-                    
+
                     // correct bounds of the current image
-                    alpha=MosaicDescriptor.create(
+                    alpha = new ImageWorker(hints).mosaic(
                             new RenderedImage[] {alpha}, 
                             MosaicDescriptor.MOSAIC_TYPE_OVERLAY, 
                             null, 
                             new ROI[] {overallROI}, 
                             null, 
-                            null, 
-                            hints);
+                            null).getRenderedOperation();
                 }
                 imageWorker.addBand(alpha, false);
             }

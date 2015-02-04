@@ -57,6 +57,7 @@ import org.geotools.factory.GeoTools;
 import org.geotools.factory.Hints;
 import org.geotools.image.ImageWorker;
 import org.geotools.referencing.CRS;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.geotools.util.Utilities;
 import org.jaitools.imageutils.ImageLayout2;
 import org.opengis.metadata.spatial.PixelOrientation;
@@ -192,9 +193,9 @@ public class GridCoverage2DRIA extends GeometricOpImage {
         BorderExtender extender = new BorderExtenderConstant(new double[] { nodata });
         
         // Check if the input coverage contains a ROI
-        Object property = src.getProperty("GC_ROI");
-        if(property != null && property instanceof ROI){
-            roi = roi != null ? roi.intersect((ROI) property) : (ROI)property;
+        ROI property = CoverageUtilities.getROIProperty(src);
+        if(property != null){
+            roi = roi != null ? roi.intersect(property) : property;
         }
         return new GridCoverage2DRIA(src, dst, vectorize(src.getRenderedImage()), imageLayout,
                 null, false, extender, Interpolation.getInstance(Interpolation.INTERP_NEAREST),
@@ -241,9 +242,9 @@ public class GridCoverage2DRIA extends GeometricOpImage {
         BorderExtender extender = new BorderExtenderConstant(new double[] { nodata });
         
         // Check if the input coverage contains a ROI
-        Object property = src.getProperty("GC_ROI");
-        if(property != null && property instanceof ROI){
-            roi = roi != null ? roi.intersect((ROI) property) : (ROI)property;
+        ROI property = CoverageUtilities.getROIProperty(src);
+        if(property != null){
+            roi = roi != null ? roi.intersect(property) : property;
         }
 
         return new GridCoverage2DRIA(src, dst.getGridGeometry(), vectorize(src.getRenderedImage()), imageLayout,

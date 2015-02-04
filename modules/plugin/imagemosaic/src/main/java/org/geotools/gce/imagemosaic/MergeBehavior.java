@@ -119,14 +119,10 @@ public enum MergeBehavior {
                         } else {
                             localHints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
                         }
-                        return MosaicDescriptor.create(
-                                sources, 
-                              MosaicDescriptor.MOSAIC_TYPE_OVERLAY, 
-                              sourceAlpha, 
-                              sourceROI, 
-                              inputThreshold, 
-                              backgroundValues, 
-                              localHints);
+                        return new ImageWorker(localHints)
+                                .setDestinationNoData(backgroundValues)
+                                .mosaic(sources, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, sourceAlpha, 
+                                        sourceROI, inputThreshold, null).getRenderedImage();
                     }
                 }
             }

@@ -26,9 +26,7 @@ import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.RenderedImage;
-import java.awt.image.renderable.ParameterBlock;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +39,7 @@ import javax.media.jai.ROIShape;
 import javax.media.jai.operator.MosaicDescriptor;
 
 import org.geotools.coverage.GridSampleDimension;
+import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridEnvelope2D;
@@ -56,7 +55,6 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.LiteShape2;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.image.ImageWorker;
-//import org.geotools.image.crop.GTCropDescriptor;
 import org.geotools.metadata.iso.citation.Citations;
 import org.geotools.parameter.DefaultParameterDescriptor;
 import org.geotools.parameter.DefaultParameterDescriptorGroup;
@@ -88,6 +86,7 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
+//import org.geotools.image.crop.GTCropDescriptor;
 
 /**
  * The crop operation is responsible for selecting geographic subarea of the
@@ -283,10 +282,10 @@ public class Crop extends Operation2D {
      */
 	public Crop() {
 		super(new DefaultParameterDescriptorGroup(Citations.JAI,
-				"Crop", new ParameterDescriptor[] { SOURCE_0,
+				"CoverageCrop", new ParameterDescriptor[] { SOURCE_0,
 						CROP_ENVELOPE, CROP_ROI,
 						ROI_OPTIMISATION_TOLERANCE,
-						FORCE_MOSAIC}));
+						FORCE_MOSAIC, NODATA, DEST_NODATA}));
 
 	}
 
@@ -325,7 +324,8 @@ public class Crop extends Operation2D {
         
         // Getting NoData value if not defined
         if(nodata == null){
-            nodata = (Range) source.getProperty("GC_NODATA");
+            NoDataContainer noDataProperty = CoverageUtilities.getNoDataProperty(source);
+            nodata = noDataProperty != null ? noDataProperty.getAsRange() : null;
         }
 
         // Check Envelope and ROI existence - we need at least one of them
@@ -417,7 +417,7 @@ public class Crop extends Operation2D {
                 // Get the inner ROI object contained as property. It is in Raster space
                 //
                 // //
-                ROI internalROI = (ROI) source.getProperty("GC_NODATA");
+		ROI internalROI =  CoverageUtilities.getROIProperty(source);
                 
 		// //
 		//
@@ -608,7 +608,7 @@ public class Crop extends Operation2D {
 			// //
 			final PlanarImage croppedImage;
 			//final ParameterBlock pbj = new ParameterBlock();
-			ImageWorker worker = new ImageWorker(sourceImage);
+			ImageWorker worker = new ImageWorker();
 			//pbj.addSource(sourceImage);
 			java.awt.Polygon rasterSpaceROI=null;
 			double[] background = destnodata != null ? destnodata : CoverageUtilities.getBackgroundValues(sourceCoverage);
@@ -653,8 +653,8 @@ public class Crop extends Operation2D {
                     } catch (FactoryException ex) {
 						throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP), ex);
                     }
-                                        worker.setROI(roiarr[0]);
-                                        worker.setnoData(nodata);
+                                        //worker.setROI(roiarr[0]);
+                                        //worker.setnoData(nodata);
                                         worker.setDestinationNoData(background);
                                         
                                         
@@ -680,7 +680,7 @@ public class Crop extends Operation2D {
 					operatioName = "Mosaic";
 					
 					worker.setRenderingHints(targetHints);
-					worker.mosaic(null, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, null, null, null);
+					worker.mosaic(new RenderedImage[]{sourceImage}, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, roiarr, null, nodata != null ? new Range[]{nodata} : null);
 				}
 
 			}
@@ -688,6 +688,7 @@ public class Crop extends Operation2D {
             //do we still have to set the operation name? If so that means we have to go for crop.
             if(operatioName==null) {
                 // executing the crop
+                worker.setImage(sourceImage);
                 worker.setRenderingHints(targetHints);
                 worker.crop((float) minX, (float) minY, (float) width, (float) height);
                 operatioName = "Crop";
@@ -711,20 +712,29 @@ public class Crop extends Operation2D {
                 properties = new HashMap(sourceProperties);
             }
             if (rasterSpaceROI != null || internalROI != null) {
-                ROI rsROI = new ROIShape(rasterSpaceROI);
-                ROI finalROI = internalROI.intersect(rsROI);
-                
+            	ROI finalROI = null;
+                if(rasterSpaceROI != null){
+                	finalROI = new ROIShape(rasterSpaceROI);
+                }
+                if(finalROI != null && internalROI != null){
+                	finalROI = finalROI.intersect(internalROI);
+                }else if(internalROI != null){
+                	finalROI = internalROI;
+                }
+
                 if (properties == null) {
                     properties = new HashMap(); 
                 }
-                properties.put("GC_ROI", finalROI); 
+                if(finalROI != null){
+                    CoverageUtilities.setROIProperty(properties, finalROI);
+                }
             }
             
             if(worker.getNoData() != null ){
                 if (properties == null) {
                     properties = new HashMap(); 
                 }
-                properties.put("GC_NODATA", worker.getNoData()); 
+                CoverageUtilities.setNoDataProperty(properties, worker.getNoData());
             }
             
             return new GridCoverageFactory(hints).create(

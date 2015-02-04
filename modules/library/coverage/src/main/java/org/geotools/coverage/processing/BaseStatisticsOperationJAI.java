@@ -160,6 +160,17 @@ public abstract class BaseStatisticsOperationJAI extends
 	 * Constructor for {@link BaseStatisticsOperationJAI}.
 	 * @param name of the underlying JAI operation.
 	 */
+	public BaseStatisticsOperationJAI(String name, OperationDescriptor operationDescriptor) {
+		super(getOperationDescriptor(getOperationName(name)),new ExtendedImagingParameterDescriptors(
+				name,
+				operationDescriptor,
+				new HashSet<ParameterDescriptor>(REPLACED_DESCRIPTORS)));
+	}
+	
+    /**
+	 * Constructor for {@link BaseStatisticsOperationJAI}.
+	 * @param name of the underlying JAI operation.
+	 */
 	public BaseStatisticsOperationJAI(String name) {
 		super(getOperationDescriptor(name),new ImagingParameterDescriptors(
 				getOperationDescriptor(name),
@@ -312,7 +323,7 @@ public abstract class BaseStatisticsOperationJAI extends
 	 * @throws TransformException
 	 *             in case the provided {@link MathTransform} chokes.
 	 */
-	private static java.awt.Polygon convertPolygon(final Polygon roiInput,
+	protected static java.awt.Polygon convertPolygon(final Polygon roiInput,
 			MathTransform worldToGridTransform) throws TransformException {
 		final boolean isIdentity = worldToGridTransform.isIdentity();
 		final java.awt.Polygon retValue = new java.awt.Polygon();

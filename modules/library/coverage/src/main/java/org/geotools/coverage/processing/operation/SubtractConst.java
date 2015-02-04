@@ -92,7 +92,11 @@ public class SubtractConst extends OperationJAI {
      * Constructs a default {@code "SubtractConst"} operation.
      */
     public SubtractConst() {
-        super(getOperationName("SubtractConst"));
+    	super("SubtractConst", getOperationDescriptor(getOperationName("SubtractConst")));
+    }
+    
+    public String getName() {
+        return "SubtractConst";
     }
 
     /**

@@ -419,7 +419,7 @@ public class BandMerge extends OperationJAI {
      * @throws ParameterNotFoundException
      * @throws InvalidParameterValueException
      */
-    private void extractSources(final ParameterValueGroup parameters,
+    protected void extractSources(final ParameterValueGroup parameters,
             final Collection<GridCoverage2D> sources) throws ParameterNotFoundException,
             InvalidParameterValueException {
         Utilities.ensureNonNull("parameters", parameters);
