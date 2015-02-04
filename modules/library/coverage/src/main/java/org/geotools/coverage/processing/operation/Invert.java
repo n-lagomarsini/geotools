@@ -21,13 +21,14 @@ import it.geosolutions.jaiext.JAIExt;
 import it.geosolutions.jaiext.algebra.AlgebraDescriptor.Operator;
 
 import java.awt.image.RenderedImage;
+import java.util.Collection;
 import java.util.Map;
 
 import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.operator.InvertDescriptor;
 
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.processing.OperationJAI;
+import org.geotools.coverage.processing.BaseMathOperationJAI;
 import org.geotools.util.NumberRange;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -74,7 +75,7 @@ import org.opengis.util.InternationalString;
  * @see org.geotools.coverage.processing.Operations#invert
  * @see InvertDescriptor
  */
-public class Invert extends OperationJAI {
+public class Invert extends BaseMathOperationJAI {
     /**
      * Serial number for interoperability with different versions.
      */
@@ -84,7 +85,11 @@ public class Invert extends OperationJAI {
      * Constructs a default {@code "Invert"} operation.
      */
     public Invert() {
-        super(getOperationName("Invert"));
+    	super("Invert", getOperationDescriptor(getOperationName("Invert")));
+    }
+    
+    public String getName() {
+        return "Invert";
     }
 
     /**
@@ -98,11 +103,13 @@ public class Invert extends OperationJAI {
     }
     
     protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
-        GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
         if(JAIExt.isJAIExtOperation("algebric")){
             parameters.set(Operator.INVERT, 0);
+            Collection<GridCoverage2D> sources = (Collection<GridCoverage2D>) parameters2.parameter("sources").getValue();
+            for(GridCoverage2D source : sources){
+                handleROINoDataInternal(parameters, source, "algebric", 1, 2);
+            }
         }
-        handleROINoDataInternal(parameters, source, "algebric", 1, 2);
     }
     
     protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,

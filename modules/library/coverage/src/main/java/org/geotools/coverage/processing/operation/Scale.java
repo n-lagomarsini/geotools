@@ -17,9 +17,11 @@
 package org.geotools.coverage.processing.operation;
 
 import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.affine.AffineDescriptor;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
 import it.geosolutions.jaiext.scale.ScaleDescriptor;
+import it.geosolutions.jaiext.translate.TranslateDescriptor;
 
 import java.awt.RenderingHints;
 import java.awt.image.DataBuffer;
@@ -34,11 +36,13 @@ import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.PlanarImage;
 import javax.media.jai.PropertyGenerator;
 import javax.media.jai.ROI;
+import javax.media.jai.RenderedOp;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.BaseScaleOperationJAI;
 import org.geotools.coverage.processing.OperationJAI;
 import org.geotools.image.jai.Registry;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -91,6 +95,7 @@ public class Scale extends BaseScaleOperationJAI {
 				interpolation=null;
 			}
 		final int transferType = source.getSampleModel().getDataType();
+		
 		final JAI processor = OperationJAI.getJAI(hints);
 		PlanarImage image;
 		if (interpolation!=null&&!(interpolation instanceof InterpolationNearest)
@@ -148,15 +153,25 @@ public class Scale extends BaseScaleOperationJAI {
 		Object bkgProp = parameters.parameters.getObjectParameter(8);
 		if(bkgProp != null && bkgProp instanceof double[]){
 			double[] background = (double[])bkgProp;
-			properties.put("GC_NODATA", RangeFactory.create(background[0], background[0]));
+			CoverageUtilities.setNoDataProperty(properties, background);
 		}
 		
-		// Setting ROI if present
-		PropertyGenerator propertyGenerator = new ScaleDescriptor().getPropertyGenerators()[0];
-		Object roiProp = propertyGenerator.getProperty("roi", data);
-		if(roiProp != null && roiProp instanceof ROI){
-			properties.put("GC_ROI", roiProp);
-		}
+                // Setting ROI if present
+                if (data instanceof RenderedOp) {
+                    String operationName = ((RenderedOp) data).getOperationName();
+                    PropertyGenerator propertyGenerator = null;
+                    if (operationName.equalsIgnoreCase("Scale")) {
+                        propertyGenerator = new ScaleDescriptor().getPropertyGenerators()[0];
+                    } else if (operationName.equalsIgnoreCase("Translate")) {
+                        propertyGenerator = new TranslateDescriptor().getPropertyGenerators()[0];
+                    }
+                    if (propertyGenerator != null) {
+                        Object roiProp = propertyGenerator.getProperty("roi", data);
+                        if (roiProp != null && roiProp instanceof ROI) {
+                            CoverageUtilities.setROIProperty(properties, (ROI) roiProp);
+                        }
+                    }
+                }
 		
 		return properties;
 	}

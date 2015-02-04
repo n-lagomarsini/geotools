@@ -94,6 +94,10 @@ public class AddConst extends OperationJAI {
     public AddConst() {
         super(getOperationName("AddConst"));
     }
+    
+    public String getName() {
+        return "AddConst";
+    }
 
     /**
      * Returns the expected range of values for the resulting image.

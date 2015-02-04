@@ -18,6 +18,8 @@ package org.geotools.coverage.processing;
 
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.media.jai.Interpolation;
 import javax.media.jai.Warp;
@@ -740,7 +742,8 @@ public class Operations {
     {
         final Operation operation = processor.getOperation(operationName);
         final ParameterValueGroup parameters = operation.getParameters();
-        parameters.parameter("Source").setValue(source);
+        addSources(operationName, parameters, source);
+        //parameters.parameter("Source").setValue(source);
         return processor.doOperation(parameters);
     }
     
@@ -761,8 +764,9 @@ public class Operations {
     {
         final Operation operation = processor.getOperation(operationName);
         final ParameterValueGroup parameters = operation.getParameters();
-        parameters.parameter("Source0").setValue(source0);
-        parameters.parameter("Source1").setValue(source1);
+        addSources(operationName, parameters, source0, source1);
+        //parameters.parameter("Source0").setValue(source0);
+        //parameters.parameter("Source1").setValue(source1);
         return processor.doOperation(parameters);
     }
 
@@ -786,7 +790,7 @@ public class Operations {
     {
         final Operation operation = processor.getOperation(operationName);
         final ParameterValueGroup parameters = operation.getParameters();
-        parameters.parameter("Source").setValue(source);
+        addSources(operationName, parameters, source);
         setParameterValue(parameters, argumentName1, argumentValue1);
         return processor.doOperation(parameters);
     }
@@ -814,7 +818,8 @@ public class Operations {
     {
         final Operation operation = processor.getOperation(operationName);
         final ParameterValueGroup parameters = operation.getParameters();
-        parameters.parameter("Source").setValue(source);
+        addSources(operationName, parameters, source);
+        //parameters.parameter("Source").setValue(source);
         setParameterValue(parameters, argumentName1, argumentValue1);
         setParameterValue(parameters, argumentName2, argumentValue2);
         return processor.doOperation(parameters);
@@ -846,7 +851,8 @@ public class Operations {
     {
         final Operation operation = processor.getOperation(operationName);
         final ParameterValueGroup parameters = operation.getParameters();
-        parameters.parameter("Source").setValue(source);
+        addSources(operationName, parameters, source);
+        //parameters.parameter("Source").setValue(source);
         setParameterValue(parameters, argumentName1, argumentValue1);
         setParameterValue(parameters, argumentName2, argumentValue2);
         setParameterValue(parameters, argumentName3, argumentValue3);
@@ -876,7 +882,8 @@ public class Operations {
     {
         final Operation operation = processor.getOperation(operationName);
         final ParameterValueGroup parameters = operation.getParameters();
-        parameters.parameter("Source").setValue(source);
+        addSources(operationName, parameters, source);
+        //parameters.parameter("Source").setValue(source);
         setParameterValue(parameters, argumentName1, argumentValue1);
         setParameterValue(parameters, argumentName2, argumentValue2);
         setParameterValue(parameters, argumentName3, argumentValue3);
@@ -908,7 +915,8 @@ public class Operations {
     {
         final Operation operation = processor.getOperation(operationName);
         final ParameterValueGroup parameters = operation.getParameters();
-        parameters.parameter("Source").setValue(source);
+        addSources(operationName, parameters, source);
+        //parameters.parameter("Source").setValue(source);
         setParameterValue(parameters, argumentName1, argumentValue1);
         setParameterValue(parameters, argumentName2, argumentValue2);
         setParameterValue(parameters, argumentName3, argumentValue3);
@@ -942,7 +950,8 @@ public class Operations {
     {
         final Operation operation = processor.getOperation(operationName);
         final ParameterValueGroup parameters = operation.getParameters();
-        parameters.parameter("Source").setValue(source);
+        //parameters.parameter("Source").setValue(source);
+        addSources(operationName, parameters, source);
         setParameterValue(parameters, argumentName1, argumentValue1);
         setParameterValue(parameters, argumentName2, argumentValue2);
         setParameterValue(parameters, argumentName3, argumentValue3);
@@ -952,6 +961,22 @@ public class Operations {
         return processor.doOperation(parameters);
     }
 
+    private void addSources(final String operationName, 
+            final ParameterValueGroup parameters,
+            final Coverage... sources) {
+        if(OperationJAI.getOperationName(operationName).equalsIgnoreCase("algebric")){
+            ArrayList<Coverage> sourceList = new ArrayList<>();
+            sourceList.addAll(Arrays.asList(sources));
+            parameters.parameter("Sources").setValue(sourceList);
+        }else if(sources.length == 1){
+            parameters.parameter("Source").setValue(sources[0]);
+        }else{
+            for(int i = 0; i < sources.length; i++){
+                parameters.parameter("Source" + i).setValue(sources[i]);
+            }
+        }
+    }
+    
     /**
      * Set the specified parameter to the specified value, if not null.
      */

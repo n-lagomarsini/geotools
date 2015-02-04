@@ -398,8 +398,7 @@ public class Mosaic extends OperationJAI {
                     double fillValue = CoverageUtilities.getBackgroundValues(coverage)[0];
                     backgrounds[i] = fillValue;
                     // Get ROI from the coverage
-                    Object roi = coverage.getProperty("GC_ROI");
-                    rois[i] = (ROI) (roi instanceof ROI ? roi : null);
+                    rois[i] = CoverageUtilities.getROIProperty(coverage);
                 } else {
                     // New GridGeometry
                     GridGeometry2D newGG = new GridGeometry2D(PixelInCell.CELL_CORNER, g2w,
@@ -442,7 +441,8 @@ public class Mosaic extends OperationJAI {
                     backgrounds[i] = fillValue[0];
                     // Resample to the new resolution
                     GridCoverage2DRIA.GridCoverage2DRIAPropertyGenerator propertyGenerator = new GridCoverage2DRIA.GridCoverage2DRIAPropertyGenerator();
-                    ROI roi = (ROI) propertyGenerator.getProperty("roi", rasters[i]);
+                    Object property = propertyGenerator.getProperty("roi", rasters[i]);
+                    ROI roi = (property != null && property instanceof ROI ) ? (ROI) property : null;
                     rois[i] = roi;
                 }
             }
@@ -509,7 +509,7 @@ public class Mosaic extends OperationJAI {
          * Extracts the source grid coverages now as a List. The sources will be set in the ParameterBlockJAI (as RenderedImages) later.
          */
         final Collection<GridCoverage2D> sourceCollection = new ArrayList<GridCoverage2D>();
-        extractSources(parameters, sourceCollection);
+        extractSources(parameters, sourceCollection, null);
         
         // Selection of the source number
         int numSources = sourceCollection.size();
@@ -534,39 +534,6 @@ public class Mosaic extends OperationJAI {
          * Applies the operation. This delegates the work to the chain of 'deriveXXX' methods.
          */
         return deriveGridCoverage(sources, params);
-    }
-
-    /**
-     * Extraction of the sources from the parameter called SOURCES. The sources are stored inside a List. 
-     * 
-     * @param parameters
-     * @param sources
-     * @return
-     * @throws ParameterNotFoundException
-     * @throws InvalidParameterValueException
-     */
-    private void extractSources(final ParameterValueGroup parameters,
-            final Collection<GridCoverage2D> sources) throws ParameterNotFoundException,
-            InvalidParameterValueException {
-        Utilities.ensureNonNull("parameters", parameters);
-        Utilities.ensureNonNull("sources", sources);
-
-        // Extraction of the sources from the parameters
-        Object srcCoverages = parameters.parameter("sources").getValue();
-
-        if (!(srcCoverages instanceof Collection) || ((Collection) srcCoverages).isEmpty()
-                || !(((Collection) srcCoverages).iterator().next() instanceof GridCoverage2D)) {
-            throw new InvalidParameterValueException(Errors.format(ErrorKeys.ILLEGAL_ARGUMENT_$1,
-                    "sources"), "sources", srcCoverages);
-        }
-        // Collection of the sources to use
-        Collection<GridCoverage2D> sourceCoverages = (Collection<GridCoverage2D>) srcCoverages;
-        // Cycle on all the Sources
-        for (GridCoverage2D source : sourceCoverages) {
-            if (source != null) {
-                sources.add(source);
-            }
-        }
     }
 
     /**
@@ -693,7 +660,9 @@ public class Mosaic extends OperationJAI {
         
 
         // Creation of the finel Parameters
-        return new Params(block, hints, finalGeometry);
+        Params params = new Params(block, hints, finalGeometry);
+        params.rr = rr;
+		return params;
     }
 
     /**
@@ -797,9 +766,10 @@ public class Mosaic extends OperationJAI {
         ParameterBlockJAI jai = parameters.parameters;
         int numSources = jai.getNumSources();
         // ROI
-        Object roiParam = jai.getObjectParameter(2);
-        if(roiParam != null && roiParam instanceof ROI[]){
-            ROI[] rois = (ROI[]) roiParam;
+        //Object roiParam = jai.getObjectParameter(2);
+        ResampledRasters rr = parameters.rr;
+        if(rr != null && rr.getRois() != null){
+            ROI[] rois = (ROI[]) rr.getRois();
             ROI finalROI = null;
             for(int i = 0; i < numSources; i++){
                 if(finalROI == null){
@@ -808,16 +778,36 @@ public class Mosaic extends OperationJAI {
                     finalROI.add(rois[i]);
                 }
             }
-            properties.put("GC_ROI", finalROI);
+            CoverageUtilities.setROIProperty(properties, finalROI);
         }
         // NoData
         Object nodataParam = jai.getObjectParameter(4);
-        if(nodataParam != null && nodataParam instanceof double[]){
-            double outNoData = ((double[])nodataParam)[0];
-            properties.put("GC_NODATA", RangeFactory.create(outNoData, outNoData));
-        }
+        CoverageUtilities.setNoDataProperty(properties, nodataParam);
 
         return properties;
+    }
+    
+    protected void extractSources(final ParameterValueGroup parameters,
+            final Collection<GridCoverage2D> sources, final String[] sourceNames)
+            throws ParameterNotFoundException, InvalidParameterValueException {
+        if (!JAIExt.isJAIExtOperation(getOperationName(getName()))) {
+            super.extractSources(parameters, sources, sourceNames);
+        } else {
+            Utilities.ensureNonNull("parameters", parameters);
+            Utilities.ensureNonNull("sources", sources);
+
+            // Extraction of the sources from the parameters
+            Object srcCoverages = parameters.parameter("Sources").getValue();
+
+            if (!(srcCoverages instanceof Collection) || ((Collection) srcCoverages).isEmpty()
+                    || !(((Collection) srcCoverages).iterator().next() instanceof GridCoverage2D)) {
+                throw new InvalidParameterValueException(Errors.format(
+                        ErrorKeys.ILLEGAL_ARGUMENT_$1, "sources"), "sources", srcCoverages);
+            }
+            // Collection of the sources to use
+            Collection<GridCoverage2D> sourceCoverages = (Collection<GridCoverage2D>) srcCoverages;
+            sources.addAll(sourceCoverages);
+        }
     }
 
     /**
@@ -826,6 +816,8 @@ public class Mosaic extends OperationJAI {
      * @author Nicola Lagomarsini
      */
     protected static final class Params {
+    	
+    	public ResampledRasters rr;
 
         /**
          * The parameters to be given to the {@link JAI#createNS} method.

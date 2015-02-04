@@ -35,6 +35,7 @@ import javax.media.jai.operator.ExtremaDescriptor;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.BaseStatisticsOperationJAI;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.geotools.util.logging.Logging;
 import org.opengis.coverage.processing.OperationNotFoundException;
 import org.opengis.parameter.ParameterValueGroup;
@@ -106,14 +107,16 @@ public class Extrema extends BaseStatisticsOperationJAI {
 	/**Locations of max values. */
 	public final static String GT_SYNTHETIC_PROPERTY_MAX_LOCATIONS="maxLocations";
 
-
 	/**
 	 * Constructs a default {@code "Extrema"} operation.
 	 */
 	public Extrema() throws OperationNotFoundException {
-		super(getOperationDescriptor(getOperationName("Extrema")));
-
+		super("Extrema", getOperationDescriptor(getOperationName("Extrema")));
 	}
+	
+    public String getName() {
+        return "Extrema";
+    }
 
 	/**
 	 * This operation MUST be performed on the geophysics data for this
@@ -190,8 +193,8 @@ public class Extrema extends BaseStatisticsOperationJAI {
                         }
                         // Addition of the ROI property and NoData property
                         GridCoverage2D source = sources[0];
-                        synthProp.put("GC_ROI", source.getProperty("GC_ROI"));
-                        synthProp.put("GC_NODATA", source.getProperty("GC_NODATA"));
+                        CoverageUtilities.setROIProperty(synthProp, CoverageUtilities.getROIProperty(source));
+                        CoverageUtilities.setNoDataProperty(synthProp, CoverageUtilities.getNoDataProperty(source));
 			return Collections.unmodifiableMap(synthProp);
 
 		}

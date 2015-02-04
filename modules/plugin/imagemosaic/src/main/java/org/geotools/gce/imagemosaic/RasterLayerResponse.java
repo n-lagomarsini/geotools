@@ -57,13 +57,13 @@ import javax.media.jai.RenderedOp;
 import javax.media.jai.TileCache;
 import javax.media.jai.TileScheduler;
 import javax.media.jai.operator.ConstantDescriptor;
-import javax.media.jai.operator.FormatDescriptor;
 import javax.media.jai.operator.MosaicDescriptor;
 import javax.media.jai.operator.TranslateDescriptor;
 
 import org.apache.commons.io.FilenameUtils;
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
+import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.TypeMap;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
@@ -110,7 +110,6 @@ import org.opengis.filter.sort.SortOrder;
 import org.opengis.geometry.BoundingBox;
 import org.opengis.referencing.datum.PixelInCell;
 import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.MathTransform1D;
 import org.opengis.referencing.operation.MathTransform2D;
 import org.opengis.referencing.operation.TransformException;
 import org.opengis.util.InternationalString;
@@ -849,10 +848,11 @@ class RasterLayerResponse{
                 for (ROI roi : rois) {
                     images[i++] = roi.getAsImage();
                 }
-                ROI[] roisArray = rois.toArray(new ROI[rois.size()]);
-                RenderedOp overallROI = MosaicDescriptor.create(images,
-                        MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, roisArray,
-                        new double[][] { { 1.0 } }, new double[] { 0.0 }, hints);
+                ROI[] roisArray = (ROI[]) rois.toArray(new ROI[rois.size()]);
+                RenderedImage overallROI = new ImageWorker(hints)
+                        .setDestinationNoData(new double[] { 0.0 })
+                        .mosaic(images, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, roisArray,
+                                new double[][] { { 1.0 } }, null).getRenderedImage();
                 return new ROI(overallROI);
             }
         }
@@ -1622,8 +1622,8 @@ class RasterLayerResponse{
                 il.setColorModel(rasterManager.defaultCM);
                 il.setSampleModel(rasterManager.defaultCM.createCompatibleSampleModel(
                         tileSize.width, tileSize.height));
-                finalImage = FormatDescriptor.create(finalImage,
-                        Integer.valueOf(il.getSampleModel(null).getDataType()), renderingHints);
+                finalImage = new ImageWorker(finalImage).setRenderingHints(renderingHints).
+                        format(il.getSampleModel(null).getDataType()).getRenderedImage();
             }
         } else {
             il.setWidth(rasterBounds.width).setHeight(rasterBounds.height);
@@ -1699,8 +1699,10 @@ class RasterLayerResponse{
 	        // set some no data values, as well as Min and Max values
 	        final double noData;
 	        double min=-Double.MAX_VALUE,max=Double.MAX_VALUE;
-	        if(backgroundValues!=null)
-	        {
+	        Double noDataAsProperty = getNoDataProperty(image);
+	        if (noDataAsProperty != null) {
+	            noData = noDataAsProperty.doubleValue();
+	        } else if(backgroundValues != null) {
 	        	// sometimes background values are not specified as 1 per each band, therefore we need to be careful
 	        	noData= backgroundValues[backgroundValues.length > i ? i:0];
 	        }
@@ -1786,6 +1788,9 @@ class RasterLayerResponse{
         if (mosaicOutput.pamDataset != null) {
             properties.put(Utils.PAM_DATASET, mosaicOutput.pamDataset);
         }
+        // Setting NoData as the NoData for the first Band
+        CoverageUtilities.setNoDataProperty(properties, bands[0].getNoDataValues());
+        
         return coverageFactory.create(
                 rasterManager.getCoverageIdentifier(),
                 image,
@@ -1798,5 +1803,15 @@ class RasterLayerResponse{
                 bands,
                 null, 
                 properties);
+    }
+
+    private Double getNoDataProperty(RenderedImage image) {
+        if (image != null) {
+            Object obj = image.getProperty(NoDataContainer.GC_NODATA);
+            if (obj != null && obj instanceof Double) {
+                return (Double) obj; 
+            }
+        }
+        return null;
     }
 }
