@@ -19,6 +19,7 @@ package org.geotools.coverage;
 import java.awt.Color;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import org.geotools.referencing.operation.transform.LinearTransform1D;
 import org.geotools.resources.Classes;
@@ -29,6 +30,7 @@ import org.geotools.resources.i18n.VocabularyKeys;
 import org.geotools.util.NumberRange;
 import org.geotools.util.SimpleInternationalString;
 import org.geotools.util.Utilities;
+import org.geotools.util.logging.Logging;
 import org.opengis.referencing.operation.MathTransform1D;
 import org.opengis.util.InternationalString;
 
@@ -70,6 +72,11 @@ public class Category implements Serializable {
      * Serial number for interoperability with different versions.
      */
     private static final long serialVersionUID = 6215962897884256696L;
+
+    /**
+     * The logger for category.
+     */
+    public static final Logger LOGGER = Logging.getLogger("org.geotools.coverage");
 
     /**
      * The 0 value as a byte. Used for {@link #FALSE} categories.
@@ -151,7 +158,6 @@ public class Category implements Serializable {
      */
     NumberRange<? extends Number> range;
 
-
     final boolean isQuantitative;
 
     /**
@@ -187,6 +193,22 @@ public class Category implements Serializable {
         this(name, toArray(color), sample ? BYTE_0 : BYTE_1, false);
     }
 
+   /**
+     * Constructs a qualitative category for sample value {@code sample}.
+     *
+     * @param  name    The category name as a {@link String} or {@link InternationalString} object.
+     * @param  color   The category color, or {@code null} for a default color.
+     * @param  sample  The sample value as an integer, usually in the range 0 to 255.
+     */
+    public Category(final CharSequence name,
+                    final Color        color,
+                    final int          sample)
+    {
+        this(name, toARGB(color, sample), Integer.valueOf(sample), false);
+        assert minimum == sample : minimum;
+        assert maximum == sample : maximum;
+    }
+
     /**
      * Constructs a qualitative category for sample value {@code sample}.
      *
@@ -220,8 +242,9 @@ public class Category implements Serializable {
         assert Double.doubleToRawLongBits(maximum) == Double.doubleToRawLongBits(sample) : maximum;
     }
 
+
     /**
-     * Constructs a qualitative category for sample value {@code sample}.
+     * Constructs a category for sample value {@code sample}.
      */
     private Category(final CharSequence name,
                      final int[]        ARGB,
@@ -245,6 +268,42 @@ public class Category implements Serializable {
                     final NumberRange<?> sampleValueRange) throws IllegalArgumentException
     {
         this(name, toArray(color), sampleValueRange, true);
+    }
+
+    /**
+     * Constructs a quantitative category for sample values ranging from {@code lower}
+     * inclusive to {@code upper} exclusive. Sample values are converted into geophysics
+     * values using the following linear equation:
+     *
+     * <center><var>x</var><code>&nbsp;=&nbsp;{@linkplain GridSampleDimension#getOffset()
+     * offset}&nbsp;+&nbsp;{@linkplain GridSampleDimension#getScale()
+     * scale}&times;</code><var>s</var></center>
+     *
+     * @param  name    The category name as a {@link String} or {@link InternationalString} object.
+     * @param  colors  A set of colors for this category. This array may have any length;
+     *                 colors will be interpolated as needed. An array of length 1 means
+     *                 that an uniform color should be used for all sample values. An array
+     *                 of length 0 or a {@code null} array means that some default colors
+     *                 should be used (usually a gradient from opaque black to opaque white).
+     * @param  lower   The lower sample value, inclusive.
+     * @param  upper   The upper sample value, exclusive.
+     * @param  scale   The {@link GridSampleDimension#getScale() scale} value which is
+     *                 multiplied to sample values for this category.
+     * @param  offset  The {@link GridSampleDimension#getOffset() offset} value to add
+     *                 to sample values for this category.
+     *
+     * @throws IllegalArgumentException if {@code lower} is not smaller than {@code upper},
+     *         or if {@code scale} or {@code offset} are not real numbers.
+     * @deprecated. 
+     */
+    public Category(final CharSequence name,
+                    final Color[]      colors,
+                    final int          lower,
+                    final int          upper,
+                    final double       scale,
+                    final double       offset) throws IllegalArgumentException
+    {
+        this(name, colors, NumberRange.create(lower, true, upper, false), scale, offset);
     }
 
     /**
@@ -273,6 +332,43 @@ public class Category implements Serializable {
 
     /**
      * Constructs a quantitative category for sample values in the specified range.
+     * Sample values are converted into geophysics values using the following linear
+     * equation:
+     *
+     * <center><var>x</var><code>&nbsp;=&nbsp;{@linkplain GridSampleDimension#getOffset()
+     * offset}&nbsp;+&nbsp;{@linkplain GridSampleDimension#getScale()
+     * scale}&times;</code><var>s</var></center>
+     *
+     * @param  name    The category name as a {@link String} or {@link InternationalString} object.
+     * @param  colors  A set of colors for this category. This array may have any length;
+     *                 colors will be interpolated as needed. An array of length 1 means
+     *                 that an uniform color should be used for all sample values. An array
+     *                 of length 0 or a {@code null} array means that some default colors
+     *                 should be used (usually a gradient from opaque black to opaque white).
+     * @param  sampleValueRange The range of sample values for this category. Element class
+     *                 is usually {@link Integer}, but {@link Float} and {@link Double} are
+     *                 accepted as well.
+     * @param  scale   The {@link GridSampleDimension#getScale() scale} value which is
+     *                 multiplied to sample values for this category.
+     * @param  offset  The {@link GridSampleDimension#getOffset() offset} value to add
+     *                 to sample values for this category.
+     * 
+     * @throws IllegalArgumentException if {@code lower} is not smaller than {@code upper},
+     *         or if {@code scale} or {@code offset} are not real numbers.
+     * @deprecated
+     */
+    public Category(final CharSequence name,
+                    final Color[]     colors,
+                    final NumberRange sampleValueRange,
+                    final double      scale,
+                    final double      offset) throws IllegalArgumentException
+    {
+        this(name, colors, sampleValueRange);
+    }
+
+
+    /**
+     * Constructs a quantitative category for sample values in the specified range.
      * 
      * @param  name    The category name as a {@link String} or {@link InternationalString} object.
      * @param  colors  A set of colors for this category. This array may have any length;
@@ -292,6 +388,71 @@ public class Category implements Serializable {
                     final NumberRange sampleValueRange) throws IllegalArgumentException
     {
         this(name, colors, sampleValueRange, true);
+    }
+
+    /**
+     * Constructs a quantitative category mapping samples to geophysics values in the specified
+     * range. Sample values in the {@code sampleValueRange} will be mapped to geophysics
+     * values in the {@code geophysicsValueRange} through a linear equation of the form:
+     *
+     * <center><var>x</var><code>&nbsp;=&nbsp;{@linkplain GridSampleDimension#getOffset()
+     * offset}&nbsp;+&nbsp;{@linkplain GridSampleDimension#getScale()
+     * scale}&times;</code><var>s</var></center>
+     *
+     * {@code scale} and {@code offset} coefficients are computed from the ranges supplied in
+     * arguments.
+     *
+     * @param  name    The category name as a {@link String} or {@link InternationalString} object.
+     * @param  colors  A set of colors for this category. This array may have any length;
+     *                 colors will be interpolated as needed. An array of length 1 means
+     *                 that an uniform color should be used for all sample values. An array
+     *                 of length 0 or a {@code null} array means that some default colors
+     *                 should be used (usually a gradient from opaque black to opaque white).
+     * @param  sampleValueRange The range of sample values for this category. Element class
+     *                 is usually {@link Integer}, but {@link Float} and {@link Double} are
+     *                 accepted as well.
+     * @param  geophysicsValueRange The range of geophysics values for this category.
+     *                 Element class is usually {@link Float} or {@link Double}.
+     *
+     * @throws ClassCastException if the range element class is not a {@link Number} subclass.
+     * @throws IllegalArgumentException if the range is invalid.
+     * @deprecated
+     */
+    public Category(final CharSequence name,
+                    final Color[]     colors,
+                    final NumberRange sampleValueRange,
+                    final NumberRange geophysicsValueRange) throws IllegalArgumentException
+    {
+        this(name, colors, sampleValueRange);
+    }
+
+   /**
+     * Constructs a qualitative or quantitative category for samples in the specified range.
+     * Sample values (usually integers) will be converted into geophysics values (usually
+     * floating-point) through the {@code sampleToGeophysics} transform.
+     *
+     * @param  name    The category name as a {@link String} or {@link InternationalString} object.
+     * @param  colors  A set of colors for this category. This array may have any length;
+     *                 colors will be interpolated as needed. An array of length 1 means
+     *                 that an uniform color should be used for all sample values. An array
+     *                 of length 0 or a {@code null} array means that some default colors
+     *                 should be used (usually a gradient from opaque black to opaque white).
+     * @param  sampleValueRange The range of sample values for this category. Element class
+     *                 is usually {@link Integer}, but {@link Float} and {@link Double} are
+     *                 accepted as well.
+     * @param  sampleToGeophysics A transform from sample values to geophysics values,
+     *                 or {@code null} if this category is not a quantitative one.
+     *
+     * @throws ClassCastException if the range element class is not a {@link Number} subclass.
+     * @throws IllegalArgumentException if the range is invalid.
+     * @deprecated
+     */
+    public Category(final CharSequence name,
+                    final Color[]     colors,
+                    final NumberRange sampleValueRange,
+                    final MathTransform1D sampleToGeophysics) throws IllegalArgumentException
+    {
+        this(name, colors, sampleValueRange);
     }
 
     /**
@@ -480,7 +641,19 @@ public class Category implements Serializable {
     }
 
     /**
-     * Returns {@code true} if this category is quantitative.
+     * Returns a transform from sample values to geophysics values. If this category
+     * is not a quantitative one, then this method returns {@code null}.
+     *
+     * @return The transform from sample values to geophysics values.
+     * @deprecated
+     */
+    public MathTransform1D getSampleToGeophysics() {
+        LOGGER.fine("Views aren't supported anymore: returning the Identity transform");
+        return LinearTransform1D.IDENTITY;
+    }
+    /**
+     * Returns {@code true} if this category is quantitative. A quantitative category
+     * has a non-null {@link #getSampleToGeophysics() sampleToGeophysics} transform.
      *
      * @return {@code true} if this category is quantitative, or
      *         {@code false} if this category is qualitative.
@@ -514,6 +687,71 @@ public class Category implements Serializable {
         return newCategory;
     }
 
+    /**
+     * Changes the mapping from sample to geophysics values. This method returns a category with
+     * a "{@linkplain #getSampleToGeophysics sample to geophysics}" transformation set to the
+     * specified one. Other properties like the {@linkplain #getRange sample value range}
+     * and the {@linkplain #getColors colors} are unchanged.
+     * <p>
+     * <strong>Note about geophysics categories:</strong> The above rules are straightforward
+     * when applied on non-geophysics category, but this method can be invoked on geophysics
+     * category (as returned by <code>{@linkplain #geophysics geophysics}(true)</code>) as well.
+     * Since geophysics categories are already the result of some "sample to geophysics"
+     * transformation, invoking this method on those is equivalent to {@linkplain
+     * org.opengis.referencing.operation.MathTransformFactory#createConcatenatedTransform
+     * concatenate} this "sample to geophysics" transform with the specified one.
+     *
+     * @param  sampleToGeophysics The new {@linkplain #getSampleToGeophysics sample to geophysics}
+     *         transform.
+     * @return A category using the specified transform.
+     *
+     * @see #getSampleToGeophysics
+     * @see GridSampleDimension#rescale
+     * @deprecated
+     */
+    public Category rescale(final MathTransform1D sampleToGeophysics) {
+        LOGGER.fine("Views aren't supported anymore: returning \"this\"");
+        return this;
+    }
+
+    /**
+     * Returns the {@linkplain org.geotools.coverage.grid.ViewType#GEOPHYSICS geophysics} or
+     * {@linkplain org.geotools.coverage.grid.ViewType#PACKED packed} of this category.
+     * By definition, a <cite>geophysics category</cite> is a category with a
+     * {@linkplain #getRange range of sample values} transformed in such a way that the
+     * {@linkplain #getSampleToGeophysics sample to geophysics} transform is always the
+     * {@linkplain MathTransform1D#isIdentity identity} transform, or {@code null} if no
+     * such transform existed in the first place. In other words, the range of sample values
+     * in a geophysics category maps directly the "<cite>real world</cite>" values without the
+     * need for any transformation.
+     * <p>
+     * {@code Category} objects live by pair: a
+     * {@linkplain org.geotools.coverage.grid.ViewType#GEOPHYSICS geophysics} one (used for
+     * computation) and a {@linkplain org.geotools.coverage.grid.ViewType#PACKED packed} one
+     * (used for storing data, usually as integers). The {@code geo} argument specifies which
+     * object from the pair is wanted, regardless if this method is invoked on the geophysics or
+     * packed instance of the pair.
+     * <p>
+     * Newly constructed categories are {@linkplain org.geotools.coverage.grid.ViewType#PACKED
+     * packed} (i.e. a {@linkplain #getSampleToGeophysics sample to geophysics} transform must
+     * be applied in order to gets {@linkplain org.geotools.coverage.grid.ViewType#GEOPHYSICS
+     * geophysics} values).
+     *
+     * @param  geo {@code true} to get a category with an identity
+     *         {@linkplain #getSampleToGeophysics transform} and a
+     *         {@linkplain #getRange range of values} matching the
+     *         {@linkplain org.geotools.coverage.grid.ViewType#GEOPHYSICS geophysics} values, or
+     *         {@code false} to get the {@linkplain org.geotools.coverage.grid.ViewType#PACKED
+     *         packed} category (the one constructed with {@code new Category(...)}).
+     * @return The category. Never {@code null}, but may be {@code this}.
+     *
+     * @see GridSampleDimension#geophysics
+     * @see org.geotools.coverage.grid.GridCoverage2D#view
+     * @deprecated
+     */
+    public Category geophysics(final boolean geo) {
+        return this;
+    }
 
     /**
      * Returns a hash value for this category. This value need not remain consistent between

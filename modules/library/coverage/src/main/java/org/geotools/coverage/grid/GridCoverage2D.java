@@ -32,7 +32,11 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -765,6 +769,80 @@ public class GridCoverage2D extends AbstractGridCoverage {
         if (tileIndices != null) {
             image.prefetchTiles(tileIndices);
         }
+    }
+
+    /**
+     * Returns a view of the specified type. Valid types are:
+     * <ul>
+     *   <li><p>
+     *     {@link ViewType#GEOPHYSICS GEOPHYSICS}: all sample values are equals to geophysics
+     *     ("<cite>real world</cite>") values without the need for any transformation. The
+     *     {@linkplain SampleDimension#getSampleToGeophysics sample to geophysics} transform
+     *     {@linkplain org.opengis.referencing.operation.MathTransform1D#isIdentity is identity}
+     *     for all sample dimensions. "<cite>No data</cite>" values (if any) are expressed as
+     *     {@linkplain Float#NaN NaN} numbers. This view is suitable for computation, but usually
+     *     not for rendering.
+     *   </p></li>
+     *   <li><p>
+     *     {@link ViewType#PACKED PACKED}: sample values are typically integers. A
+     *     {@linkplain SampleDimension#getSampleToGeophysics sample to geophysics} transform may
+     *     exists for converting them to "<cite>real world</cite>" values.
+     *   </p></li>
+     *   <li><p>
+     *     {@link ViewType#RENDERED RENDERED}: synonymous of {@code PACKED} for now. Will be
+     *     improved in a future version.
+     *   </p></li>
+     *   <li><p>
+     *     {@link ViewType#PHOTOGRAPHIC PHOTOGRAPHIC}: synonymous of {@code RENDERED} for now.
+     *     Will be improved in a future version.
+     *   </p></li>
+     *   <li><p>
+     *     {@link ViewType#SAME SAME}: returns {@code this} coverage unchanged.
+     *   </p></li>
+     * </ul>
+     *
+     * This method may be understood as applying the JAI's
+     * {@linkplain javax.media.jai.operator.PiecewiseDescriptor piecewise} operation with
+     * breakpoints specified by the {@link org.geotools.coverage.Category} objects in each
+     * sample dimension. However, it is more general in that the transformation specified
+     * with each breakpoint doesn't need to be linear. On an implementation note, this method
+     * tries to use the first of the following operations which is found applicable:
+     * <cite>identity</cite>,
+     * {@linkplain javax.media.jai.operator.LookupDescriptor lookup},
+     * {@linkplain javax.media.jai.operator.RescaleDescriptor rescale},
+     * {@linkplain javax.media.jai.operator.PiecewiseDescriptor piecewise} and in
+     * last ressort a more general (but slower) <cite>sample transcoding</cite> algorithm.
+     *
+     * @param  type The kind of view wanted.
+     * @return The grid coverage. Never {@code null}, but may be {@code this}.
+     *
+     * @see GridSampleDimension#geophysics
+     * @see org.geotools.coverage.Category#geophysics
+     * @see javax.media.jai.operator.LookupDescriptor
+     * @see javax.media.jai.operator.RescaleDescriptor
+     * @see javax.media.jai.operator.PiecewiseDescriptor
+     *
+     * @since 2.5
+     * @deprecated
+     */
+    public GridCoverage2D view(final ViewType type) {
+        LOGGER.fine("Views aren't supported anymore: returning \"this\"");
+        return this;
+    }
+
+    /**
+     * Returns the set of views that this coverage represents. The same coverage may be used for
+     * more than one view. For example a coverage could be valid both as a {@link ViewType#PACKED
+     * PACKED} and {@link ViewType#RENDERED RENDERED} view.
+     *
+     * @return The set of views that this coverage represents.
+     * 
+     * @since 2.5
+     * @deprecated 
+     */
+    public synchronized Set<ViewType> getViewTypes() {
+        LOGGER.fine("Views aren't supported anymore: returning empty set");
+        return Collections.EMPTY_SET;
     }
 
     /**
