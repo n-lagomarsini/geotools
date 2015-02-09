@@ -34,6 +34,7 @@ import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
+import java.awt.image.renderable.ParameterBlock;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -51,7 +52,6 @@ import javax.media.jai.Interpolation;
 import javax.media.jai.JAI;
 import javax.media.jai.RasterFactory;
 import javax.media.jai.RenderedOp;
-import javax.media.jai.operator.BandMergeDescriptor;
 import javax.media.jai.operator.ConstantDescriptor;
 
 import org.geotools.TestData;
@@ -702,11 +702,13 @@ public final class ImageWorkerTest extends GridProcessingTestBase {
     	Assert.assertEquals(minimums4a[0],minimums4b[0],1E-10);
     	
     	// now test multibands case
-    	final RenderedImage multiband=BandMergeDescriptor.create(test2, test3, null);
+    	ParameterBlock pb = new ParameterBlock();
+    	pb.addSource(test2).addSource(test3);
+    	final RenderedImage multiband=JAI.create("BandMerge", pb, null);//BandMergeDescriptor.create(test2, test3, null);
     	ImageWorker testmultibandI=new ImageWorker(multiband);
     	final double[] maximums5a = testmultibandI.getMaximums();
     	final double[] minimums5a = testmultibandI.getMinimums();    
-    	testmultibandI.rescaleToBytes();
+    	testmultibandI.rescaleToBytes().setnoData(null);
     	final double[] maximums5b = testmultibandI.getMaximums();
     	final double[] minimums5b = testmultibandI.getMinimums();
     	Assert.assertEquals(maximums5a[0],maximums5b[0],1E-10);

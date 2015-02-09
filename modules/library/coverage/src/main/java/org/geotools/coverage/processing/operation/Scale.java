@@ -16,19 +16,33 @@
  */
 package org.geotools.coverage.processing.operation;
 
+import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.range.Range;
+import it.geosolutions.jaiext.range.RangeFactory;
+import it.geosolutions.jaiext.scale.ScaleDescriptor;
+
 import java.awt.RenderingHints;
 import java.awt.image.DataBuffer;
 import java.awt.image.RenderedImage;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.media.jai.Interpolation;
 import javax.media.jai.InterpolationNearest;
 import javax.media.jai.JAI;
 import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.PlanarImage;
+import javax.media.jai.PropertyGenerator;
+import javax.media.jai.ROI;
 
+import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.BaseScaleOperationJAI;
 import org.geotools.coverage.processing.OperationJAI;
 import org.geotools.image.jai.Registry;
+import org.opengis.parameter.ParameterValueGroup;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
+import org.opengis.util.InternationalString;
 
 
 /**
@@ -114,4 +128,36 @@ public class Scale extends BaseScaleOperationJAI {
 		return image;
 	}
 	
+        protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
+            GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
+            handleROINoDataInternal(parameters, source, "Scale", 5, 7);
+        }
+
+	protected Map<String, ?> getProperties(RenderedImage data,
+			CoordinateReferenceSystem crs, InternationalString name,
+			MathTransform gridToCRS, GridCoverage2D[] sources,
+			Parameters parameters) {
+		Map props = sources[PRIMARY_SOURCE_INDEX].getProperties();
+		
+		Map properties = new HashMap<>();
+		if(props != null){
+			properties.putAll(props);
+		}
+		
+		// Setting NoData property if needed
+		Object bkgProp = parameters.parameters.getObjectParameter(8);
+		if(bkgProp != null && bkgProp instanceof double[]){
+			double[] background = (double[])bkgProp;
+			properties.put("GC_NODATA", RangeFactory.create(background[0], background[0]));
+		}
+		
+		// Setting ROI if present
+		PropertyGenerator propertyGenerator = new ScaleDescriptor().getPropertyGenerators()[0];
+		Object roiProp = propertyGenerator.getProperty("roi", data);
+		if(roiProp != null && roiProp instanceof ROI){
+			properties.put("GC_ROI", roiProp);
+		}
+		
+		return properties;
+	}
 }
