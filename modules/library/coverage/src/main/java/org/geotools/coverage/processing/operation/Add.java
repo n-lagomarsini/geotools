@@ -17,10 +17,22 @@
 package org.geotools.coverage.processing.operation;
 
 // JAI dependencies (for javadoc)
+import java.awt.image.RenderedImage;
+import java.util.Map;
+
+import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.algebra.AlgebraDescriptor.Operator;
+
+import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.operator.AddDescriptor;
 
+import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.OperationJAI;
 import org.geotools.util.NumberRange;
+import org.opengis.parameter.ParameterValueGroup;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
+import org.opengis.util.InternationalString;
 
 
 /**
@@ -82,7 +94,7 @@ public class Add extends OperationJAI {
      * Constructs a default {@code "AddConst"} operation.
      */
     public Add() {
-        super("Add");
+        super(getOperationName("Add"));
     }
 
     /**
@@ -105,5 +117,18 @@ public class Add extends OperationJAI {
         }
         return null;
     }
-   
+    
+    protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
+        GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
+        if(JAIExt.isJAIExtOperation("algebric")){
+            parameters.set(Operator.SUM, 0);
+        }
+        handleROINoDataInternal(parameters, source, "algebric", 1, 2);
+    }
+
+    protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,
+            InternationalString name, MathTransform gridToCRS, GridCoverage2D[] sources,
+            Parameters parameters) {
+        return handleROINoDataProperties(null, parameters.parameters, sources[0], "algebric", 1, 2, 3);
+    }
 }

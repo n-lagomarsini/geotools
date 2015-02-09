@@ -16,6 +16,8 @@
  */
 package org.geotools.coverage.processing.operation;
 
+import it.geosolutions.jaiext.range.Range;
+
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
@@ -53,7 +55,8 @@ import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.LiteShape2;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.image.crop.GTCropDescriptor;
+import org.geotools.image.ImageWorker;
+//import org.geotools.image.crop.GTCropDescriptor;
 import org.geotools.metadata.iso.citation.Citations;
 import org.geotools.parameter.DefaultParameterDescriptor;
 import org.geotools.parameter.DefaultParameterDescriptorGroup;
@@ -176,14 +179,16 @@ public class Crop extends Operation2D {
 		}
 		GFACTORY = new GeometryFactory(pm, 0);
 		
-        // Register manually the GTCrop operation, in web containers JAI registration may fails
-        GTCropDescriptor.register();
+//        // Register manually the GTCrop operation, in web containers JAI registration may fails
+//        GTCropDescriptor.register();
 	}
 
     public static final String PARAMNAME_ENVELOPE = "Envelope";
     public static final String PARAMNAME_ROI = "ROI";
     public static final String PARAMNAME_ROITOLERANCE = "ROITolerance";
     public static final String PARAMNAME_FORCEMOSAIC = "ForceMosaic";
+    public static final String PARAMNAME_NODATA = "NoData";
+    public static final String PARAMNAME_DEST_NODATA = "destNoData";
 
 	/**
 	 * The parameter descriptor used to pass this operation the envelope to use
@@ -246,13 +251,39 @@ public class Crop extends Operation2D {
 			null,  // Maximal value
 			null, // Unit of measure
 			true); // Parameter is optional
+	
+        /**
+         * The parameter descriptor used to tell this operation to check NoData
+         */
+        public static final ParameterDescriptor<Range> NODATA = new DefaultParameterDescriptor<Range>(
+                        Citations.JAI, PARAMNAME_NODATA,
+                        Range.class, // Value class
+                        null, // Array of valid values
+                        null,  // Default value
+                        null,  // Minimal value
+                        null,  // Maximal value
+                        null, // Unit of measure
+                        true); // Parameter is optional
+        
+        /**
+         * The parameter descriptor used to tell this operation to set destinationNoData
+         */
+        public static final ParameterDescriptor<double[]> DEST_NODATA = new DefaultParameterDescriptor<double[]>(
+                        Citations.JAI, PARAMNAME_DEST_NODATA,
+                        double[].class, // Value class
+                        null, // Array of valid values
+                        null,  // Default value
+                        null,  // Minimal value
+                        null,  // Maximal value
+                        null, // Unit of measure
+                        true); // Parameter is optional 
 
     /**
      * Constructs a default {@code "Crop"} operation.
      */
 	public Crop() {
-		super(new DefaultParameterDescriptorGroup(Citations.GEOTOOLS,
-				"CoverageCrop", new ParameterDescriptor[] { SOURCE_0,
+		super(new DefaultParameterDescriptorGroup(Citations.JAI,
+				"Crop", new ParameterDescriptor[] { SOURCE_0,
 						CROP_ENVELOPE, CROP_ROI,
 						ROI_OPTIMISATION_TOLERANCE,
 						FORCE_MOSAIC}));
@@ -273,6 +304,8 @@ public class Crop extends Operation2D {
         final GridCoverage2D source; // extracted from parameters
         final double roiTolerance = parameters.parameter(Crop.PARAMNAME_ROITOLERANCE).doubleValue();
         final boolean forceMosaic = parameters.parameter(Crop.PARAMNAME_FORCEMOSAIC).booleanValue();
+        Range nodata = (Range) parameters.parameter(Crop.PARAMNAME_NODATA).getValue();
+        double[] destnodata = (double[]) parameters.parameter(Crop.PARAMNAME_DEST_NODATA).getValue();
 
 		// /////////////////////////////////////////////////////////////////////
 		//
@@ -289,6 +322,11 @@ public class Crop extends Operation2D {
             throw new CannotCropException(Errors.format(ErrorKeys.NULL_PARAMETER_$2, "Source", GridCoverage2D.class.toString()));
         }
         source = (GridCoverage2D) sourceParameter.getValue();
+        
+        // Getting NoData value if not defined
+        if(nodata == null){
+            nodata = (Range) source.getProperty("GC_NODATA");
+        }
 
         // Check Envelope and ROI existence - we need at least one of them
         final ParameterValue envelopeParameter = parameters.parameter(PARAMNAME_ENVELOPE);
@@ -374,7 +412,13 @@ public class Crop extends Operation2D {
             if( ! IntersectUtils.intersects(cropRoi, jis))
                 throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
         }
-
+                // //
+                //
+                // Get the inner ROI object contained as property. It is in Raster space
+                //
+                // //
+                ROI internalROI = (ROI) source.getProperty("GC_NODATA");
+                
 		// //
 		//
 		// Get the grid-to-world transform by keeping into account translation
@@ -393,9 +437,12 @@ public class Crop extends Operation2D {
 		//
 		// //
 		final double tolerance = XAffineTransform.getScale(sourceCornerGridToWorld);
-		if (cropRoi != null || !intersectionEnvelope.equals(sourceEnvelope, tolerance / 2.0, false)) {
+		if (internalROI != null || cropRoi != null || !intersectionEnvelope.equals(sourceEnvelope, tolerance / 2.0, false)) {
             cropEnvelope = intersectionEnvelope.clone();
 			return buildResult(
+			                internalROI,
+					nodata, 
+					destnodata,
 					cropEnvelope, 
 					cropRoi, 
 					roiTolerance,
@@ -422,6 +469,9 @@ public class Crop extends Operation2D {
 
 	/**
 	 * Applies the band select operation to a grid coverage.
+	 * @param internalROI internal ROI contained as property
+	 * @param nodata Range used for checking NoData
+	 * @param destnodata value used for defining NoData
 	 *
 	 * @param cropEnvelope the target envelope; always not null
      * @param cropROI the target ROI shape; nullable
@@ -437,10 +487,12 @@ public class Crop extends Operation2D {
 	 * @return The result as a grid coverage.
 	 */
 	private static GridCoverage2D buildResult(
-			final GeneralEnvelope cropEnvelope,
-            final Geometry cropROI,
-            final double roiTolerance,
-            final boolean forceMosaic,
+			ROI internalROI,
+			Range nodata,
+			double[] destnodata, final GeneralEnvelope cropEnvelope,
+                        final Geometry cropROI,
+                        final double roiTolerance,
+                        final boolean forceMosaic,
 			final Hints hints,
 			final GridCoverage2D sourceCoverage,
 			final AffineTransform sourceGridToWorldTransform) {
@@ -555,9 +607,11 @@ public class Crop extends Operation2D {
 			//
 			// //
 			final PlanarImage croppedImage;
-			final ParameterBlock pbj = new ParameterBlock();
-			pbj.addSource(sourceImage);
+			//final ParameterBlock pbj = new ParameterBlock();
+			ImageWorker worker = new ImageWorker(sourceImage);
+			//pbj.addSource(sourceImage);
 			java.awt.Polygon rasterSpaceROI=null;
+			double[] background = destnodata != null ? destnodata : CoverageUtilities.getBackgroundValues(sourceCoverage);
             String operatioName=null;
             if (!isSimpleTransform || cropROI!=null) {
                 // /////////////////////////////////////////////////////////////////////
@@ -581,27 +635,30 @@ public class Crop extends Operation2D {
 		            if(finalRasterArea.isEmpty())
 		            	throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
 				final boolean doMosaic = forceMosaic ? true : decideJAIOperation(roiTolerance, rasterSpaceROI.getBounds2D(), points);
-				if (doMosaic || cropROI != null) {
+				if (doMosaic || cropROI != null || internalROI != null || nodata != null) {
 					// prepare the params for the mosaic
                     final ROI[] roiarr;
                     try {
                         if(cropROI != null) {
                             final Shape cropRoiLS2 = new LiteShape2(cropROI, ProjectiveTransform.create(sourceWorldToGridTransform), null, false);
-                            final ROIShape cropRS = new ROIShape(cropRoiLS2);
+                            ROI cropRS = new ROIShape(cropRoiLS2);
                             roiarr = new ROI[]{cropRS};
                         } else {
-                            final ROIShape roi = new ROIShape(rasterSpaceROI);
+                            ROI roi = new ROIShape(rasterSpaceROI);
                             roiarr = new ROI[]{roi};
+                        }
+                        if(roiarr[0].getBounds().isEmpty()){
+                            throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP));
                         }
                     } catch (FactoryException ex) {
 						throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP), ex);
                     }
-					pbj.add(MosaicDescriptor.MOSAIC_TYPE_OVERLAY);
-					pbj.add(null);
-					pbj.add(roiarr);
-					pbj.add(null);
- 					pbj.add(CoverageUtilities.getBackgroundValues(sourceCoverage));
-
+                                        worker.setROI(roiarr[0]);
+                                        worker.setnoData(nodata);
+                                        worker.setDestinationNoData(background);
+                                        
+                                        
+ 					
  					//prepare the final layout
 					final Rectangle bounds = rasterSpaceROI.getBounds2D().getBounds();
 					Rectangle.intersect(bounds, sourceGridRange, bounds);
@@ -610,7 +667,7 @@ public class Crop extends Operation2D {
 
 					// we do not have to crop in this case (should not really happen at
                     // this time)
-                    if (!doMosaic && bounds.getBounds().equals(sourceGridRange) && isSimpleTransform)
+                    if (!doMosaic && bounds.getBounds().equals(sourceGridRange) && isSimpleTransform && nodata == null)
                             return sourceCoverage;
 
 
@@ -621,6 +678,9 @@ public class Crop extends Operation2D {
 					layout.setMinY(boundsInt.y);
 					layout.setHeight( boundsInt.height);
 					operatioName = "Mosaic";
+					
+					worker.setRenderingHints(targetHints);
+					worker.mosaic(null, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, null, null, null);
 				}
 
 			}
@@ -628,22 +688,21 @@ public class Crop extends Operation2D {
             //do we still have to set the operation name? If so that means we have to go for crop.
             if(operatioName==null) {
                 // executing the crop
-                pbj.add((float) minX);
-                pbj.add((float) minY);
-                pbj.add((float) width);
-                pbj.add((float) height);
-                operatioName = "GTCrop";
+                worker.setRenderingHints(targetHints);
+                worker.crop((float) minX, (float) minY, (float) width, (float) height);
+                operatioName = "Crop";
             }
             // //
             //
             // Apply operation
             //
             // //
-            if (!useProvidedProcessor) {
-                croppedImage = JAI.create(operatioName, pbj, targetHints);
-            } else {
-                croppedImage = processor.createNS(operatioName, pbj, targetHints);
-            }
+//            if (!useProvidedProcessor) {
+//                croppedImage = JAI.create(operatioName, pbj, targetHints);
+//            } else {
+//                croppedImage = processor.createNS(operatioName, pbj, targetHints);
+//            }
+            croppedImage = worker.getPlanarImage();
 
 		    //conserve the input grid to world transformation
             Map sourceProperties = sourceCoverage.getProperties();
@@ -651,12 +710,21 @@ public class Crop extends Operation2D {
             if (sourceProperties != null && !sourceProperties.isEmpty()) {
                 properties = new HashMap(sourceProperties);
             }
-            if (rasterSpaceROI != null) {
-                if (properties != null) {
-                    properties.put("GC_ROI", rasterSpaceROI); 
-                } else {
-                    properties = Collections.singletonMap("GC_ROI", rasterSpaceROI); 
+            if (rasterSpaceROI != null || internalROI != null) {
+                ROI rsROI = new ROIShape(rasterSpaceROI);
+                ROI finalROI = internalROI.intersect(rsROI);
+                
+                if (properties == null) {
+                    properties = new HashMap(); 
                 }
+                properties.put("GC_ROI", finalROI); 
+            }
+            
+            if(worker.getNoData() != null ){
+                if (properties == null) {
+                    properties = new HashMap(); 
+                }
+                properties.put("GC_NODATA", worker.getNoData()); 
             }
             
             return new GridCoverageFactory(hints).create(

@@ -16,12 +16,17 @@
  */
 package org.geotools.coverage.processing;
 
+import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.range.Range;
+import it.geosolutions.jaiext.range.RangeFactory;
+
 import java.awt.RenderingHints;
 import java.awt.image.ColorModel;
 import java.awt.image.RenderedImage;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,6 +37,7 @@ import javax.media.jai.JAI;
 import javax.media.jai.OperationDescriptor;
 import javax.media.jai.OperationRegistry;
 import javax.media.jai.ParameterBlockJAI;
+import javax.media.jai.ROI;
 import javax.media.jai.registry.RenderedRegistryMode;
 
 import org.geotools.coverage.Category;
@@ -225,6 +231,7 @@ public class OperationJAI extends Operation2D {
         final ImagingParameters copy = (ImagingParameters) descriptor.createValue();
         final ParameterBlockJAI block = (ParameterBlockJAI) copy.parameters;
         org.geotools.parameter.Parameters.copy(parameters, copy);
+        handleJAIEXTParams(block, parameters);
         return block;
     }
 
@@ -1071,6 +1078,105 @@ public class OperationJAI extends Operation2D {
                 }
             }
             return null;
+        }
+    }
+
+    /**
+     * Utility method for substituting the JAI operation names with the AJI-EXT ones, if they are present
+     * 
+     * @param name
+     * @return
+     */
+    protected static String getOperationName(String name) {
+        if (JAIExt.isJAIExtOperation("Stats")
+                && (name.equalsIgnoreCase("Extrema") || name.equalsIgnoreCase("Histogram"))) {
+            return "Stats";
+        } else if (JAIExt.isJAIExtOperation("algebric")
+                && (name.equalsIgnoreCase("Add") || name.equalsIgnoreCase("Exp")
+                        || name.equalsIgnoreCase("Invert") || name.equalsIgnoreCase("Log") || name
+                            .equalsIgnoreCase("Multiply"))) {
+            return "algebric";
+        } else if (JAIExt.isJAIExtOperation("operationConst")
+                && (name.equalsIgnoreCase("AddConst") || name.equalsIgnoreCase("DivideByConst")
+                        || name.equalsIgnoreCase("MultiplyConst")
+                        || name.equalsIgnoreCase("SubtractConst") || name
+                            .equalsIgnoreCase("SubtractFromConst"))) {
+            return "operationConst";
+        }
+
+        return name;
+    }
+    
+    protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
+        return;
+    }
+    
+    protected static Map<String, Object> handleROINoDataProperties(Map<String, Object> properties,
+            ParameterBlockJAI parameters, GridCoverage2D sourceCoverage, String operationName,
+            int roiIndex, int noDataIndex, int backgroundIndex) {
+        Map<String, Object> prop = new HashMap<>();
+        if (properties != null) {
+            prop.putAll(properties);
+        }
+        // Setting the internal properties
+        if (JAIExt.isJAIExtOperation(operationName)) {
+            ROI roiParam = (ROI) parameters.getObjectParameter(roiIndex);
+            if (roiParam != null) {
+                properties.put("GC_ROI", roiParam);
+            }
+
+            Range noDataParam = (Range) parameters.getObjectParameter(noDataIndex);
+            if (noDataParam != null || roiParam != null) {
+                // NoData must be set
+                // Background has been set?
+                Object background = parameters.getObjectParameter(backgroundIndex);
+                if (background != null) {
+                    if (background instanceof double[]) {
+                        double[] bkg = (double[]) background;
+                        properties.put("GC_NODATA", RangeFactory.create(bkg[0], bkg[0]));
+                    } else if (background instanceof Number) {
+                        Number bkg = (Number) background;
+                        properties.put("GC_NODATA",
+                                RangeFactory.create(bkg.doubleValue(), bkg.doubleValue()));
+                    } else {
+                        // Undefined, set 0
+                        properties.put("GC_NODATA", RangeFactory.create(0d, 0d));
+                    }
+                } else {
+                    // Set 0 as NoData
+                    properties.put("GC_NODATA", RangeFactory.create(0d, 0d));
+                }
+            }
+        }
+        return prop;
+    }
+    
+    
+    protected static void handleROINoDataInternal(ParameterBlockJAI parameters,
+            GridCoverage2D sourceCoverage, String operationName, int roiIndex, int noDataIndex){
+        // Getting the internal ROI property
+        Object roiProp = sourceCoverage.getProperty("GC_ROI");
+        ROI innerROI = (ROI) ((roiProp != null && roiProp instanceof ROI) ? roiProp : null);  
+        
+        if(JAIExt.isJAIExtOperation(operationName)){
+                ROI roiParam = (ROI) parameters.getObjectParameter(roiIndex);
+                ROI newROI = null;
+                if(innerROI == null ){
+                        newROI = roiParam;
+                } else {
+                        newROI = roiParam != null ? innerROI.add(roiParam) : innerROI;
+                }
+                parameters.set(newROI, roiIndex);
+        }
+        
+        
+        Object nodataProp = sourceCoverage.getProperty("GC_NODATA");
+        Range innerNodata = (Range) ((nodataProp != null && nodataProp instanceof Range) ? nodataProp : null);  
+        if(JAIExt.isJAIExtOperation(operationName)){
+                Range noDataParam = (Range) parameters.getObjectParameter(noDataIndex);
+                if(noDataParam == null ){
+                        parameters.set(innerNodata, noDataIndex);
+                }
         }
     }
 }

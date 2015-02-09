@@ -410,6 +410,22 @@ public class CoverageProcessor {
 				}
 			}
 
+        /**
+         * Removes the specified operation to this processor. This method is usually invoked at construction time before this processor is made accessible.
+         * 
+         * @param operation The operation to remove.
+         */
+        protected void removeOperation(final Operation operation) {
+            Utilities.ensureNonNull("operation", operation);
+            synchronized (operations) {
+    
+                if (operations.isEmpty()) {
+                    return;
+                }
+                operations.remove(operation.getName().trim());
+            }
+        }	
+
 	/**
 	 * Implementation of {@link #addOperation} method. Also used by {@link #scanForPlugins}
 	 * instead of the public method in order to avoid never-ending loop.
