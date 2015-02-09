@@ -16,6 +16,11 @@
  */
 package org.geotools.image;
 
+import it.geosolutions.jaiext.ConcurrentOperationRegistry;
+import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.range.Range;
+import it.geosolutions.jaiext.stats.Statistics.StatsType;
+
 import java.awt.Color;
 import java.awt.HeadlessException;
 import java.awt.Image;
@@ -74,29 +79,6 @@ import javax.media.jai.TileCache;
 import javax.media.jai.Warp;
 import javax.media.jai.WarpAffine;
 import javax.media.jai.WarpGrid;
-import javax.media.jai.operator.AddConstDescriptor;
-import javax.media.jai.operator.AddDescriptor;
-import javax.media.jai.operator.AffineDescriptor;
-import javax.media.jai.operator.AndDescriptor;
-import javax.media.jai.operator.BandCombineDescriptor;
-import javax.media.jai.operator.BandMergeDescriptor;
-import javax.media.jai.operator.BandSelectDescriptor;
-import javax.media.jai.operator.BinarizeDescriptor;
-import javax.media.jai.operator.ColorConvertDescriptor;
-import javax.media.jai.operator.ConstantDescriptor;
-import javax.media.jai.operator.ErrorDiffusionDescriptor;
-import javax.media.jai.operator.ExtremaDescriptor;
-import javax.media.jai.operator.FormatDescriptor;
-import javax.media.jai.operator.InvertDescriptor;
-import javax.media.jai.operator.LookupDescriptor;
-import javax.media.jai.operator.MultiplyConstDescriptor;
-import javax.media.jai.operator.NotDescriptor;
-import javax.media.jai.operator.NullDescriptor;
-import javax.media.jai.operator.OrderedDitherDescriptor;
-import javax.media.jai.operator.RescaleDescriptor;
-import javax.media.jai.operator.ScaleDescriptor;
-import javax.media.jai.operator.XorConstDescriptor;
-import javax.media.jai.registry.RenderedRegistryMode;
 
 import org.geotools.factory.Hints;
 import org.geotools.image.crop.GTCropDescriptor;
@@ -145,6 +127,13 @@ public class ImageWorker {
 
     /** CODEC_LIB_AVAILABLE */
     private static final boolean CODEC_LIB_AVAILABLE = PackageUtil.isCodecLibAvailable();
+    
+    /** Registration of the JAI-EXT operations*/
+    static{
+        ConcurrentOperationRegistry registry = (ConcurrentOperationRegistry) ConcurrentOperationRegistry.initializeRegistry();
+        JAIExt.initJAIEXT(registry);
+        JAI.getDefaultInstance().setOperationRegistry(registry);
+    }
 
     /** JDK_JPEG_IMAGE_WRITER_SPI */
     private static final ImageWriterSpi JDK_JPEG_IMAGE_WRITER_SPI;
@@ -346,6 +335,11 @@ public class ImageWorker {
      * The region of interest, or {@code null} if none.
      */
     private ROI roi;
+    
+    /**
+     * The NoData range to check nodata, or {@code null} if none.
+     */
+    private Range nodata;
 
     /**
      * The rendering hints to provides to all image operators. Additional hints may be set (in a separated {@link RenderingHints} object) for
@@ -495,7 +489,12 @@ public class ImageWorker {
         if (image instanceof RenderedOp) {
             return (RenderedOp) image;
         }
-        return NullDescriptor.create(image, getRenderingHints());
+        // Creating a parameter block 
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0);
+        // TODO COPY PROPERTIES HERE?
+        // Executing the operation
+        return JAI.create("Null", pb,  getRenderingHints());
     }
 
     /**
@@ -525,6 +524,15 @@ public class ImageWorker {
     public final ROI getROI() {
         return roi;
     }
+    
+    /**
+     * Returns the <cite>NoData Range</cite> currently set, or {@code null} if none. The default value is {@code null}.
+     * 
+     * @return The current NoData Range.
+     */
+    public final Range getNoData() {
+        return nodata;
+    }
 
     /**
      * Set the <cite>region of interest</cite> (ROI). A {@code null} set the ROI to the whole {@linkplain #image}. The ROI is used by statistical
@@ -538,6 +546,19 @@ public class ImageWorker {
      */
     public final ImageWorker setROI(final ROI roi) {
         this.roi = roi;
+        invalidateStatistics();
+        return this;
+    }
+    
+    /**
+     * Set the <cite>NoData Range</cite> for checking NoData during computation.
+     * 
+     * @param nodata The new NoData Range.
+     * @return This ImageWorker
+     * 
+     */
+    public final ImageWorker setnoData(final Range nodata) {
+        this.nodata = nodata;
         invalidateStatistics();
         return this;
     }
@@ -771,6 +792,13 @@ public class ImageWorker {
         Object extrema = getComputedProperty(EXTREMA);
         if (!(extrema instanceof double[][])) {
             final Integer ONE = 1;
+            StatsType[] stats = new StatsType[]{StatsType.EXTREMA};
+            // Create the parameterBlock
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0);
+            pb.set();
+            
+            
             image = ExtremaDescriptor.create(image, // The source image.
                     roi, // The region of the image to scan. Default to all.
                     ONE, // The horizontal sampling rate. Default to 1.
@@ -779,6 +807,7 @@ public class ImageWorker {
                     ONE, // Maximum number of run length codes to store. Default to 1.
                     getRenderingHints());
             extrema = getComputedProperty(EXTREMA);
+            
         }
         return (double[][]) extrema;
     }
