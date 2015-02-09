@@ -16,15 +16,20 @@
  */
 package org.geotools.resources.coverage;
 
+import it.geosolutions.jaiext.range.NoDataContainer;
+import it.geosolutions.jaiext.range.Range;
+
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.DataBuffer;
 import java.awt.image.RenderedImage;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageReadParam;
 import javax.media.jai.PropertySource;
+import javax.media.jai.ROI;
 
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
@@ -196,6 +201,48 @@ public final class CoverageUtilities {
         // Following may thrown MismatchedDimensionException.
         return new Envelope2D(coverage.getEnvelope());
     }
+    
+    public static NoDataContainer getNoDataProperty(GridCoverage2D coverage){
+        final Object noData = coverage.getProperty(NoDataContainer.GC_NODATA);
+        if(noData != null){
+            if(noData instanceof NoDataContainer){
+                return (NoDataContainer) noData;
+            }else if(noData instanceof Double){
+                return new NoDataContainer((Double)noData);
+            }
+        }
+        return null;
+    }
+    
+    public static ROI getROIProperty(GridCoverage2D coverage){
+        final Object roi = coverage.getProperty("GC_ROI");
+        if(roi != null && roi instanceof ROI){
+            return (ROI) roi;
+        }
+        return null;
+    }
+    
+    public static void setNoDataProperty(Map<String, Object> properties, Object noData){
+        if(noData == null || properties == null){
+            return;
+        }
+        if(noData instanceof Range){
+            properties.put(NoDataContainer.GC_NODATA, new NoDataContainer((Range) noData));
+        }else if(noData instanceof Double){
+            properties.put(NoDataContainer.GC_NODATA, new NoDataContainer((Double) noData));
+        }else if(noData instanceof double[]){
+            properties.put(NoDataContainer.GC_NODATA, new NoDataContainer((double[]) noData));
+        }else if(noData instanceof NoDataContainer){
+            properties.put(NoDataContainer.GC_NODATA, new NoDataContainer((NoDataContainer) noData));
+        }
+    }
+    
+    public static void setROIProperty(Map<String, Object> properties, ROI roi){
+        if(roi == null || properties == null){
+            return;
+        }
+        properties.put("GC_ROI", roi);
+    }
 
     /**
      * Retrieves a best guess for the sample value to use for background,
@@ -212,9 +259,10 @@ public final class CoverageUtilities {
 		}
 		
 		// try to get the GC_NODATA double value from the coverage property
-		final Object noData=coverage.getProperty("GC_NODATA");
-		if(noData!=null&& noData instanceof Number){
-			return new double[]{((Double)noData).doubleValue()};
+		final Object noData=coverage.getProperty(NoDataContainer.GC_NODATA);
+		if(noData!=null&& noData instanceof NoDataContainer){
+			return ((NoDataContainer)noData).getAsArray();
+			        //new double[]{((Double)noData).doubleValue()};
 		}
 		
         ////
