@@ -18,7 +18,12 @@ package org.geotools.image;
 
 import it.geosolutions.jaiext.ConcurrentOperationRegistry;
 import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.colorconvert.IHSColorSpaceJAIExt;
+import it.geosolutions.jaiext.lookup.LookupTable;
+import it.geosolutions.jaiext.lookup.LookupTableFactory;
 import it.geosolutions.jaiext.range.Range;
+import it.geosolutions.jaiext.range.RangeFactory;
+import it.geosolutions.jaiext.stats.Statistics;
 import it.geosolutions.jaiext.stats.Statistics.StatsType;
 
 import java.awt.Color;
@@ -79,6 +84,8 @@ import javax.media.jai.TileCache;
 import javax.media.jai.Warp;
 import javax.media.jai.WarpAffine;
 import javax.media.jai.WarpGrid;
+import javax.media.jai.operator.ConstantDescriptor;
+import javax.media.jai.registry.RenderedRegistryMode;
 
 import org.geotools.factory.Hints;
 import org.geotools.image.crop.GTCropDescriptor;
@@ -340,6 +347,11 @@ public class ImageWorker {
      * The NoData range to check nodata, or {@code null} if none.
      */
     private Range nodata;
+    
+    /**
+     * Array of values used for indicating the background values
+     */
+    private double[] destNoData;
 
     /**
      * The rendering hints to provides to all image operators. Additional hints may be set (in a separated {@link RenderingHints} object) for
@@ -535,6 +547,15 @@ public class ImageWorker {
     }
 
     /**
+     * Returns the <cite>NoData Range</cite> currently set, or {@code null} if none. The default value is {@code null}.
+     * 
+     * @return The current NoData Range.
+     */
+    public final double[] getDestinationNoData() {
+        return destNoData;
+    }
+
+    /**
      * Set the <cite>region of interest</cite> (ROI). A {@code null} set the ROI to the whole {@linkplain #image}. The ROI is used by statistical
      * methods like {@link #getMinimums} and {@link #getMaximums}.
      * 
@@ -559,6 +580,19 @@ public class ImageWorker {
      */
     public final ImageWorker setnoData(final Range nodata) {
         this.nodata = nodata;
+        invalidateStatistics();
+        return this;
+    }
+
+    /**
+     * Set the <cite>NoData Range</cite> for checking NoData during computation.
+     * 
+     * @param nodata The new NoData Range.
+     * @return This ImageWorker
+     * 
+     */
+    public final ImageWorker setDestinationNoData(final double[] destNoData) {
+        this.destNoData = destNoData;
         invalidateStatistics();
         return this;
     }
@@ -792,22 +826,50 @@ public class ImageWorker {
         Object extrema = getComputedProperty(EXTREMA);
         if (!(extrema instanceof double[][])) {
             final Integer ONE = 1;
-            StatsType[] stats = new StatsType[]{StatsType.EXTREMA};
             // Create the parameterBlock
             ParameterBlock pb = new ParameterBlock();
             pb.setSource(image, 0);
-            pb.set();
-            
-            
-            image = ExtremaDescriptor.create(image, // The source image.
-                    roi, // The region of the image to scan. Default to all.
-                    ONE, // The horizontal sampling rate. Default to 1.
-                    ONE, // The vertical sampling rate. Default to 1.
-                    null, // Whether to store extrema locations. Default to false.
-                    ONE, // Maximum number of run length codes to store. Default to 1.
-                    getRenderingHints());
+            if(JAIExt.isJAIExtOperation("Stats")){
+                StatsType[] stats = new StatsType[]{StatsType.EXTREMA};
+                // Band definition
+                int numBands = getNumBands();
+                int[] bands = new int[numBands];
+                for(int i = 0; i < numBands; i++){
+                    bands[i] = i;
+                }
+
+                // Image parameters
+                pb.set(ONE, 0); //xPeriod
+                pb.set(ONE, 1); //yPeriod
+                pb.set(roi, 2); //ROI
+                pb.set(nodata,3); //NoData
+                pb.set(bands,5); // band indexes
+                pb.set(stats, 6); // statistic operation
+                image = JAI.create("Stats", pb, getRenderingHints());
+                // Retrieving the statistics
+                Statistics[][] results = (Statistics[][]) getComputedProperty(Statistics.STATS_PROPERTY);
+                double[][] ext = new double[2][numBands];
+                for(int i = 0; i < numBands; i++){
+                    double[] extBand = (double[]) results[i][0].getResult();
+                    ext[i][0] = extBand[0]; 
+                    ext[i][1] = extBand[1];
+                }
+                // Setting the property
+                if(image instanceof PlanarImage){
+                    ((PlanarImage)image).setProperty(EXTREMA, ext);
+                }else{
+                    PlanarImage p = getPlanarImage();
+                    p.setProperty(EXTREMA, ext);
+                    image = p;
+                }
+            }else{
+                pb.set(roi, 0); // The region of the image to scan. Default to all.
+                pb.set(ONE, 1); // The horizontal sampling rate. Default to 1.
+                pb.set(ONE, 2); // The vertical sampling rate. Default to 1.
+                pb.set(ONE, 4); // Maximum number of run length codes to store. Default to 1.
+                image = JAI.create("Extrema", pb, getRenderingHints());
+            }
             extrema = getComputedProperty(EXTREMA);
-            
         }
         return (double[][]) extrema;
     }
@@ -931,7 +993,7 @@ public class ImageWorker {
         if (cm == null) {
             return false;
         }
-        return cm.getColorSpace() instanceof IHSColorSpace;
+        return cm.getColorSpace() instanceof IHSColorSpace || cm.getColorSpace() instanceof IHSColorSpaceJAIExt;
     }
 
     /**
@@ -1006,15 +1068,30 @@ public class ImageWorker {
             }
         }
         final RenderingHints hints = getRenderingHints(DataBuffer.TYPE_BYTE);
-        if (computeRescale)
-            image = RescaleDescriptor.create(image, // The source image.
-                    scale, // The per-band constants to multiply by.
-                    offset, // The per-band offsets to be added.
-                    hints); // The rendering hints.
-        else
-            image = FormatDescriptor.create(image, // The source image.
-                    DataBuffer.TYPE_BYTE, // The destination image data type (BYTE)
-                    hints); // The rendering hints.
+        if (computeRescale){
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0); // The source image.
+            pb.set(scale, 0); // The per-band constants to multiply by.
+            pb.set(offset, 1); // The per-band offsets to be added.
+            pb.set(roi, 2); // ROI
+            pb.set(nodata, 3); // NoData range
+            if(destNoData != null && destNoData.length > 0){
+                pb.set(destNoData[0], 5); // destination No Data value
+                // We must set the new NoData value
+                setnoData(RangeFactory.create((byte)destNoData[0], (byte)destNoData[0]));
+            }else{
+                setnoData(RangeFactory.create((byte)0, (byte)0));
+            }
+
+            image = JAI.create("Rescale", pb, hints);
+        }else{
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0); // The source image.
+            pb.set(DataBuffer.TYPE_BYTE, 0); // The destination image data type (BYTE)
+            
+            image = JAI.create("Format", pb, hints);
+            setnoData(RangeFactory.convert(nodata, DataBuffer.TYPE_BYTE));
+        }
         invalidateStatistics(); // Extremas are no longer valid.
 
         // All post conditions for this method contract.
@@ -1051,25 +1128,53 @@ public class ImageWorker {
         forceColorSpaceRGB();
         final RenderingHints hints = getRenderingHints();
         if (error) {
-            // color quantization
-            // final RenderedOp temp = ColorQuantizerDescriptor.create(image,
-            // ColorQuantizerDescriptor.MEDIANCUT, new Integer(254),
-            // new Integer(200), null, new Integer(1), new Integer(1),
-            // getRenderingHints());
-            // final ImageLayout layout= new ImageLayout();
-            // layout.setColorModel(temp.getColorModel());
-            // hints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,layout));
-
             // error diffusion
             final KernelJAI ditherMask = KernelJAI.ERROR_FILTER_FLOYD_STEINBERG;
             final LookupTableJAI colorMap = ColorCube.BYTE_496;
-            // (LookupTableJAI) temp.getProperty("JAI.LookupTable");
-            image = ErrorDiffusionDescriptor.create(image, colorMap, ditherMask, hints);
+            
+            // Creation of the ParameterBlock
+            ParameterBlock pb = new ParameterBlock();
+            // Setting source
+            pb.setSource(image, 0);
+            // Setting parameters
+            pb.set(colorMap, 0);
+            pb.set(ditherMask, 1);
+            pb.set(roi, 2);
+            pb.set(nodata, 3);
+            if(destNoData != null && destNoData.length > 0){
+                int dest = (int)destNoData[0];
+                pb.set(dest, 4);
+                // We must set the new NoData value
+                setnoData(RangeFactory.create(dest, dest));
+            }else{
+                setnoData(RangeFactory.create((int)0, (int)0));
+            }
+            
+            image = JAI.create("ErrorDiffusion", pb, hints);
         } else {
             // ordered dither
             final KernelJAI[] ditherMask = KernelJAI.DITHER_MASK_443;
             final ColorCube colorMap = ColorCube.BYTE_496;
-            image = OrderedDitherDescriptor.create(image, colorMap, ditherMask, hints);
+            
+            // Creation of the ParameterBlock
+            ParameterBlock pb = new ParameterBlock();
+            // Setting source
+            pb.setSource(image, 0);
+            // Setting parameters
+            pb.set(colorMap, 0);
+            pb.set(ditherMask, 1);
+            pb.set(roi, 2);
+            pb.set(nodata, 3);
+            if(destNoData != null && destNoData.length > 0){
+                int dest = (int)destNoData[0];
+                pb.set(dest, 4);
+                // We must set the new NoData value
+                setnoData(RangeFactory.create(dest, dest));
+            }else{
+                setnoData(RangeFactory.create((int)0, (int)0));
+            }
+            
+            image = JAI.create("OrderedDither", pb, hints);
         }
         tileCacheEnabled(true);
         invalidateStatistics();
@@ -1150,19 +1255,19 @@ public class ImageWorker {
             if (newPixelSize > 16)
                 throw new IllegalArgumentException(
                         "Unable to create index color model with more than 65536 elements");
-            final LookupTableJAI lookupTable;
+            final LookupTable lookupTable;
             if (newPixelSize <= 8) {
                 final byte[] table = new byte[mapSize];
                 for (int i = 0; i < mapSize; i++) {
                     table[i] = (byte) ((oldCM.getAlpha(i) == 0) ? suggestedTransparent : i);
                 }
-                lookupTable = new LookupTableJAI(table);
+                lookupTable = LookupTableFactory.create(table, image.getSampleModel().getDataType());
             } else {
                 final short[] table = new short[mapSize];
                 for (int i = 0; i < mapSize; i++) {
                     table[i] = (short) ((oldCM.getAlpha(i) == 0) ? suggestedTransparent : i);
                 }
-                lookupTable = new LookupTableJAI(table, true);
+                lookupTable = LookupTableFactory.create(table, true, image.getSampleModel().getDataType());
             }
             /*
              * Now we need to perform the look up transformation. First of all we create the new color model with a bitmask transparency using the
@@ -1180,10 +1285,30 @@ public class ImageWorker {
             // we should not transform on color map here
             hints.put(JAI.KEY_TRANSFORM_ON_COLORMAP, Boolean.FALSE);
             hints.put(JAI.KEY_IMAGE_LAYOUT, layout);
-            image = LookupDescriptor.create(image, lookupTable, hints);
-
-            // workaround bug in Lookup since it looks like it is switching 255 and 254
-            image = FormatDescriptor.create(image, image.getSampleModel().getDataType(), hints);
+            
+            // ParameterBlock definition
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0);
+            pb.set(lookupTable, 0);
+            if(destNoData != null && destNoData.length > 0){
+                pb.set(destNoData[0], 1);
+                // We must set the new NoData value
+                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+            }else{
+                setnoData(RangeFactory.create((int)0, (int)0));
+            }
+            pb.set(roi, 2);
+            pb.set(nodata, 3);
+            
+            image = JAI.create("Lookup", pb, hints);
+            // New parameterblock for format operation
+            pb = new ParameterBlock();
+            pb.setSource(image, 0);
+            int dataType = image.getSampleModel().getDataType();
+            pb.set(dataType, 0);
+            image = JAI.create("Format", pb, hints);
+            // Converting NoData Range
+            setnoData(RangeFactory.convert(nodata, dataType));
         } else {
             // force component color model first
             forceComponentColorModel(true);
@@ -1196,8 +1321,11 @@ public class ImageWorker {
                 int numBands = getNumBands();
                 final RenderingHints hints = getRenderingHints();
 
-                final RenderedOp alphaChannel = BandSelectDescriptor.create(image,
-                        new int[] { --numBands }, hints);
+                // ParameterBlock creation
+                ParameterBlock pb = new ParameterBlock();
+                pb.setSource(image, 0);
+                pb.set(new int[] { --numBands }, 0);
+                final RenderedOp alphaChannel = JAI.create("BandSelect", pb, hints);
                 retainBands(numBands);
                 forceIndexColorModel(errorDiffusion);
                 tileCacheEnabled(true);
@@ -1311,7 +1439,7 @@ public class ImageWorker {
              * If the image is grayscale, retain only the needed bands.
              */
             final int numDestinationBands = gray ? (alpha ? 2 : 1) : (alpha ? 4 : 3);
-            LookupTableJAI lut = null;
+            LookupTable lut = null;
 
             switch (datatype) {
             case DataBuffer.TYPE_BYTE: {
@@ -1328,7 +1456,7 @@ public class ImageWorker {
                 if (numDestinationBands == 4) {
                     icm.getAlphas(data[3]);
                 }
-                lut = new LookupTableJAI(data);
+                lut = LookupTableFactory.create(data, datatype);
 
             }
                 break;
@@ -1350,7 +1478,7 @@ public class ImageWorker {
                         data[3][i] = (short) icm.getAlpha(i);
                     }
                 }
-                lut = new LookupTableJAI(data, datatype == DataBuffer.TYPE_USHORT);
+                lut = LookupTableFactory.create(data, datatype == DataBuffer.TYPE_USHORT, datatype);
 
             }
                 break;
@@ -1390,16 +1518,34 @@ public class ImageWorker {
                     .createCompatibleSampleModel(image.getWidth(), image.getHeight());
             layout.setColorModel(destinationColorModel);
             layout.setSampleModel(destinationSampleModel);
-            image = LookupDescriptor.create(image, lut, hints);
+            
+            // ParameterBlock definition
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0);
+            pb.set(lut, 0);
+            if(destNoData != null && destNoData.length > 0){
+                pb.set(destNoData[0], 1);
+                // We must set the new NoData value
+                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+            }else{
+                setnoData(RangeFactory.create(0, 0));
+            }
+            pb.set(roi, 2);
+            pb.set(nodata, 3);
+            
+            image = JAI.create("Lookup", pb, hints);
 
         } else {
             // Most of the code adapted from jai-interests is in 'getRenderingHints(int)'.
             final int type = (cm instanceof DirectColorModel) ? DataBuffer.TYPE_BYTE : image
                     .getSampleModel().getTransferType();
             final RenderingHints hints = getRenderingHints(type);
-            // image=ColorConvertDescriptor.create(image, RIFUtil.getImageLayoutHint(hints).getColorModel(null), hints);
-            image = FormatDescriptor.create(image, type, hints);
-            ;
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0); // The source image.
+            pb.set(type, 0); 
+            
+            image = JAI.create("Format", pb, hints);
+            setnoData(RangeFactory.convert(nodata, type));
         }
         invalidateStatistics();
 
@@ -1487,7 +1633,7 @@ public class ImageWorker {
             forceComponentColorModel();
 
             // Create a ColorModel to convert the image to IHS.
-            final IHSColorSpace ihs = IHSColorSpace.getInstance();
+            final IHSColorSpaceJAIExt ihs = IHSColorSpaceJAIExt.getInstance();
             final int numBits = image.getColorModel().getComponentSize(0);
             final ColorModel ihsColorModel = new ComponentColorModel(ihs, new int[] { numBits,
                     numBits, numBits }, false, false, Transparency.OPAQUE, image.getSampleModel()
@@ -1512,7 +1658,34 @@ public class ImageWorker {
         final RenderingHints newRi = (RenderingHints) oldRi.clone();
         newRi.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT, il));
         setRenderingHints(newRi);
-        image = ColorConvertDescriptor.create(image, cm, getRenderingHints());
+        
+        // Setting the parameter blocks
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0);
+        pb.set(cm, 0);
+        pb.set(roi, 1);
+        pb.set(nodata, 2);
+        if(destNoData != null && destNoData.length > 0){
+            // Elaborating the final NoData value
+            if(destNoData.length != cm.getNumColorComponents()){
+                throw new IllegalArgumentException("Wrong DestinationNoData value defined");
+            }
+            pb.set(destNoData, 3);
+            ColorSpace in = image.getColorModel().getColorSpace();
+            ColorSpace out = cm.getColorSpace();
+            float[] output = new float[destNoData.length];
+            for(int i = 0; i < destNoData.length; i++){
+                output[i] = (float)destNoData[i];
+            }
+            float[] toXYZ = in.toCIEXYZ(output);
+            float[] fromXYZ = out.fromCIEXYZ(toXYZ);
+            // We must set the new NoData value
+            setnoData(RangeFactory.create(fromXYZ[0], fromXYZ[0]));
+        }else{
+            setnoData(RangeFactory.create(0d, 0d));
+        }
+        
+        image = JAI.create("ColorConvert", pb, getRenderingHints());
 
         // restore RI
         this.setRenderingHints(oldRi);
@@ -1547,6 +1720,7 @@ public class ImageWorker {
 
             pb.addSource(sourceImage);
             pb.addSource(firstBand);
+            // TODO FIXME
             sourceImage = JAI.create("bandmerge", pb);
 
             pb.removeParameters();
@@ -1571,10 +1745,26 @@ public class ImageWorker {
      * 
      */
     public final ImageWorker addBand(RenderedImage image, boolean before) {
-
-        this.image = before ? BandMergeDescriptor.create(image, this.image,
-                this.getRenderingHints()) : BandMergeDescriptor.create(this.image, image,
-                this.getRenderingHints());
+        ParameterBlock pb = new ParameterBlock();
+        if(before){
+            pb.setSource(image, 0);
+            pb.setSource(this.image, 1);
+        }else{
+            pb.setSource(this.image, 0);
+            pb.setSource(image, 1);
+        }
+        pb.set(nodata, 0);
+        if(destNoData != null && destNoData.length > 0){
+            double dest = destNoData[0];
+            pb.set(dest, 1);
+            // We must set the new NoData value
+            setnoData(RangeFactory.create(dest, dest));
+        }else{
+            setnoData(RangeFactory.create(0, 0));
+        }
+        pb.set(roi, 2);
+        
+        this.image = JAI.create("BandMerge", pb, this.getRenderingHints());
         invalidateStatistics();
 
         return this;
@@ -1594,7 +1784,8 @@ public class ImageWorker {
             final ColorModel cm = new ComponentColorModel(
                     ColorSpace.getInstance(ColorSpace.CS_GRAY), false, false, Transparency.OPAQUE,
                     DataBuffer.TYPE_BYTE);
-            image = ColorConvertDescriptor.create(image, cm, getRenderingHints());
+            forceColorModel(cm);
+            //image = ColorConvertDescriptor.create(image, cm, getRenderingHints());
             invalidateStatistics();
         }
         // All post conditions for this method contract.
@@ -1653,7 +1844,21 @@ public class ImageWorker {
          */
         final double[][] coeff = new double[1][numBands + 1];
         Arrays.fill(coeff[0], 0, numColorBands, 1.0 / numColorBands);
-        image = BandCombineDescriptor.create(image, coeff, getRenderingHints());
+        // ParameterBlock definition
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0);
+        pb.set(coeff, 0);
+        pb.set(roi, 1);
+        pb.set(nodata, 2);
+        if(destNoData != null && destNoData.length > 0){
+            // We must set the new NoData value
+            setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+        }else{
+            setnoData(RangeFactory.create(0d, 0d));
+        }
+        
+        image = JAI.create("BandCombine", pb, getRenderingHints());
+
         invalidateStatistics();
 
         // All post conditions for this method contract.
@@ -1723,7 +1928,11 @@ public class ImageWorker {
             for (int i = 0; i < bands.length; i++) {
                 bands[i] = i;
             }
-            image = BandSelectDescriptor.create(image, bands, getRenderingHints());
+            // ParameterBlock creation
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0);
+            pb.set(bands, 0);
+            image = JAI.create("BandSelect", pb, getRenderingHints());
         }
 
         // All post conditions for this method contract.
@@ -1742,7 +1951,11 @@ public class ImageWorker {
      * @see BandSelectDescriptor
      */
     public final ImageWorker retainBands(final int[] bands) {
-        image = BandSelectDescriptor.create(image, bands, getRenderingHints());
+     // ParameterBlock creation
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0);
+        pb.set(bands, 0);
+        image = JAI.create("BandSelect", pb, getRenderingHints());
         return this;
     }
 
@@ -1753,7 +1966,12 @@ public class ImageWorker {
      * @return this {@link ImageWorker}
      */
     public final ImageWorker format(final int dataType) {
-        image = FormatDescriptor.create(image, dataType, getRenderingHints());
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0); // The source image.
+        pb.set(dataType, 0); 
+        
+        image = JAI.create("Format", pb, getRenderingHints());
+        setnoData(RangeFactory.convert(nodata, dataType));
 
         // All post conditions for this method contract.
         assert image.getSampleModel().getDataType() == dataType;
@@ -1803,7 +2021,16 @@ public class ImageWorker {
                 threshold = 0.5 * (extremas[0][0] + extremas[1][0]);
             }
             final RenderingHints hints = getRenderingHints();
-            image = BinarizeDescriptor.create(image, threshold, hints);
+            // ParameterBlock definition
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0);
+            pb.set(threshold, 0);
+            pb.set(roi, 1);
+            pb.set(nodata, 2);
+            
+            image = JAI.create("Binarize", pb, hints);
+
+            setnoData(null);
             invalidateStatistics();
         }
         // All post conditions for this method contract.
@@ -1827,21 +2054,35 @@ public class ImageWorker {
         tileCacheEnabled(false);
         binarize();
         tileCacheEnabled(true);
-        final LookupTableJAI table;
+        final LookupTable table;
         final int min = Math.min(value0, value1);
         if (min >= 0) {
             final int max = Math.max(value0, value1);
             if (max < 256) {
-                table = new LookupTableJAI(new byte[] { (byte) value0, (byte) value1 });
+                table = LookupTableFactory.create(new byte[] { (byte) value0, (byte) value1 }, DataBuffer.TYPE_BYTE);
             } else if (max < 65536) {
-                table = new LookupTableJAI(new short[] { (short) value0, (short) value1 }, true);
+                table = LookupTableFactory.create(new short[] { (short) value0, (short) value1 }, true, DataBuffer.TYPE_BYTE);
             } else {
-                table = new LookupTableJAI(new int[] { value0, value1 });
+                table = LookupTableFactory.create(new int[] { value0, value1 }, DataBuffer.TYPE_BYTE);
             }
         } else {
-            table = new LookupTableJAI(new int[] { value0, value1 });
+            table = LookupTableFactory.create(new int[] { value0, value1 }, DataBuffer.TYPE_BYTE);
         }
-        image = LookupDescriptor.create(image, table, getRenderingHints());
+        // ParameterBlock definition
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0);
+        pb.set(table, 0);
+        if(destNoData != null && destNoData.length > 0){
+            pb.set(destNoData[0], 1);
+            // We must set the new NoData value
+            setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+        }else{
+            setnoData(RangeFactory.create((int)0, (int)0));
+        }
+        pb.set(roi, 2);
+        pb.set(nodata, 3);
+        
+        image = JAI.create("Lookup", pb, getRenderingHints());
         invalidateStatistics();
         return this;
     }
@@ -1957,7 +2198,13 @@ public class ImageWorker {
         final RenderingHints hints = getRenderingHints();
         hints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout));
         hints.add(new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL, Boolean.FALSE));
-        image = FormatDescriptor.create(image, image.getSampleModel().getDataType(), hints);
+        // ParameterBlock definition
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0); // The source image.
+        pb.set(image.getSampleModel().getDataType(), 0); 
+        
+        image = JAI.create("Format", pb, hints);
+        setnoData(RangeFactory.convert(nodata, image.getSampleModel().getDataType()));
         invalidateStatistics();
         return this;
     }
@@ -2016,7 +2263,11 @@ public class ImageWorker {
             for (int i = 0; i < opaqueBands.length; i++) {
                 opaqueBands[i] = i;
             }
-            image = BandSelectDescriptor.create(image, opaqueBands, hints);
+            // ParameterBlock creation
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0);
+            pb.set(opaqueBands, 0);
+            image = JAI.create("BandSelect", pb, hints);
             numBands = numColorBands;
         }
 
@@ -2046,11 +2297,26 @@ public class ImageWorker {
             }
         }
         // Create a LookupTableJAI object to be used with the "lookup" operator.
-        LookupTableJAI table = new LookupTableJAI(tableData);
+        LookupTable table = LookupTableFactory.create(tableData, image.getSampleModel().getDataType());
         // Do the lookup operation.
         // we should not transform on color map here
         hints.put(JAI.KEY_TRANSFORM_ON_COLORMAP, Boolean.FALSE);
-        PlanarImage luImage = LookupDescriptor.create(image, table, hints);
+        // ParameterBlock definition
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0);
+        pb.set(table, 0);
+        if(destNoData != null && destNoData.length > 0){
+            pb.set(destNoData[0], 1);
+            // We must set the new NoData value
+            setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+        }else{
+            setnoData(RangeFactory.create(0, 0));
+        }
+        pb.set(roi, 2);
+        pb.set(nodata, 3);
+        
+        PlanarImage luImage = JAI.create("Lookup", pb, hints);
+        //PlanarImage luImage = LookupDescriptor.create(image, table, hints);
 
         /*
          * Now that we have performed the lookup operation we have to remember what we stated here above.
@@ -2066,9 +2332,38 @@ public class ImageWorker {
             final double[][] matrix = new double[1][4];
             // Values at index 0,1,2 are set to 1.0, value at index 3 is left to 0.
             Arrays.fill(matrix[0], 0, 3, 1.0);
-            luImage = BandCombineDescriptor.create(luImage, matrix, hints);
+            // ParameterBlock definition
+            pb = new ParameterBlock();
+            pb.setSource(luImage, 0);
+            pb.set(matrix, 0);
+            pb.set(roi, 1);
+            pb.set(nodata, 2);
+            if(destNoData != null && destNoData.length > 0){
+                // We must set the new NoData value
+                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+            }else{
+                setnoData(RangeFactory.create(0d, 0d));
+            }
+            
+            luImage = JAI.create("BandCombine", pb, getRenderingHints());
+            //luImage = BandCombineDescriptor.create(luImage, matrix, hints);
         }
-        image = BandMergeDescriptor.create(image, luImage, hints);
+        pb = new ParameterBlock();
+        pb.setSource(image, 0);
+        pb.setSource(luImage, 1);
+        pb.set(nodata, 0);
+        if(destNoData != null && destNoData.length > 0){
+            double dest = destNoData[0];
+            pb.set(dest, 1);
+            // We must set the new NoData value
+            setnoData(RangeFactory.create(dest, dest));
+        }else{
+            setnoData(RangeFactory.create(0, 0));
+        }
+        pb.set(roi, 2);
+        
+        image = JAI.create("BandMerge", pb, hints);
+        //image = BandMergeDescriptor.create(image, luImage, hints);
 
         invalidateStatistics();
         return this;
@@ -2122,8 +2417,25 @@ public class ImageWorker {
             Arrays.fill(lutData, (byte) 0);
             // for transparent pixels
             lutData[0] = (byte) 255;
-            final LookupTableJAI lut = new LookupTableJAI(lutData);
-            mask = LookupDescriptor.create(mask, lut, hints);
+            final LookupTable lut = LookupTableFactory.create(lutData, mask.getSampleModel().getDataType());
+            
+            // ParameterBlock definition
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(mask, 0);
+            pb.set(lut, 0);
+            if(destNoData != null && destNoData.length > 0){
+                pb.set(destNoData[0], 1);
+                // We must set the new NoData value
+                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+            }else{
+                setnoData(RangeFactory.create(0, 0));
+            }
+            pb.set(roi, 2);
+            pb.set(nodata, 3);
+            
+            mask = JAI.create("Lookup", pb, hints);
+            
+            //mask = LookupDescriptor.create(mask, lut, hints);
 
             /*
              * Adding to the other image exploiting the implict clamping
@@ -2307,7 +2619,13 @@ public class ImageWorker {
         if (layout.isValid(ImageLayout.TILE_WIDTH_MASK)
                 || layout.isValid(ImageLayout.TILE_HEIGHT_MASK)) {
             final int type = image.getSampleModel().getDataType();
-            image = FormatDescriptor.create(image, type, hints);
+            // ParameterBlock definition
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0); // The source image.
+            pb.set(type, 0); 
+            
+            image = JAI.create("Format", pb, hints);
+            setnoData(RangeFactory.convert(nodata, type));
         }
         return this;
     }
@@ -2349,11 +2667,27 @@ public class ImageWorker {
             // build a new palette
             IndexColorModel newColorModel = new IndexColorModel(index.getPixelSize(),
                     index.getMapSize(), reds, greens, blues, alphas);
-            LookupTableJAI table = buildOpacityLookupTable(0, 1, -1);
+            LookupTable table = buildOpacityLookupTable(0, 1, -1, image.getSampleModel().getDataType());
             ImageLayout layout = new ImageLayout(image);
             layout.setColorModel(newColorModel);
             RenderingHints hints = new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
-            result = LookupDescriptor.create(image, table, hints);
+            
+            // ParameterBlock definition
+            ParameterBlock pb = new ParameterBlock();
+            pb.setSource(image, 0);
+            pb.set(table, 0);
+            if(destNoData != null && destNoData.length > 0){
+                pb.set(destNoData[0], 1);
+                // We must set the new NoData value
+                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+            }else{
+                setnoData(RangeFactory.create(0, 0));
+            }
+            pb.set(roi, 2);
+            pb.set(nodata, 3);
+            
+            result = JAI.create("Lookup", pb, hints);
+            //result = LookupDescriptor.create(image, table, hints);
         } else {
             // not indexed, then make sure it's some sort of component color model or turn it into one
             RenderedImage expanded;
@@ -2375,13 +2709,46 @@ public class ImageWorker {
                         (float) image.getHeight(), new Byte[] { new Byte(alpha) },
                         new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout));
 
-                result = BandMergeDescriptor.create(expanded, alphaBand, null);
+                
+                ParameterBlock pb = new ParameterBlock();
+                pb.setSource(expanded, 0);
+                pb.setSource(alphaBand, 1);
+                pb.set(nodata, 0);
+                if(destNoData != null && destNoData.length > 0){
+                    double dest = destNoData[0];
+                    pb.set(dest, 1);
+                    // We must set the new NoData value
+                    setnoData(RangeFactory.create(dest, dest));
+                }else{
+                    setnoData(RangeFactory.create(0, 0));
+                }
+                pb.set(roi, 2);
+                
+                result = JAI.create("BandMerge", pb, null);
+                //result = BandMergeDescriptor.create(expanded, alphaBand, null);
             } else {
                 // we need to transform the existing, we'll use a lookup
                 final int bands = expanded.getSampleModel().getNumBands();
                 int alphaBand = bands - 1;
-                LookupTableJAI table = buildOpacityLookupTable(opacity, bands, alphaBand);
-                result = LookupDescriptor.create(expanded, table, null);
+                // ParameterBlock definition
+                ParameterBlock pb = new ParameterBlock();
+                pb.setSource(image, 0);
+                LookupTableJAI table = buildOpacityLookupTable(opacity, bands, alphaBand, expanded
+                        .getSampleModel().getDataType());
+                pb.set(table, 0);
+                if(destNoData != null && destNoData.length > 0){
+                    pb.set(destNoData[0], 1);
+                    // We must set the new NoData value
+                    setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                }else{
+                    setnoData(RangeFactory.create(0, 0));
+                }
+                pb.set(roi, 2);
+                pb.set(nodata, 3);
+                
+                result = JAI.create("Lookup", pb, null);
+                //LookupTableJAI table = buildOpacityLookupTable(opacity, bands, alphaBand);
+                //result = LookupDescriptor.create(expanded, table, null);
             }
         }
 
@@ -2397,7 +2764,7 @@ public class ImageWorker {
      * @param alphaBand
      * @return
      */
-    LookupTableJAI buildOpacityLookupTable(float opacity, final int bands, int alphaBand) {
+    LookupTable buildOpacityLookupTable(float opacity, final int bands, int alphaBand, int dataType) {
         byte[][] matrix = new byte[bands][256];
         for (int band = 0; band < matrix.length; band++) {
             if (band == alphaBand) {
@@ -2410,7 +2777,7 @@ public class ImageWorker {
                 }
             }
         }
-        LookupTableJAI table = new LookupTableJAI(matrix);
+        LookupTable table = LookupTableFactory.create(matrix, dataType);
         return table;
     }
 
