@@ -86,6 +86,13 @@ public class GridSampleDimension implements SampleDimension, Serializable {
      */
     private static final long serialVersionUID = 6026936545776852758L;
 
+    private static final double DELTA = 1E-10;
+
+    /**
+     * The logger for grid sample dimensions.
+     */
+    public static final Logger LOGGER = Logging.getLogger("org.geotools.coverage");
+
     /**
      * The logger for grid sample dimensions.
      */
@@ -752,38 +759,12 @@ public class GridSampleDimension implements SampleDimension, Serializable {
 
 
     /**
-     * Returns the values to indicate "no data" for this sample dimension.  The default
-     * implementation deduces the "no data" values from the list of categories supplied
-     * at construction time. The rules are:
-     *
-     * <ul>
-     *   <li>If {@link #getSampleToGeophysics} returns {@code null}, then {@code getNoDataValues()}
-     *       returns {@code null} as well. This means that this sample dimension contains no category
-     *       or contains only qualitative categories (e.g. a band from a classified image).</li>
-     *
-     *   <li>If {@link #getSampleToGeophysics} returns an identity transform, then
-     *       {@code getNoDataValues()} returns {@code null}. This means that sample value in this
-     *       sample dimension are already expressed in geophysics values and that all "no data"
-     *       values (if any) have already been converted into {@code NaN} values.</li>
-     *
-     *   <li>Otherwise, if there is at least one quantitative category, returns the sample values
-     *       of all non-quantitative categories. For example if "Temperature" is a quantitative
-     *       category and "Land" and "Cloud" are two qualitative categories, then sample values
-     *       for "Land" and "Cloud" will be considered as "no data" values. "No data" values
-     *       that are already {@code NaN} will be ignored.</li>
-     * </ul>
-     *
-     * Together with {@link #getOffset()} and {@link #getScale()}, this method provides a limited
-     * way to transform sample values into geophysics values. However, the recommended way is to
-     * use the {@link #getSampleToGeophysics sampleToGeophysics} transform instead, which is more
-     * general and take care of converting automatically "no data" values into {@code NaN}.
-     *
-     * @return The values to indicate no data values for this sample dimension,
-     *         or {@code null} if not applicable.
-     * @throws IllegalStateException if some qualitative categories use a range of
-     *         non-integer values.
-     *
-     * @see #getSampleToGeophysics
+     * Returns the values to indicate "no data" for this sample dimension. The default implementation deduces the "no data" values from the list of
+     * categories supplied at construction time.
+     * 
+     * @return The values to indicate no data values for this sample dimension, or {@code null} if not applicable.
+     * @throws IllegalStateException if some qualitative categories use a range of non-integer values.
+     * 
      */
     public double[] getNoDataValues() throws IllegalStateException {
         if (!hasQuantitative) {
@@ -794,6 +775,17 @@ public class GridSampleDimension implements SampleDimension, Serializable {
         final int size = categories.size();
         for (int i=0; i<size; i++) {
             final Category category = categories.get(i);
+            if (category.getName().equals(Category.NODATA.getName())) {
+                final double min = category.minimum;
+                final double max = category.maximum;
+                if (Double.isNaN(min) && Double.isNaN(max)) {
+                    return new double[]{min};
+                } else if (Math.abs(min - max) < DELTA) {
+                    return new double[]{min};
+                } else {
+                    return new double[]{min, max};
+                }
+            }
             if (!category.isQuantitative()) {
                 final double min = category.minimum;
                 final double max = category.maximum;
