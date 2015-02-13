@@ -94,6 +94,11 @@ public class GridSampleDimension implements SampleDimension, Serializable {
     public static final Logger LOGGER = Logging.getLogger("org.geotools.coverage");
 
     /**
+     * The logger for grid sample dimensions.
+     */
+    public static final Logger LOGGER = Logging.getLogger("org.geotools.coverage");
+
+    /**
      * The category list for this sample dimension, or {@code null} if this sample
      * dimension has no category. This field is read by {@code SampleTranscoder} only.
      */
