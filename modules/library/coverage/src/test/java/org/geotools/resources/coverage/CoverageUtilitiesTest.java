@@ -117,7 +117,7 @@ public final class CoverageUtilitiesTest extends Assert {
 
     	// test coverage no data property
     	final HashMap properties= new HashMap();
-    	properties.put("GC_NODATA", Double.valueOf(-9999.0));
+    	CoverageUtilities.setNoDataProperty(properties, Double.valueOf(-9999.0));
     	final GridGeometry2D gg2D = new GridGeometry2D(
     			new Rectangle(0,0,800,600),
     			new Rectangle(-180,90,360,180));

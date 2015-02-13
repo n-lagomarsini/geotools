@@ -34,6 +34,8 @@ import javax.media.jai.ROI;
 import javax.media.jai.iterator.RectIter;
 import javax.media.jai.iterator.RectIterFactory;
 
+import org.geotools.coverage.NoDataContainer;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.opengis.coverage.CannotEvaluateException;
 import org.opengis.coverage.PointOutsideCoverageException;
 import org.opengis.metadata.spatial.PixelOrientation;
@@ -201,8 +203,8 @@ public final class Interpolator2D extends Calculator2D {
         }
         Object roiProp = coverage.getProperty("GC_ROI");
         boolean hasROI = roiProp != null && !(roiProp == Image.UndefinedProperty);
-        Object noDataProp = coverage.getProperty("GC_NoData");
-        boolean hasNoData = noDataProp != null && !(roiProp == Image.UndefinedProperty);
+        Object noDataProp = CoverageUtilities.getNoDataProperty(coverage);
+        boolean hasNoData = noDataProp != null;
         if (interpolations.length==0 || (interpolations[0] instanceof InterpolationNearest && !hasROI && !hasNoData) ) {
             return coverage;
         }
@@ -277,10 +279,11 @@ public final class Interpolator2D extends Calculator2D {
 	    // Check ROI and NoData
 	    Object roiProp = coverage.getProperty("GC_ROI");
             hasROI = roiProp != null && !(roiProp == Image.UndefinedProperty);
-	    Object noDataProp = coverage.getProperty("GC_NoData");
-            hasNoData = noDataProp != null && !(roiProp == Image.UndefinedProperty);
+	    Object noDataProp = CoverageUtilities.getNoDataProperty(coverage);
+            hasNoData = noDataProp != null;
 	    roi = hasROI ? (ROI) roiProp : null;
-	    nodata = hasNoData ? RangeFactory.convertToDoubleRange((Range) noDataProp) : null;
+	    Range nodataR = ((NoDataContainer)noDataProp).getAsRange();
+	    nodata = hasNoData ? RangeFactory.convertToDoubleRange(nodataR) : null;
 	    
 	    // Create a value to set as background
 	    if(nodata != null){

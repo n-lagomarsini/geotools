@@ -41,6 +41,7 @@ import javax.media.jai.ROIShape;
 import javax.media.jai.operator.MosaicDescriptor;
 
 import org.geotools.coverage.GridSampleDimension;
+import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridEnvelope2D;
@@ -325,7 +326,8 @@ public class Crop extends Operation2D {
         
         // Getting NoData value if not defined
         if(nodata == null){
-            nodata = (Range) source.getProperty("GC_NODATA");
+            NoDataContainer noDataProperty = CoverageUtilities.getNoDataProperty(source);
+            nodata = noDataProperty != null ? noDataProperty.getAsRange() : null;
         }
 
         // Check Envelope and ROI existence - we need at least one of them
@@ -417,7 +419,7 @@ public class Crop extends Operation2D {
                 // Get the inner ROI object contained as property. It is in Raster space
                 //
                 // //
-                ROI internalROI = (ROI) source.getProperty("GC_NODATA");
+                ROI internalROI = (ROI) source.getProperty("GC_ROI");
                 
 		// //
 		//
@@ -724,7 +726,7 @@ public class Crop extends Operation2D {
                 if (properties == null) {
                     properties = new HashMap(); 
                 }
-                properties.put("GC_NODATA", worker.getNoData()); 
+                CoverageUtilities.setNoDataProperty(properties, worker.getNoData());
             }
             
             return new GridCoverageFactory(hints).create(

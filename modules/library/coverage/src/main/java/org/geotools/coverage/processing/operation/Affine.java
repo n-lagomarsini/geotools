@@ -37,6 +37,7 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.BaseScaleOperationJAI;
 import org.geotools.factory.GeoTools;
 import org.geotools.image.ImageWorker;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -119,9 +120,7 @@ public class Affine extends BaseScaleOperationJAI {
 
         // Setting NoData property if needed
         double[] background = (double[]) parameters.parameters.getObjectParameter(2);
-        if (background != null) {
-            properties.put("GC_NODATA", RangeFactory.create(background[0], background[0]));
-        }
+        CoverageUtilities.setNoDataProperty(properties, background);
 
         // Setting ROI if present
         PropertyGenerator propertyGenerator = new AffineDescriptor().getPropertyGenerators()[0];

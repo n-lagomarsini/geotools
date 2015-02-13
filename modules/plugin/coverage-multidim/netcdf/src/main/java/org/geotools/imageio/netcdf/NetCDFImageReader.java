@@ -71,6 +71,7 @@ import org.geotools.imageio.netcdf.cv.CoordinateVariable;
 import org.geotools.imageio.netcdf.utilities.NetCDFCRSUtilities;
 import org.geotools.imageio.netcdf.utilities.NetCDFUtilities;
 import org.geotools.imageio.netcdf.utilities.NetCDFUtilities.CheckType;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.geotools.util.SoftValueHashMap;
 import org.geotools.util.Utilities;
 import org.geotools.util.logging.Logging;
@@ -919,7 +920,7 @@ public class NetCDFImageReader extends GeoSpatialImageReader implements FileSetM
                         double[] noData = sampleDimension.getNoDataValues();
                         if (noData != null && noData.length > 0) {
                             Hashtable<String, Object> table = new Hashtable<String, Object>();
-                            table.put("GC_NODATA", noData[0]);
+                            CoverageUtilities.setNoDataProperty(table, noData[0]);
                             return table;
                         }
                     }

@@ -312,7 +312,7 @@ public abstract class BaseStatisticsOperationJAI extends
 	 * @throws TransformException
 	 *             in case the provided {@link MathTransform} chokes.
 	 */
-	private static java.awt.Polygon convertPolygon(final Polygon roiInput,
+	protected static java.awt.Polygon convertPolygon(final Polygon roiInput,
 			MathTransform worldToGridTransform) throws TransformException {
 		final boolean isIdentity = worldToGridTransform.isIdentity();
 		final java.awt.Polygon retValue = new java.awt.Polygon();

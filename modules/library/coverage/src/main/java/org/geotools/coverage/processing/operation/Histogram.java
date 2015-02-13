@@ -35,6 +35,7 @@ import javax.media.jai.operator.HistogramDescriptor;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.BaseStatisticsOperationJAI;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.opengis.coverage.processing.OperationNotFoundException;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -181,7 +182,7 @@ public class Histogram extends BaseStatisticsOperationJAI {
 			// Addition of the ROI property and NoData property
 			GridCoverage2D source = sources[0];
 			synthProp.put("GC_ROI", source.getProperty("GC_ROI"));
-			synthProp.put("GC_NODATA", source.getProperty("GC_NODATA"));
+			CoverageUtilities.setNoDataProperty(synthProp, CoverageUtilities.getNoDataProperty(source));
 			return Collections.unmodifiableMap(synthProp);
 		}
 		return super.getProperties(data, crs, name, toCRS, sources, parameters);

@@ -524,13 +524,13 @@ class NetCDFResponse extends CoverageResponse{
      */
     private GridCoverage2D prepareCoverage(RenderedImage image, GridSampleDimension[] sampleDimensions) throws IOException {
 
-        Map<String, Double> properties = null;
+        Map<String, Object> properties = null;
         if (sampleDimensions != null && sampleDimensions.length > 0) {
             GridSampleDimension sampleDimension = sampleDimensions[0];
             double[] noData = sampleDimension.getNoDataValues();
             if (noData != null && noData.length > 0) {
-                properties = new HashMap<String, Double>();  
-                properties.put("GC_NODATA", new Double(noData[0]));
+                properties = new HashMap<String, Object>();  
+                CoverageUtilities.setNoDataProperty(properties, noData[0]);
             }
         }
         return COVERAGE_FACTORY.create(request.name, image, new GridGeometry2D(new GridEnvelope2D(PlanarImage.wrapRenderedImage(image)

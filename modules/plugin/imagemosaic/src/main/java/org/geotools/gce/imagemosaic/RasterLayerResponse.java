@@ -65,6 +65,7 @@ import javax.media.jai.operator.TranslateDescriptor;
 import org.apache.commons.io.FilenameUtils;
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
+import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.TypeMap;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
@@ -1842,6 +1843,9 @@ class RasterLayerResponse{
         if (mosaicOutput.pamDataset != null) {
             properties.put(Utils.PAM_DATASET, mosaicOutput.pamDataset);
         }
+        // Setting NoData as the NoData for the first Band
+        CoverageUtilities.setNoDataProperty(properties, bands[0].getNoDataValues());
+        
         return coverageFactory.create(
                 rasterManager.getCoverageIdentifier(),
                 image,
@@ -1858,7 +1862,7 @@ class RasterLayerResponse{
 
     private Double getNoDataProperty(RenderedImage image) {
         if (image != null) {
-            Object obj = image.getProperty("GC_NODATA");
+            Object obj = image.getProperty(NoDataContainer.GC_NODATA);
             if (obj != null && obj instanceof Double) {
                 return (Double) obj; 
             }

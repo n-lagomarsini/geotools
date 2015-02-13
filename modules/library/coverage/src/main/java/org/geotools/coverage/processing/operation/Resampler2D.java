@@ -47,6 +47,7 @@ import javax.media.jai.WarpGrid;
 import javax.media.jai.operator.MosaicDescriptor;
 
 import org.geotools.coverage.GridSampleDimension;
+import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GeneralGridEnvelope;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
@@ -396,9 +397,9 @@ final class Resampler2D extends GridCoverage2D {
         Map sourceProps = sourceCoverage.getProperties();
         sourceProps = sourceProps != null ? new HashMap<>(sourceProps) : new HashMap<>();
         Object roiProp = sourceProps.get("GC_ROI");
-        Object nodataProp = sourceProps.get("GC_NODATA");
+        NoDataContainer nodataProp = CoverageUtilities.getNoDataProperty(sourceCoverage);
         ROI roi = (roiProp != null && roiProp instanceof ROI) ? (ROI)roiProp : null;
-        Range nodata = (nodataProp != null && nodataProp instanceof Range) ? (Range)nodataProp : null;
+        Range nodata = nodataProp != null ? nodataProp.getAsRange() : null;
         
         // From this point, consider 'sourceCoverage' as final.
 
@@ -642,7 +643,7 @@ final class Resampler2D extends GridCoverage2D {
                 newROI = w.getROI();
                 newNoData = w.getNoData();
                 sourceProps.put("GC_ROI", newROI);
-                sourceProps.put("GC_NODATA", newNoData);
+                CoverageUtilities.setNoDataProperty(sourceProps, newNoData);
                 operation = "Crop";
 //                paramBlk.add(Float.valueOf(targetBB.x))
 //                        .add(Float.valueOf(targetBB.y))
@@ -653,7 +654,7 @@ final class Resampler2D extends GridCoverage2D {
                 newROI = w.getROI();
                 newNoData = w.getNoData();
                 sourceProps.put("GC_ROI", newROI);
-                sourceProps.put("GC_NODATA", newNoData);
+                CoverageUtilities.setNoDataProperty(sourceProps, newNoData);
                 operation = "Mosaic";
 //                paramBlk.add(MosaicDescriptor.MOSAIC_TYPE_OVERLAY)
 //                        .add(null).add(null).add(null).add(background);
@@ -698,7 +699,7 @@ final class Resampler2D extends GridCoverage2D {
                 newROI = w.getROI();
                 newNoData = w.getNoData();
                 sourceProps.put("GC_ROI", newROI);
-                sourceProps.put("GC_NODATA", newNoData);
+                CoverageUtilities.setNoDataProperty(sourceProps, newNoData);
 //                paramBlk.add(affine).add(interpolation).add(background);
             } else {
                 /*
@@ -751,7 +752,7 @@ final class Resampler2D extends GridCoverage2D {
                 newROI = w.getROI();
                 newNoData = w.getNoData();
                 sourceProps.put("GC_ROI", newROI);
-                sourceProps.put("GC_NODATA", newNoData);
+                CoverageUtilities.setNoDataProperty(sourceProps, newNoData);
             }
         }
         final RenderedOp targetImage = w.getRenderedOperation();//getJAI(hints).createNS(operation, paramBlk, targetHints);
@@ -827,9 +828,9 @@ final class Resampler2D extends GridCoverage2D {
     {
         // NoData and ROI must be handled
         Object roiProp = coverage.getProperty("GC_ROI");
-        Object nodataProp = coverage.getProperty("GC_NODATA");
+        Object nodataProp = CoverageUtilities.getNoDataProperty(coverage);
         boolean hasROI = (roiProp != null && roiProp instanceof ROI);
-        boolean hasNoData = (nodataProp != null && nodataProp instanceof Range);
+        boolean hasNoData = (nodataProp != null);
         if(hasROI || hasNoData){
             return null;
         }

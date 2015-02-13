@@ -761,10 +761,7 @@ public class Mosaic extends OperationJAI {
         }
         // NoData
         Object nodataParam = jai.getObjectParameter(4);
-        if(nodataParam != null && nodataParam instanceof double[]){
-            double outNoData = ((double[])nodataParam)[0];
-            properties.put("GC_NODATA", RangeFactory.create(outNoData, outNoData));
-        }
+        CoverageUtilities.setNoDataProperty(properties, nodataParam);
 
         return properties;
     }

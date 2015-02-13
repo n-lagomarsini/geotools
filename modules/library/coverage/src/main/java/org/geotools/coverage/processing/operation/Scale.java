@@ -39,6 +39,7 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.BaseScaleOperationJAI;
 import org.geotools.coverage.processing.OperationJAI;
 import org.geotools.image.jai.Registry;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -148,7 +149,7 @@ public class Scale extends BaseScaleOperationJAI {
 		Object bkgProp = parameters.parameters.getObjectParameter(8);
 		if(bkgProp != null && bkgProp instanceof double[]){
 			double[] background = (double[])bkgProp;
-			properties.put("GC_NODATA", RangeFactory.create(background[0], background[0]));
+			CoverageUtilities.setNoDataProperty(properties, background);
 		}
 		
 		// Setting ROI if present

@@ -42,6 +42,7 @@ import javax.media.jai.registry.RenderedRegistryMode;
 
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
+import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.grid.InvalidGridGeometryException;
@@ -1131,20 +1132,15 @@ public class OperationJAI extends Operation2D {
                 // Background has been set?
                 Object background = parameters.getObjectParameter(backgroundIndex);
                 if (background != null) {
-                    if (background instanceof double[]) {
-                        double[] bkg = (double[]) background;
-                        properties.put("GC_NODATA", RangeFactory.create(bkg[0], bkg[0]));
-                    } else if (background instanceof Number) {
-                        Number bkg = (Number) background;
-                        properties.put("GC_NODATA",
-                                RangeFactory.create(bkg.doubleValue(), bkg.doubleValue()));
+                    if (background instanceof double[] || background instanceof Number) {
+                        CoverageUtilities.setNoDataProperty(properties, background);
                     } else {
                         // Undefined, set 0
-                        properties.put("GC_NODATA", RangeFactory.create(0d, 0d));
+                        
                     }
                 } else {
                     // Set 0 as NoData
-                    properties.put("GC_NODATA", RangeFactory.create(0d, 0d));
+                    CoverageUtilities.setNoDataProperty(properties, 0d);
                 }
             }
         }
@@ -1170,8 +1166,8 @@ public class OperationJAI extends Operation2D {
         }
         
         
-        Object nodataProp = sourceCoverage.getProperty("GC_NODATA");
-        Range innerNodata = (Range) ((nodataProp != null && nodataProp instanceof Range) ? nodataProp : null);  
+        NoDataContainer nodataProp = CoverageUtilities.getNoDataProperty(sourceCoverage);
+        Range innerNodata = (Range) ((nodataProp != null) ? nodataProp.getAsRange() : null);  
         if(JAIExt.isJAIExtOperation(operationName)){
                 Range noDataParam = (Range) parameters.getObjectParameter(noDataIndex);
                 if(noDataParam == null ){

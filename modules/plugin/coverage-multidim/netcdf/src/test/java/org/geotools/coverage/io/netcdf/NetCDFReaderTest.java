@@ -32,6 +32,7 @@ import java.util.TimeZone;
 import javax.media.jai.PlanarImage;
 
 import org.apache.commons.io.FileUtils;
+import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;
@@ -764,10 +765,10 @@ public class NetCDFReaderTest extends Assert {
             String[] names = reader.getGridCoverageNames();
             names = new String[] { names[0] };
             GridCoverage2D gc = reader.read(null);
-            Object noData = gc.getProperty("GC_NODATA");
+            Object noData = CoverageUtilities.getNoDataProperty(gc);
             assertNotNull(noData);
-            assertTrue(noData instanceof Double);
-            Double d = (Double) noData;
+            assertTrue(noData instanceof NoDataContainer);
+            Double d =  ((NoDataContainer)noData).getAsSingleValue();
             assertEquals(d, -999d, DELTA);
 
         } catch (Throwable t) {
