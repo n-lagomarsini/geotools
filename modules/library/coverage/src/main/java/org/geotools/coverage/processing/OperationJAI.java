@@ -1073,4 +1073,11 @@ public class OperationJAI extends Operation2D {
             return null;
         }
     }
+    
+    public static String getOperationName(String name){
+    	
+    	
+    	
+    	return null;
+    }
 }
