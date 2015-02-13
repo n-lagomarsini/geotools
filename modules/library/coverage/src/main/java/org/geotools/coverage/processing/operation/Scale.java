@@ -39,6 +39,7 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.BaseScaleOperationJAI;
 import org.geotools.coverage.processing.OperationJAI;
 import org.geotools.image.jai.Registry;
+import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.util.InternationalString;
@@ -127,34 +128,11 @@ public class Scale extends BaseScaleOperationJAI {
 		return image;
 	}
 	
-	protected void handleNoDataROI(ParameterBlockJAI parameters,
-			GridCoverage2D sourceCoverage){
-		// Getting the internal ROI property
-		Object roiProp = sourceCoverage.getProperty("GC_ROI");
-		ROI innerROI = (ROI) ((roiProp != null && roiProp instanceof ROI) ? roiProp : null);  
-		
-		if(JAIExt.isJAIExtOperation("Warp")){
-			ROI roiParam = (ROI) parameters.getObjectParameter(5);
-			ROI newROI = null;
-			if(innerROI == null ){
-				newROI = roiParam;
-			} else {
-				newROI = roiParam != null ? innerROI.add(roiParam) : innerROI;
-			}
-			parameters.set(newROI, 5);
-		}
-		
-		
-		Object nodataProp = sourceCoverage.getProperty("GC_NODATA");
-		Range innerNodata = (Range) ((nodataProp != null && nodataProp instanceof Range) ? nodataProp : null);  
-		if(JAIExt.isJAIExtOperation("Warp")){
-			Range noDataParam = (Range) parameters.getObjectParameter(7);
-			if(noDataParam == null ){
-				parameters.set(innerNodata, 7);
-			}
-		}
-	}
-	
+        protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
+            GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
+            handleROINoDataInternal(parameters, source, "Scale", 5, 7);
+        }
+
 	protected Map<String, ?> getProperties(RenderedImage data,
 			CoordinateReferenceSystem crs, InternationalString name,
 			MathTransform gridToCRS, GridCoverage2D[] sources,

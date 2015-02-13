@@ -439,7 +439,7 @@ public class Mosaic extends OperationJAI {
     }
 
     public Mosaic() {
-        super(new MosaicDescriptor(), new ImagingParameterDescriptors(
+        super(getOperationDescriptor("Mosaic"), new ImagingParameterDescriptors(
                 getOperationDescriptor("Mosaic"), REPLACED_DESCRIPTORS));
     }
 

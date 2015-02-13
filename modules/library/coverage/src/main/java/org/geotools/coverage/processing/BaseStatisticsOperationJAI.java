@@ -283,6 +283,10 @@ public abstract class BaseStatisticsOperationJAI extends
 					block.setParameter("roi", new ROIShape(shapePolygon));
 				}
 			}
+			
+			// Handle JAI-EXT parameters if needed
+			handleJAIEXTParams(block, parameters);
+			// Returning the parameterBlock
 			return block;
 		} catch (Exception e) {
 			// //

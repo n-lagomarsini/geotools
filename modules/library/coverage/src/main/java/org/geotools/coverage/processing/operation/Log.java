@@ -17,11 +17,23 @@
 package org.geotools.coverage.processing.operation;
 
 // JAI dependencies (for javadoc)
+import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.algebra.AlgebraDescriptor.Operator;
+
+import java.awt.image.RenderedImage;
+import java.util.Map;
+
+import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.operator.LogDescriptor;
 
-// Geotools dependencies
-import org.geotools.util.NumberRange;
+import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.OperationJAI;
+import org.geotools.util.NumberRange;
+import org.opengis.parameter.ParameterValueGroup;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
+import org.opengis.util.InternationalString;
+// Geotools dependencies
 
 
 /**
@@ -67,7 +79,7 @@ public class Log extends OperationJAI {
      * Constructs a default {@code "Log"} operation.
      */
     public Log() {
-        super("Log");
+        super(getOperationName("Log"));
     }
 
     /**
@@ -78,5 +90,19 @@ public class Log extends OperationJAI {
         final double min = Math.log(range.getMinimum());
         final double max = Math.log(range.getMaximum());
         return NumberRange.create(min, max);
+    }
+    
+    protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
+        GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
+        if(JAIExt.isJAIExtOperation("algebric")){
+            parameters.set(Operator.LOG, 0);
+        }
+        handleROINoDataInternal(parameters, source, "algebric", 1, 2);
+    }
+    
+    protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,
+            InternationalString name, MathTransform gridToCRS, GridCoverage2D[] sources,
+            Parameters parameters) {
+        return handleROINoDataProperties(null, parameters.parameters, sources[0], "algebric", 1, 2, 3);
     }
 }

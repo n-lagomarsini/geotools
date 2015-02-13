@@ -467,7 +467,7 @@ public final class Interpolator2D extends Calculator2D {
 	        int j=0; do {
 	            iter.startPixels();
 	            final double[] row=samples[j++];
-	            final boolean[] nodLine=gaps[j];
+	            final boolean[] nodLine=hasNoData ? gaps[j] : null;
 	            int i=0; do {
 	                double sampleDouble = iter.getSampleDouble(band);
                         row[i++] = sampleDouble;
@@ -566,7 +566,7 @@ public final class Interpolator2D extends Calculator2D {
 	        int j=0; do {
 	            iter.startPixels();
 	            final float[] row=samples[j++];
-	            final boolean[] nodLine=gaps[j];
+	            final boolean[] nodLine=hasNoData ? gaps[j] : null;
 	            int i=0; do {
 	                float sampleFloat = iter.getSampleFloat(band);
                         row[i++] = sampleFloat;
@@ -662,7 +662,7 @@ public final class Interpolator2D extends Calculator2D {
 	        int j=0; do {
 	            iter.startPixels();
 	            final int[] row=samples[j++];
-	            final boolean[] nodLine=gaps[j];
+	            final boolean[] nodLine=hasNoData ? gaps[j] : null;
 	            int i=0; do {
 	                int sample = iter.getSample(band);
                         row[i++] = sample;

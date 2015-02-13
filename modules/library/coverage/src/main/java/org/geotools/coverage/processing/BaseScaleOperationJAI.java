@@ -196,12 +196,6 @@ public abstract class BaseScaleOperationJAI extends OperationJAI {
 			layout.unsetValid(ImageLayout.COLOR_MODEL_MASK);
 			layout.unsetValid(ImageLayout.SAMPLE_MODEL_MASK);
 		}
-		// /////////////////////////////////////////////////////////////////////
-		//
-		// Handling NoData and ROI.
-		//
-		// /////////////////////////////////////////////////////////////////////
-		handleNoDataROI(parameters.parameters, sourceCoverage);
 	
 		// /////////////////////////////////////////////////////////////////////
 		//
@@ -281,11 +275,6 @@ public abstract class BaseScaleOperationJAI extends OperationJAI {
 		
 		// now let's see what we need to do in order to clean things up
 		return result;		
-	}
-
-	protected void handleNoDataROI(ParameterBlockJAI parameters,
-			GridCoverage2D sourceCoverage){
-		return;
 	}
 
 }
