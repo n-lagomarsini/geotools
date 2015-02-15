@@ -84,7 +84,11 @@ public class Invert extends OperationJAI {
      * Constructs a default {@code "Invert"} operation.
      */
     public Invert() {
-        super(getOperationName("Invert"));
+    	super("Invert", getOperationDescriptor(getOperationName("Invert")));
+    }
+    
+    public String getName() {
+        return "Invert";
     }
 
     /**

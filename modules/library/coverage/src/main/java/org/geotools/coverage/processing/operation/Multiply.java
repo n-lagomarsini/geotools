@@ -94,7 +94,11 @@ public class Multiply extends OperationJAI {
      * Constructs a default {@code "MultiplyConst"} operation.
      */
     public Multiply() {
-        super(getOperationName("Multiply"));
+    	super("Multiply", getOperationDescriptor(getOperationName("Multiply")));
+    }
+    
+    public String getName() {
+        return "Multiply";
     }
     
     /**

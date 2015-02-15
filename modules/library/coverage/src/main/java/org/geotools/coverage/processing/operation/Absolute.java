@@ -82,7 +82,11 @@ public class Absolute extends OperationJAI {
      * Constructs a default {@code "Absolute"} operation.
      */
     public Absolute() {
-        super(getOperationName("Absolute"));
+        super("Absolute", getOperationDescriptor(getOperationName("Absolute")));
+    }
+    
+    public String getName() {
+        return "Absolute";
     }
 
     /**

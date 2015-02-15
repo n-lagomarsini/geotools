@@ -152,6 +152,17 @@ public class OperationJAI extends Operation2D {
     public OperationJAI(final OperationDescriptor operation) {
         this(operation, new ImagingParameterDescriptors(operation));
     }
+    
+    /**
+     * Constructs a grid coverage operation backed by a JAI operation. The operation descriptor
+     * must supports the {@code "rendered"} mode (which is the case for most JAI operations).
+     *
+     * @param operationName JAI operation name
+     * @param operation The JAI operation descriptor.
+     */
+    public OperationJAI(final String operationName, final OperationDescriptor operation) {
+        this(operation, new ExtendedImagingParameterDescriptors(operationName, operation));
+    }
 
     /**
      * Constructs a grid coverage operation backed by a JAI operation. The operation descriptor
@@ -1088,7 +1099,7 @@ public class OperationJAI extends Operation2D {
      * @param name
      * @return
      */
-    protected static String getOperationName(String name) {
+    public static String getOperationName(String name) {
         if (JAIExt.isJAIExtOperation("Stats")
                 && (name.equalsIgnoreCase("Extrema") || name.equalsIgnoreCase("Histogram"))) {
             return "Stats";

@@ -94,7 +94,11 @@ public class Add extends OperationJAI {
      * Constructs a default {@code "AddConst"} operation.
      */
     public Add() {
-        super(getOperationName("Add"));
+    	super("Add", getOperationDescriptor(getOperationName("Add")));
+    }
+    
+    public String getName() {
+        return "Add";
     }
 
     /**

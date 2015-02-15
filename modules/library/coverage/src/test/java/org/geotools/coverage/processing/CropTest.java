@@ -28,9 +28,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.RenderedImage;
 
 import javax.media.jai.PlanarImage;
+import javax.media.jai.ROI;
 
 import org.geotools.coverage.grid.GridCoverage2D;
-
 import org.geotools.coverage.grid.Viewer;
 import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.GeneralEnvelope;
@@ -261,8 +261,8 @@ public final class CropTest extends GridProcessingTestBase {
          */
         Object property = cropped.getProperty("GC_ROI");
         assertNotNull(property);
-        assertTrue(property instanceof Polygon);
-        Polygon roi = (Polygon) property;
+        assertTrue(property instanceof ROI);
+        ROI roi = (ROI) property;
         assertEquals(new Rectangle(raster.getMinX(), raster.getMinY(),
                 raster.getWidth(), raster.getHeight()), roi.getBounds());
 

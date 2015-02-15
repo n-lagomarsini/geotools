@@ -79,7 +79,11 @@ public class Log extends OperationJAI {
      * Constructs a default {@code "Log"} operation.
      */
     public Log() {
-        super(getOperationName("Log"));
+    	super("Log", getOperationDescriptor(getOperationName("Log")));
+    }
+    
+    public String getName() {
+        return "Log";
     }
 
     /**

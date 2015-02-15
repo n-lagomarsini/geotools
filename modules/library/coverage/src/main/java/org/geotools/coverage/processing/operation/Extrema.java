@@ -107,14 +107,16 @@ public class Extrema extends BaseStatisticsOperationJAI {
 	/**Locations of max values. */
 	public final static String GT_SYNTHETIC_PROPERTY_MAX_LOCATIONS="maxLocations";
 
-
 	/**
 	 * Constructs a default {@code "Extrema"} operation.
 	 */
 	public Extrema() throws OperationNotFoundException {
-		super(getOperationDescriptor(getOperationName("Extrema")));
-
+		super("Extrema", getOperationDescriptor(getOperationName("Extrema")));
 	}
+	
+    public String getName() {
+        return "Extrema";
+    }
 
 	/**
 	 * This operation MUST be performed on the geophysics data for this

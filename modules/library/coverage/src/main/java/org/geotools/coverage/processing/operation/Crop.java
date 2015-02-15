@@ -284,10 +284,10 @@ public class Crop extends Operation2D {
      */
 	public Crop() {
 		super(new DefaultParameterDescriptorGroup(Citations.JAI,
-				"Crop", new ParameterDescriptor[] { SOURCE_0,
+				"CoverageCrop", new ParameterDescriptor[] { SOURCE_0,
 						CROP_ENVELOPE, CROP_ROI,
 						ROI_OPTIMISATION_TOLERANCE,
-						FORCE_MOSAIC}));
+						FORCE_MOSAIC, NODATA, DEST_NODATA}));
 
 	}
 
@@ -419,7 +419,8 @@ public class Crop extends Operation2D {
                 // Get the inner ROI object contained as property. It is in Raster space
                 //
                 // //
-                ROI internalROI = (ROI) source.getProperty("GC_ROI");
+                Object property = source.getProperty("GC_ROI");
+				ROI internalROI =  property != null && (property instanceof ROI)? (ROI)property : null;
                 
 		// //
 		//
@@ -713,13 +714,22 @@ public class Crop extends Operation2D {
                 properties = new HashMap(sourceProperties);
             }
             if (rasterSpaceROI != null || internalROI != null) {
-                ROI rsROI = new ROIShape(rasterSpaceROI);
-                ROI finalROI = internalROI.intersect(rsROI);
-                
+            	ROI finalROI = null;
+                if(rasterSpaceROI != null){
+                	finalROI = new ROIShape(rasterSpaceROI);
+                }
+                if(finalROI != null && internalROI != null){
+                	finalROI = finalROI.intersect(internalROI);
+                }else if(internalROI != null){
+                	finalROI = internalROI;
+                }
+
                 if (properties == null) {
                     properties = new HashMap(); 
                 }
-                properties.put("GC_ROI", finalROI); 
+                if(finalROI != null){
+                	properties.put("GC_ROI", finalROI); 
+                }
             }
             
             if(worker.getNoData() != null ){

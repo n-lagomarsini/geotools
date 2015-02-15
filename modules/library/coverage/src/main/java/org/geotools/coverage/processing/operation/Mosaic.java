@@ -397,7 +397,8 @@ public class Mosaic extends OperationJAI {
                     // Resample to the new resolution
                     rasters[i] = GridCoverage2DRIA.create(coverage, newGG, fillValue, hints);
                     GridCoverage2DRIA.GridCoverage2DRIAPropertyGenerator propertyGenerator = new GridCoverage2DRIA.GridCoverage2DRIAPropertyGenerator();
-                    ROI roi = (ROI) propertyGenerator.getProperty("roi", rasters[i]);
+                    Object property = propertyGenerator.getProperty("roi", rasters[i]);
+                    ROI roi = (property != null && property instanceof ROI ) ? (ROI) property : null;
                     rois[i] = roi;
                 }
             }

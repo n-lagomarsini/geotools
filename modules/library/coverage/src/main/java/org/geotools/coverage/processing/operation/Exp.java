@@ -79,7 +79,11 @@ public class Exp extends OperationJAI {
      * Constructs a default {@code "Exp"} operation.
      */
     public Exp() {
-        super(getOperationName("Exp"));
+    	super("Exp", getOperationDescriptor(getOperationName("Exp")));
+    }
+    
+    public String getName() {
+        return "Exp";
     }
 
     /**

@@ -102,9 +102,13 @@ public class Histogram extends BaseStatisticsOperationJAI {
 	 * @throws OperationNotFoundException
 	 */
 	public Histogram() throws OperationNotFoundException {
-		super(getOperationDescriptor("Histogram"));
+		super("Histogram", getOperationDescriptor(getOperationName("Histogram")));
 	}
 
+    public String getName() {
+        return "Histogram";
+    }
+	
 	/**
 	 * This operation MUST be performed on the geophysics data for this
 	 * {@link GridCoverage2D}.

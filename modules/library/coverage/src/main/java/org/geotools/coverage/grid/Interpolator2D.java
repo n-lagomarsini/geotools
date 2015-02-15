@@ -282,8 +282,7 @@ public final class Interpolator2D extends Calculator2D {
 	    Object noDataProp = CoverageUtilities.getNoDataProperty(coverage);
             hasNoData = noDataProp != null;
 	    roi = hasROI ? (ROI) roiProp : null;
-	    Range nodataR = ((NoDataContainer)noDataProp).getAsRange();
-	    nodata = hasNoData ? RangeFactory.convertToDoubleRange(nodataR) : null;
+	    nodata = hasNoData ? ((NoDataContainer)noDataProp).getAsRange() : null;
 	    
 	    // Create a value to set as background
 	    if(nodata != null){

@@ -160,6 +160,17 @@ public abstract class BaseStatisticsOperationJAI extends
 	 * Constructor for {@link BaseStatisticsOperationJAI}.
 	 * @param name of the underlying JAI operation.
 	 */
+	public BaseStatisticsOperationJAI(String name, OperationDescriptor operationDescriptor) {
+		super(getOperationDescriptor(getOperationName(name)),new ExtendedImagingParameterDescriptors(
+				name,
+				operationDescriptor,
+				new HashSet<ParameterDescriptor>(REPLACED_DESCRIPTORS)));
+	}
+	
+    /**
+	 * Constructor for {@link BaseStatisticsOperationJAI}.
+	 * @param name of the underlying JAI operation.
+	 */
 	public BaseStatisticsOperationJAI(String name) {
 		super(getOperationDescriptor(name),new ImagingParameterDescriptors(
 				getOperationDescriptor(name),
