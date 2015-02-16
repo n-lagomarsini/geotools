@@ -17,26 +17,24 @@
 package org.geotools.coverage.processing.operation;
 
 // JAI dependencies (for javadoc)
-import java.awt.image.RenderedImage;
-import java.util.Map;
-
 import it.geosolutions.jaiext.JAIExt;
 import it.geosolutions.jaiext.algebra.AlgebraDescriptor.Operator;
-import it.geosolutions.jaiext.range.Range;
+
+import java.awt.image.RenderedImage;
+import java.util.Collection;
+import java.util.Map;
 
 import javax.media.jai.ParameterBlockJAI;
-import javax.media.jai.ROI;
 import javax.media.jai.operator.AbsoluteDescriptor;
 
-import org.geotools.parameter.ImagingParameters;
-// Geotools dependencies
-import org.geotools.util.NumberRange;
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.processing.OperationJAI;
+import org.geotools.coverage.processing.BaseMathOperationJAI;
+import org.geotools.util.NumberRange;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.util.InternationalString;
+// Geotools dependencies
 
 
 /**
@@ -72,7 +70,7 @@ import org.opengis.util.InternationalString;
  * @see org.geotools.coverage.processing.Operations#absolute
  * @see AbsoluteDescriptor
  */
-public class Absolute extends OperationJAI {
+public class Absolute extends BaseMathOperationJAI {
     /**
      * Serial number for interoperability with different versions.
      */
@@ -100,11 +98,13 @@ public class Absolute extends OperationJAI {
     }
 
     protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
-        GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
         if(JAIExt.isJAIExtOperation("algebric")){
             parameters.set(Operator.ABSOLUTE, 0);
+            Collection<GridCoverage2D> sources = (Collection<GridCoverage2D>) parameters2.parameter("sources").getValue();
+            for(GridCoverage2D source : sources){
+                handleROINoDataInternal(parameters, source, "algebric", 1, 2);
+            }
         }
-        handleROINoDataInternal(parameters, source, "algebric", 1, 2);
     }
     
     protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,

@@ -17,9 +17,11 @@
 package org.geotools.coverage.processing.operation;
 
 import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.affine.AffineDescriptor;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
 import it.geosolutions.jaiext.scale.ScaleDescriptor;
+import it.geosolutions.jaiext.translate.TranslateDescriptor;
 
 import java.awt.RenderingHints;
 import java.awt.image.DataBuffer;
@@ -34,6 +36,7 @@ import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.PlanarImage;
 import javax.media.jai.PropertyGenerator;
 import javax.media.jai.ROI;
+import javax.media.jai.RenderedOp;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.BaseScaleOperationJAI;
@@ -92,6 +95,7 @@ public class Scale extends BaseScaleOperationJAI {
 				interpolation=null;
 			}
 		final int transferType = source.getSampleModel().getDataType();
+		
 		final JAI processor = OperationJAI.getJAI(hints);
 		PlanarImage image;
 		if (interpolation!=null&&!(interpolation instanceof InterpolationNearest)
@@ -152,12 +156,22 @@ public class Scale extends BaseScaleOperationJAI {
 			CoverageUtilities.setNoDataProperty(properties, background);
 		}
 		
-		// Setting ROI if present
-		PropertyGenerator propertyGenerator = new ScaleDescriptor().getPropertyGenerators()[0];
-		Object roiProp = propertyGenerator.getProperty("roi", data);
-		if(roiProp != null && roiProp instanceof ROI){
-			properties.put("GC_ROI", roiProp);
-		}
+                // Setting ROI if present
+                if (data instanceof RenderedOp) {
+                    String operationName = ((RenderedOp) data).getOperationName();
+                    PropertyGenerator propertyGenerator = null;
+                    if (operationName.equalsIgnoreCase("Scale")) {
+                        propertyGenerator = new ScaleDescriptor().getPropertyGenerators()[0];
+                    } else if (operationName.equalsIgnoreCase("Translate")) {
+                        propertyGenerator = new TranslateDescriptor().getPropertyGenerators()[0];
+                    }
+                    if (propertyGenerator != null) {
+                        Object roiProp = propertyGenerator.getProperty("roi", data);
+                        if (roiProp != null && roiProp instanceof ROI) {
+                            properties.put("GC_ROI", roiProp);
+                        }
+                    }
+                }
 		
 		return properties;
 	}

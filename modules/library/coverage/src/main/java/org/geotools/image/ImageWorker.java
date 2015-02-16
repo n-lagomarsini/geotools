@@ -22,6 +22,7 @@ import it.geosolutions.jaiext.affine.AffineDescriptor;
 import it.geosolutions.jaiext.algebra.AlgebraDescriptor;
 import it.geosolutions.jaiext.algebra.AlgebraDescriptor.Operator;
 import it.geosolutions.jaiext.colorconvert.IHSColorSpaceJAIExt;
+import it.geosolutions.jaiext.colorindexer.ColorIndexer;
 import it.geosolutions.jaiext.lookup.LookupTable;
 import it.geosolutions.jaiext.lookup.LookupTableFactory;
 import it.geosolutions.jaiext.range.Range;
@@ -95,6 +96,7 @@ import javax.media.jai.WarpAffine;
 import javax.media.jai.WarpGrid;
 import javax.media.jai.operator.ConstantDescriptor;
 import javax.media.jai.operator.MosaicType;
+import javax.media.jai.operator.SubtractDescriptor;
 import javax.media.jai.registry.RenderedRegistryMode;
 
 import org.geotools.factory.Hints;
@@ -117,7 +119,6 @@ import com.sun.media.imageioimpl.common.BogusColorSpace;
 import com.sun.media.imageioimpl.common.PackageUtil;
 import com.sun.media.imageioimpl.plugins.gif.GIFImageWriter;
 import com.sun.media.jai.util.ImageUtil;
-import com.sun.org.apache.xalan.internal.xsltc.runtime.Parameter;
 
 /**
  * Helper methods for applying JAI operations on an image. The image is specified at {@linkplain #ImageWorker(RenderedImage) creation time}. Sucessive
@@ -150,7 +151,6 @@ public class ImageWorker {
         ConcurrentOperationRegistry registry = (ConcurrentOperationRegistry) ConcurrentOperationRegistry
                 .initializeRegistry();
         JAIExt.initJAIEXT(registry);
-        JAI.getDefaultInstance().setOperationRegistry(registry);
     }
 
     /** JDK_JPEG_IMAGE_WRITER_SPI */
@@ -1807,6 +1807,20 @@ public class ImageWorker {
      * 
      */
     public final ImageWorker addBand(RenderedImage image, boolean before) {
+        return addBand(image, before, false);
+    }
+    
+    /**
+     * Perform a BandMerge operation between the underlying image and the provided one.
+     * 
+     * @param image to merge with the underlying one.
+     * @param before <code>true</code> if we want to use first the provided image, <code>false</code> otherwise.
+     * @param addAlpha <code>true</code> if we want to set the last image as alpha, <code>false</code> otherwise.
+     * 
+     * @return this {@link ImageWorker}.
+     * 
+     */
+    public final ImageWorker addBand(RenderedImage image, boolean before, boolean addAlpha) {
         ParameterBlock pb = new ParameterBlock();
         if (before) {
             pb.setSource(image, 0);
@@ -1826,7 +1840,8 @@ public class ImageWorker {
                 setnoData(RangeFactory.create(0, 0));
             }
         }
-        pb.set(roi, 2);
+        pb.set(roi, 3);
+        pb.set(addAlpha, 4);
         this.image = JAI.create("BandMerge", pb, this.getRenderingHints());
         invalidateStatistics();
 
@@ -2715,6 +2730,30 @@ public class ImageWorker {
         return this;
     }
 
+    /**
+     * Takes two rendered or renderable source images, and subtract form each pixel the related value of the second image, each one from each source
+     * image of the corresponding position and band. See JAI {@link AddDescriptor} for details.
+     * 
+     * @param renderedImage the {@link RenderedImage} to be subtracted to this {@link ImageWorker}.
+     * @return this {@link ImageWorker}.
+     * 
+     * @see SubtractDescriptor
+     */
+    public final ImageWorker subtract(final RenderedImage renderedImage) {
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0);
+        pb.setSource(renderedImage, 1);
+        pb.setSource(renderedImage, 1);
+        if (JAIExt.isJAIExtOperation("algebric")) {
+            prepareAlgebricOperation(Operator.SUBTRACT, pb, roi, nodata, true);
+            image = JAI.create("algebric", pb, getRenderingHints());
+        } else {
+            image = JAI.create("Subtract", pb, getRenderingHints());
+        }
+        invalidateStatistics();
+        return this;
+    }
+    
     /**
      * Adds transparency to a preexisting image whose color model is {@linkplain IndexColorModel index color model}. For all pixels with the value
      * {@code false} in the specified transparency mask, the corresponding pixel in the {@linkplain #image} is set to the transparent pixel value. All
@@ -3698,10 +3737,9 @@ public class ImageWorker {
                 pb.set(interpolation, 4);
                 pb.set(roi, 5);
                 pb.set(nodata, 7);
-                pb.set(roi, 8);
                 if (isNoDataNeeded()) {
                     if (destNoData != null && destNoData.length > 0) {
-                        pb.set(destNoData[0], 9);
+                        pb.set(destNoData[0], 8);
                         // We must set the new NoData value
                         setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
                     } else {
@@ -3728,10 +3766,9 @@ public class ImageWorker {
                 pb.set(interpolation, 4);
                 pb.set(roi, 5);
                 pb.set(nodata, 7);
-                pb.set(roi, 8);
                 if (isNoDataNeeded()) {
                     if (destNoData != null && destNoData.length > 0) {
-                        pb.set(destNoData[0], 9);
+                        pb.set(destNoData[0], 8);
                         // We must set the new NoData value
                         setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
                     } else {
@@ -3989,6 +4026,28 @@ public class ImageWorker {
         if(prop != null && prop instanceof ROI){
             setROI((ROI) prop);
         }
+        return this;
+    }
+ 
+    /**
+     * Warps the underlying using the provided Warp object.
+     */
+    public ImageWorker colorIndex(ColorIndexer indexer) {
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0); // The source image.
+        pb.set(indexer, 0);
+        pb.set(roi, 1);
+        pb.set(nodata, 2);
+        if (isNoDataNeeded()) {
+            if (destNoData != null && destNoData.length > 0) {
+                pb.set(destNoData, 3);
+                // We must set the new NoData value
+                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+            } else {
+                setnoData(RangeFactory.create(0d, 0d));
+            }
+        }
+        image = JAI.create("ColorIndexer", pb, getRenderingHints());
         return this;
     }
     

@@ -281,7 +281,10 @@ public final class Interpolator2D extends Calculator2D {
             hasROI = roiProp != null && !(roiProp == Image.UndefinedProperty);
 	    Object noDataProp = CoverageUtilities.getNoDataProperty(coverage);
             hasNoData = noDataProp != null;
-	    roi = hasROI ? (ROI) roiProp : null;
+            if(hasROI){
+                roi = (ROI) roiProp;
+                roiBounds = roi.getBounds(); 
+            }
 	    nodata = hasNoData ? ((NoDataContainer)noDataProp).getAsRange() : null;
 	    
 	    // Create a value to set as background
@@ -468,15 +471,15 @@ public final class Interpolator2D extends Calculator2D {
 	        iter.startLines();
 	        int j=0; do {
 	            iter.startPixels();
-	            final double[] row=samples[j++];
 	            final boolean[] nodLine=hasNoData ? gaps[j] : null;
+	            final double[] row=samples[j++];
 	            int i=0; do {
 	                double sampleDouble = iter.getSampleDouble(band);
-                        row[i++] = sampleDouble;
                         // NoData Check
                         if(hasNoData && !nodata.contains(sampleDouble)){
                             nodLine[i] = true;
                         }
+                        row[i++] = sampleDouble;
 	            }
 	            while (!iter.nextPixelDone());
 	            assert i == row.length;
@@ -567,15 +570,15 @@ public final class Interpolator2D extends Calculator2D {
 	        iter.startLines();
 	        int j=0; do {
 	            iter.startPixels();
-	            final float[] row=samples[j++];
 	            final boolean[] nodLine=hasNoData ? gaps[j] : null;
+	            final float[] row=samples[j++];
 	            int i=0; do {
 	                float sampleFloat = iter.getSampleFloat(band);
-                        row[i++] = sampleFloat;
-	             // NoData Check
+	                    // NoData Check
                         if(hasNoData && !nodata.contains(sampleFloat)){
                             nodLine[i] = true;
                         }
+                        row[i++] = sampleFloat;
 	            }
 	            while (!iter.nextPixelDone());
 	            assert i == row.length;
@@ -663,15 +666,15 @@ public final class Interpolator2D extends Calculator2D {
 	        iter.startLines();
 	        int j=0; do {
 	            iter.startPixels();
-	            final int[] row=samples[j++];
 	            final boolean[] nodLine=hasNoData ? gaps[j] : null;
+	            final int[] row=samples[j++];
 	            int i=0; do {
 	                int sample = iter.getSample(band);
-                        row[i++] = sample;
                         // NoData Check
                         if(hasNoData && !nodata.contains(sample)){
                             nodLine[i] = true;
                         }
+                        row[i++] = sample;
 	            }
 	            while (!iter.nextPixelDone());
 	            assert i==row.length;
@@ -718,7 +721,7 @@ public final class Interpolator2D extends Calculator2D {
             if(totalValid){
                 return true;
             }
-            if(totalInvalid){
+            if(!totalInvalid){
                 return false;
             }
             // We must do nodata handling
@@ -811,7 +814,7 @@ public final class Interpolator2D extends Calculator2D {
             if(totalValid){
                 return true;
             }
-            if(totalInvalid){
+            if(!totalInvalid){
                 return false;
             }
             // We must do nodata handling
@@ -904,7 +907,7 @@ public final class Interpolator2D extends Calculator2D {
             if(totalValid){
                 return true;
             }
-            if(totalInvalid){
+            if(!totalInvalid){
                 return false;
             }
             // We must do nodata handling

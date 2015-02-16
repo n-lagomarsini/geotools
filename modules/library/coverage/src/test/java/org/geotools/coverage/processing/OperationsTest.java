@@ -98,7 +98,7 @@ public final class OperationsTest extends GridProcessingTestBase {
         assertEquals (sourceRaster  .getHeight(),                    targetRaster  .getHeight());
         assertEquals (0, sourceRaster.getMinX());
         assertEquals (0, sourceRaster.getMinY());
-        assertEquals ("SubtractConst", ((OperationNode) targetImage).getOperationName());
+        assertEquals (OperationJAI.getOperationName("SubtractConst"), ((OperationNode) targetImage).getOperationName());
 
         final boolean medialib = TestData.isMediaLibAvailable();
         float difference;

@@ -24,7 +24,9 @@ import java.awt.RenderingHints;
 import java.awt.image.ColorModel;
 import java.awt.image.RenderedImage;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +65,9 @@ import org.geotools.util.NumberRange;
 import org.geotools.util.Utilities;
 import org.opengis.coverage.Coverage;
 import org.opengis.coverage.processing.OperationNotFoundException;
+import org.opengis.parameter.InvalidParameterValueException;
 import org.opengis.parameter.ParameterDescriptorGroup;
+import org.opengis.parameter.ParameterNotFoundException;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.IdentifiedObject;
@@ -290,8 +294,10 @@ public class OperationJAI extends Operation2D {
          * next block.
          */
         final String[]     sourceNames = operation.getSourceNames();
-        final GridCoverage2D[] sources = new GridCoverage2D[sourceNames.length];
-        extractSources(parameters, sourceNames, sources);
+        final Collection<GridCoverage2D> sourceCollection = new ArrayList<GridCoverage2D>();
+        extractSources(parameters, sourceCollection, sourceNames);
+        int numSources = sourceCollection.size();
+        final GridCoverage2D[] sources = sourceCollection.toArray(new GridCoverage2D[numSources]);
         /*
          * Ensures that all coverages use the same CRS and has the same 'gridToCRS' relationship.
          * After the reprojection, the method still checks all CRS in case the user overridden the
@@ -312,7 +318,8 @@ public class OperationJAI extends Operation2D {
             {
                 throw new IllegalArgumentException(Errors.format(ErrorKeys.INCOMPATIBLE_GRID_GEOMETRY));
             }
-            block.setSource(sourceNames[i], source.getRenderedImage());
+            //String sourceName = (sourceNames != null && sourceNames.length == sources.length) ? sourceNames[i] : "Source"+i;
+            block.setSource(source.getRenderedImage(), i);
         }
         /*
          * Applies the operation. This delegates the work to the chain of 'deriveXXX' methods.
@@ -1171,7 +1178,7 @@ public class OperationJAI extends Operation2D {
                 if(innerROI == null ){
                         newROI = roiParam;
                 } else {
-                        newROI = roiParam != null ? innerROI.add(roiParam) : innerROI;
+                        newROI = roiParam != null ? innerROI.intersect(roiParam) : innerROI;
                 }
                 parameters.set(newROI, roiIndex);
         }
@@ -1185,5 +1192,26 @@ public class OperationJAI extends Operation2D {
                         parameters.set(innerNodata, noDataIndex);
                 }
         }
+    }
+    
+    /**
+     * Extraction of the sources from the parameter called SOURCES. The sources are stored inside a List. 
+     * 
+     * @param parameters
+     * @param sources
+     * @return
+     * @throws ParameterNotFoundException
+     * @throws InvalidParameterValueException
+     */
+    protected void extractSources(final ParameterValueGroup parameters,
+            final Collection<GridCoverage2D> sources,
+            final String[] sourceNames) throws ParameterNotFoundException,
+            InvalidParameterValueException {
+        Utilities.ensureNonNull("parameters", parameters);
+        Utilities.ensureNonNull("sources", sources);
+        Utilities.ensureNonNull("sourceNames", sourceNames);
+        GridCoverage2D[] sourceArray = new GridCoverage2D[sourceNames.length];
+        extractSources(parameters, sourceNames, sourceArray);
+        sources.addAll(Arrays.asList(sourceArray));
     }
 }

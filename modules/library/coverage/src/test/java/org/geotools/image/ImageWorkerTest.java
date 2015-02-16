@@ -24,9 +24,11 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import it.geosolutions.imageio.utilities.ImageIOUtilities;
 import it.geosolutions.imageioimpl.plugins.tiff.TIFFImageReaderSpi;
+import it.geosolutions.jaiext.range.RangeFactory;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
@@ -55,6 +57,7 @@ import javax.imageio.stream.ImageInputStream;
 import javax.media.jai.ImageLayout;
 import javax.media.jai.Interpolation;
 import javax.media.jai.JAI;
+import javax.media.jai.ROIShape;
 import javax.media.jai.RasterFactory;
 import javax.media.jai.RenderedOp;
 import javax.media.jai.operator.ConstantDescriptor;
@@ -1016,7 +1019,35 @@ public final class ImageWorkerTest extends GridProcessingTestBase {
         int sample = image.getTile(0, 0).getSample(0, 0, 1);
         assertEquals(128, sample);
     }
+
+    @Test
+    public void testOpacityGrayROI() {
+        assertTrue("Assertions should be enabled.", ImageWorker.class.desiredAssertionStatus());
+        ImageWorker worker = new ImageWorker(gray);
+        worker.setROI(new ROIShape(new Rectangle(1, 1 , 1, 1)));
+        worker.applyOpacity(0.5f);
+        
+        RenderedImage image = worker.getRenderedImage();
+        assertTrue(image.getColorModel() instanceof ComponentColorModel);
+        assertTrue(image.getColorModel().hasAlpha());
+        int sample = image.getTile(0, 0).getSample(0, 0, 1);
+        assertEquals(0, sample);
+    }
     
+    @Test
+    public void testOpacityGrayNoData() {
+        assertTrue("Assertions should be enabled.", ImageWorker.class.desiredAssertionStatus());
+        ImageWorker worker = new ImageWorker(gray);
+        worker.setnoData(RangeFactory.convert(RangeFactory.create(255, 255), gray.getSampleModel().getDataType()));
+        worker.applyOpacity(0.5f);
+        
+        RenderedImage image = worker.getRenderedImage();
+        assertTrue(image.getColorModel() instanceof ComponentColorModel);
+        assertTrue(image.getColorModel().hasAlpha());
+        int sample = image.getTile(0, 0).getSample(0, 0, 1);
+        assertEquals(0, sample);
+    }
+
     @Test
     public void testOpacityGrayAlpha() {
         assertTrue("Assertions should be enabled.", ImageWorker.class.desiredAssertionStatus());
