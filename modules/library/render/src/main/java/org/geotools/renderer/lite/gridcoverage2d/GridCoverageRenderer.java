@@ -64,7 +64,10 @@ import org.geotools.referencing.CRS;
 import org.geotools.referencing.operation.builder.GridToEnvelopeMapper;
 import org.geotools.referencing.operation.matrix.XAffineTransform;
 import org.geotools.referencing.operation.transform.AffineTransform2D;
+//<<<<<<< HEAD
 //import org.geotools.renderedimage.viewer.RenderedImageBrowser;
+//=======
+//>>>>>>> 915aac2... Avoid image mosaic final image manipulation
 import org.geotools.renderer.crs.ProjectionHandler;
 import org.geotools.renderer.crs.ProjectionHandlerFinder;
 import org.geotools.renderer.crs.WrappingProjectionHandler;
@@ -869,7 +872,10 @@ public final class GridCoverageRenderer {
             return null;
         }
 
+//<<<<<<< HEAD
         //RenderedImageBrowser.showChain(cropped.getRenderedImage(),false,false);
+//=======
+//>>>>>>> 915aac2... Avoid image mosaic final image manipulation
         return cropped.getRenderedImage();
 
     }
