@@ -182,8 +182,15 @@
       <repository>
        <uniqueVersion>false</uniqueVersion>
        <id>geosolutions</id>
+       <name>GeoSolutions Maven Repository</name>
        <url>ftp://demo.geo-solutions.it</url>
       </repository>
+      <snapshotRepository>
+       <uniqueVersion>false</uniqueVersion>
+       <id>geosolutions</id>
+       <name>GeoSolutions Maven Repository</name>
+       <url>ftp://demo.geo-solutions.it</url>
+      </snapshotRepository>
     </distributionManagement>
    </profile>
     <profile>
