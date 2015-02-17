@@ -83,7 +83,7 @@ public class Warp extends BaseScaleOperationJAI {
         PropertyGenerator propertyGenerator = new WarpDescriptor().getPropertyGenerators()[0];
         Object roiProp = propertyGenerator.getProperty("roi", data);
         if (roiProp != null && roiProp instanceof ROI) {
-            properties.put("GC_ROI", roiProp);
+            CoverageUtilities.setROIProperty(properties, (ROI) roiProp);
         }
 
         return properties;

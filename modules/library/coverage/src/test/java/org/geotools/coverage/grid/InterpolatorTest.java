@@ -39,6 +39,7 @@ import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.NoDataContainer;
 import org.geotools.factory.Hints;
 import org.geotools.referencing.operation.matrix.XAffineTransform;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.junit.Before;
 import org.junit.Test;
 import org.opengis.coverage.grid.GridEnvelope;
@@ -144,7 +145,7 @@ public final class InterpolatorTest extends GridCoverageTestBase {
         RenderedImage src = coverage.getRenderedImage();
         // Setting ROI and NoData
         ROIShape roi = new ROIShape(new Rectangle(src.getMinX(), src.getMinY(), src.getWidth()/2, src.getHeight()/2));
-        properties.put("GC_ROI", roi);
+        CoverageUtilities.setROIProperty(properties, roi);
         NoDataContainer noDataContainer = new NoDataContainer(15);
         properties.put("GC_NODATA", noDataContainer);
         

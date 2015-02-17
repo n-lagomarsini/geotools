@@ -417,8 +417,7 @@ public class Crop extends Operation2D {
                 // Get the inner ROI object contained as property. It is in Raster space
                 //
                 // //
-                Object property = source.getProperty("GC_ROI");
-				ROI internalROI =  property != null && (property instanceof ROI)? (ROI)property : null;
+		ROI internalROI =  CoverageUtilities.getROIProperty(source);
                 
 		// //
 		//
@@ -726,7 +725,7 @@ public class Crop extends Operation2D {
                     properties = new HashMap(); 
                 }
                 if(finalROI != null){
-                	properties.put("GC_ROI", finalROI); 
+                    CoverageUtilities.setROIProperty(properties, finalROI);
                 }
             }
             

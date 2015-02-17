@@ -368,8 +368,7 @@ public class Mosaic extends OperationJAI {
                     double fillValue = CoverageUtilities.getBackgroundValues(coverage)[0];
                     backgrounds[i] = fillValue;
                     // Get ROI from the coverage
-                    Object roi = coverage.getProperty("GC_ROI");
-                    rois[i] = (ROI) (roi instanceof ROI ? roi : null);
+                    rois[i] = CoverageUtilities.getROIProperty(coverage);
                 } else {
                     // New GridGeometry
                     GridGeometry2D newGG = new GridGeometry2D(PixelInCell.CELL_CORNER, g2w,
@@ -725,7 +724,7 @@ public class Mosaic extends OperationJAI {
                     finalROI.add(rois[i]);
                 }
             }
-            properties.put("GC_ROI", finalROI);
+            CoverageUtilities.setROIProperty(properties, finalROI);
         }
         // NoData
         Object nodataParam = jai.getObjectParameter(4);

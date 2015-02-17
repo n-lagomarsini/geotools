@@ -168,7 +168,7 @@ public class Scale extends BaseScaleOperationJAI {
                     if (propertyGenerator != null) {
                         Object roiProp = propertyGenerator.getProperty("roi", data);
                         if (roiProp != null && roiProp instanceof ROI) {
-                            properties.put("GC_ROI", roiProp);
+                            CoverageUtilities.setROIProperty(properties, (ROI) roiProp);
                         }
                     }
                 }

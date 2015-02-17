@@ -201,8 +201,8 @@ public final class Interpolator2D extends Calculator2D {
         while (coverage instanceof Calculator2D) {
             coverage = ((Calculator2D) coverage).source;
         }
-        Object roiProp = coverage.getProperty("GC_ROI");
-        boolean hasROI = roiProp != null && !(roiProp == Image.UndefinedProperty);
+        ROI roiProp = CoverageUtilities.getROIProperty(coverage);
+        boolean hasROI = roiProp != null;
         Object noDataProp = CoverageUtilities.getNoDataProperty(coverage);
         boolean hasNoData = noDataProp != null;
         if (interpolations.length==0 || (interpolations[0] instanceof InterpolationNearest && !hasROI && !hasNoData) ) {
@@ -277,12 +277,12 @@ public final class Interpolator2D extends Calculator2D {
 	    bounds = new Rectangle(0, 0, interpolation.getWidth(), interpolation.getHeight());
 	    
 	    // Check ROI and NoData
-	    Object roiProp = coverage.getProperty("GC_ROI");
-            hasROI = roiProp != null && !(roiProp == Image.UndefinedProperty);
+	    ROI roiProp = CoverageUtilities.getROIProperty(coverage);
+            hasROI = roiProp != null;
 	    Object noDataProp = CoverageUtilities.getNoDataProperty(coverage);
             hasNoData = noDataProp != null;
             if(hasROI){
-                roi = (ROI) roiProp;
+                roi = roiProp;
                 roiBounds = roi.getBounds(); 
             }
 	    nodata = hasNoData ? ((NoDataContainer)noDataProp).getAsRange() : null;

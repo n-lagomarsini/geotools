@@ -38,6 +38,7 @@ import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.crs.DefaultDerivedCRS;
 import org.geotools.referencing.operation.transform.ProjectiveTransform;
+import org.geotools.resources.coverage.CoverageUtilities;
 import org.junit.Before;
 import org.junit.Test;
 import org.opengis.geometry.Envelope;
@@ -259,7 +260,7 @@ public final class CropTest extends GridProcessingTestBase {
         /*
          * Get the roi and test it against the crop area
          */
-        Object property = cropped.getProperty("GC_ROI");
+        Object property = CoverageUtilities.getROIProperty(cropped);
         assertNotNull(property);
         assertTrue(property instanceof ROI);
         ROI roi = (ROI) property;

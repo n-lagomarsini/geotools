@@ -1140,9 +1140,7 @@ public class OperationJAI extends Operation2D {
         // Setting the internal properties
         if (JAIExt.isJAIExtOperation(operationName)) {
             ROI roiParam = (ROI) parameters.getObjectParameter(roiIndex);
-            if (roiParam != null) {
-                properties.put("GC_ROI", roiParam);
-            }
+            CoverageUtilities.setROIProperty(properties, roiParam);
 
             Range noDataParam = (Range) parameters.getObjectParameter(noDataIndex);
             if (noDataParam != null || roiParam != null) {
@@ -1169,9 +1167,7 @@ public class OperationJAI extends Operation2D {
     protected static void handleROINoDataInternal(ParameterBlockJAI parameters,
             GridCoverage2D sourceCoverage, String operationName, int roiIndex, int noDataIndex){
         // Getting the internal ROI property
-        Object roiProp = sourceCoverage.getProperty("GC_ROI");
-        ROI innerROI = (ROI) ((roiProp != null && roiProp instanceof ROI) ? roiProp : null);  
-        
+        ROI innerROI = CoverageUtilities.getROIProperty(sourceCoverage);  
         if(JAIExt.isJAIExtOperation(operationName)){
                 ROI roiParam = (ROI) parameters.getObjectParameter(roiIndex);
                 ROI newROI = null;

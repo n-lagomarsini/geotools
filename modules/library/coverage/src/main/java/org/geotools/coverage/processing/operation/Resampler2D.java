@@ -835,9 +835,9 @@ final class Resampler2D extends GridCoverage2D {
               CoordinateReferenceSystem targetCRS, GridGeometry2D targetGG)
     {
         // NoData and ROI must be handled
-        Object roiProp = coverage.getProperty("GC_ROI");
+        ROI roiProp = CoverageUtilities.getROIProperty(coverage);
         Object nodataProp = CoverageUtilities.getNoDataProperty(coverage);
-        boolean hasROI = (roiProp != null && roiProp instanceof ROI);
+        boolean hasROI = (roiProp != null);
         boolean hasNoData = (nodataProp != null);
         if(hasROI || hasNoData){
             return null;

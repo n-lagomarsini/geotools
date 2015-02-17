@@ -283,7 +283,7 @@ public class ZonalStatistics extends BaseStatisticsOperationJAI {
 
             // Addition of the ROI property and NoData property
             GridCoverage2D source = sources[0];
-            synthProp.put("GC_ROI", source.getProperty("GC_ROI"));
+            CoverageUtilities.setROIProperty(synthProp, CoverageUtilities.getROIProperty(source));
             CoverageUtilities.setNoDataProperty(synthProp, CoverageUtilities.getNoDataProperty(source));
             
             Object results = result.getProperty(GT_SYNTHETIC_PROPERTY_ZONALSTATS);

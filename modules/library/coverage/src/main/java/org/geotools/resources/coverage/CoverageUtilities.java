@@ -35,6 +35,7 @@ import javax.media.jai.Interpolation;
 import javax.media.jai.InterpolationBilinear;
 import javax.media.jai.InterpolationNearest;
 import javax.media.jai.PropertySource;
+import javax.media.jai.ROI;
 
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
@@ -219,6 +220,14 @@ public final class CoverageUtilities {
         return null;
     }
     
+    public static ROI getROIProperty(GridCoverage2D coverage){
+        final Object roi = coverage.getProperty("GC_ROI");
+        if(roi != null && roi instanceof ROI){
+            return (ROI) roi;
+        }
+        return null;
+    }
+    
     public static void setNoDataProperty(Map<String, Object> properties, Object noData){
         if(noData == null || properties == null){
             return;
@@ -232,6 +241,13 @@ public final class CoverageUtilities {
         }else if(noData instanceof NoDataContainer){
             properties.put(NoDataContainer.GC_NODATA, new NoDataContainer((NoDataContainer) noData));
         }
+    }
+    
+    public static void setROIProperty(Map<String, Object> properties, ROI roi){
+        if(roi == null || properties == null){
+            return;
+        }
+        properties.put("GC_ROI", roi);
     }
 
     /**
