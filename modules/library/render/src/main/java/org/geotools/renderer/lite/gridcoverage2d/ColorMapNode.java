@@ -317,9 +317,9 @@ class ColorMapNode extends StyleVisitorCoverageProcessingNodeAdapter implements
 		Map properties = sourceCoverage.getProperties();
 		if(properties == null){
 		    properties = new HashMap<>();
-		    CoverageUtilities.setROIProperty(properties, w.getROI());
-		    CoverageUtilities.setNoDataProperty(properties, w.getNoData());
 		}
+		CoverageUtilities.setROIProperty(properties, w.getROI());
+                CoverageUtilities.setNoDataProperty(properties, w.getNoData());
 
                 return getCoverageFactory().create(
         		        "color_mapped_"+sourceCoverage.getName().toString(), 

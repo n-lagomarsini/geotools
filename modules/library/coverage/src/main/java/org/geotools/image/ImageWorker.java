@@ -4166,6 +4166,16 @@ public class ImageWorker {
         return this;
     }
     
+    public ImageWorker translate(float xTrans, float yTrans, Interpolation interp){
+        ParameterBlock pb = new ParameterBlock();
+        pb.addSource(image);
+        pb.add(xTrans);
+        pb.add(yTrans);
+        pb.add(interp);
+        image = JAI.create("Translate", pb, getRenderingHints());
+        return this;
+    }
+    
     /**
      * Warps the underlying raster using the provided Warp object.
      */
@@ -4194,7 +4204,41 @@ public class ImageWorker {
         }
         return this;
     }
-    
+
+    /**
+     * Scales the underlying raster using the provided parameters.
+     */
+    public ImageWorker scale(float xScale, float yScale,
+            float xTrans, float yTrans, Interpolation interp) {
+        ParameterBlock pb = new ParameterBlock();
+        pb.setSource(image, 0); // The source image.
+        pb.set(xScale, 0);
+        pb.set(yScale, 1);
+        pb.set(xTrans, 2);
+        pb.set(yTrans, 3);
+        pb.set(interp, 4);
+        pb.set(roi, 5);
+        pb.set(false, 6);
+        pb.set(nodata, 7);
+        if (isNoDataNeeded()) {
+            if (destNoData != null && destNoData.length > 0) {
+                pb.set(destNoData, 8);
+                // We must set the new NoData value
+                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+            } else {
+                setnoData(RangeFactory.create(0d, 0d));
+            }
+        }
+        image = JAI.create("Warp", pb, getRenderingHints());
+        // getting the new ROI property
+        PropertyGenerator gen = new ScaleDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
+        Object prop = gen.getProperty("roi", image);
+        if(prop != null && prop instanceof ROI){
+            setROI((ROI) prop);
+        }
+        return this;
+    }
+
     /**
      * Warps the underlying raster using the provided Warp object.
      */
