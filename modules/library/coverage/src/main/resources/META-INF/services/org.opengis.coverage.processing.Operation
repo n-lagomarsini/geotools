@@ -1,6 +1,7 @@
 org.geotools.coverage.processing.operation.Absolute
 org.geotools.coverage.processing.operation.AddConst
 org.geotools.coverage.processing.operation.Add
+org.geotools.coverage.processing.operation.BandMerge
 org.geotools.coverage.processing.operation.Convolve
 org.geotools.coverage.processing.operation.Crop
 org.geotools.coverage.processing.operation.DivideByConst

@@ -16,6 +16,7 @@
  */
 package org.geotools.coverage.processing.operation;
 
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 
 import java.awt.Rectangle;
@@ -39,7 +40,6 @@ import javax.media.jai.ROIShape;
 import javax.media.jai.operator.MosaicDescriptor;
 
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridEnvelope2D;

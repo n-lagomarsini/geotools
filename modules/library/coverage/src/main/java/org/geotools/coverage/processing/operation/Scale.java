@@ -151,10 +151,13 @@ public class Scale extends BaseScaleOperationJAI {
 		
 		// Setting NoData property if needed
 		Object bkgProp = parameters.parameters.getObjectParameter(8);
-		if(bkgProp != null && bkgProp instanceof double[]){
-			double[] background = (double[])bkgProp;
-			CoverageUtilities.setNoDataProperty(properties, background);
-		}
+                if (parameters.parameters.getNumParameters() > 5
+                        && parameters.parameters.getObjectParameter(8) != null) {
+                    if (bkgProp != null && bkgProp instanceof double[]) {
+                        double[] background = (double[]) bkgProp;
+                        CoverageUtilities.setNoDataProperty(properties, background);
+                    }
+                }
 		
                 // Setting ROI if present
                 if (data instanceof RenderedOp) {

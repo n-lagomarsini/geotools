@@ -17,10 +17,14 @@
 package org.geotools.coverage.processing.operation;
 
 import it.geosolutions.imageio.utilities.ImageIOUtilities;
+import it.geosolutions.jaiext.range.NoDataContainer;
+import it.geosolutions.jaiext.range.Range;
+import it.geosolutions.jaiext.range.RangeFactory;
 
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.RenderedImage;
+import java.util.Map;
 //import java.awt.image.renderable.ParameterBlock;
 
 import javax.media.jai.ImageLayout;
@@ -252,6 +256,14 @@ final class BandSelector2D extends GridCoverage2D {
                 layout.setColorModel(tempCM);
                 ImageWorker iw = new ImageWorker(image).setRenderingHints(hints).format(image.getSampleModel().getDataType());
                 image= iw.getPlanarImage();
+                
+                // Check the NOData properties
+                Map properties = source.getProperties();
+                if(properties != null && CoverageUtilities.getNoDataProperty(source) != null){
+                    NoDataContainer noDataC = CoverageUtilities.getNoDataProperty(source);
+                    Range noData = RangeFactory.convert(noDataC.getAsRange(), image.getSampleModel().getDataType());
+                    CoverageUtilities.setNoDataProperty(properties, noData );
+                }
             }
 
         }

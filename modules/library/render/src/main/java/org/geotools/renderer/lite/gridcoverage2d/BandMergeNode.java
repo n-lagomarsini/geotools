@@ -16,6 +16,8 @@
  */
 package org.geotools.renderer.lite.gridcoverage2d;
 
+import it.geosolutions.jaiext.range.NoDataContainer;
+
 import java.awt.RenderingHints;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
@@ -35,7 +37,6 @@ import javax.media.jai.ROI;
 import javax.media.jai.RenderedOp;
 
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.TypeMap;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridGeometry2D;

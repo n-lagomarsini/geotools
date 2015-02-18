@@ -77,7 +77,11 @@ public class Warp extends BaseScaleOperationJAI {
 
         // Setting NoData property if needed
         double[] background = (double[]) parameters.parameters.getObjectParameter(2);
-        CoverageUtilities.setNoDataProperty(properties, background);
+        if (parameters.parameters.getNumParameters() > 3
+                && parameters.parameters.getObjectParameter(4) != null) {
+            CoverageUtilities.setNoDataProperty(properties, background);
+        }
+        
 
         // Setting ROI if present
         PropertyGenerator propertyGenerator = new WarpDescriptor().getPropertyGenerators()[0];

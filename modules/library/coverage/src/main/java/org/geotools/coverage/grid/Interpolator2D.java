@@ -16,6 +16,7 @@
  */
 package org.geotools.coverage.grid;
 
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
 
@@ -34,7 +35,6 @@ import javax.media.jai.ROI;
 import javax.media.jai.iterator.RectIter;
 import javax.media.jai.iterator.RectIterFactory;
 
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.resources.coverage.CoverageUtilities;
 import org.opengis.coverage.CannotEvaluateException;
 import org.opengis.coverage.PointOutsideCoverageException;
@@ -279,13 +279,13 @@ public final class Interpolator2D extends Calculator2D {
 	    // Check ROI and NoData
 	    ROI roiProp = CoverageUtilities.getROIProperty(coverage);
             hasROI = roiProp != null;
-	    Object noDataProp = CoverageUtilities.getNoDataProperty(coverage);
+            NoDataContainer noDataProp = CoverageUtilities.getNoDataProperty(coverage);
             hasNoData = noDataProp != null;
             if(hasROI){
                 roi = roiProp;
                 roiBounds = roi.getBounds(); 
             }
-	    nodata = hasNoData ? ((NoDataContainer)noDataProp).getAsRange() : null;
+	    nodata = hasNoData ? noDataProp.getAsRange() : null;
 	    
 	    // Create a value to set as background
 	    if(nodata != null){

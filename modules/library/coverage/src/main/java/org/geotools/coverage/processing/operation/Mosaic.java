@@ -17,6 +17,7 @@
 package org.geotools.coverage.processing.operation;
 
 import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
 
@@ -337,6 +338,8 @@ public class Mosaic extends OperationJAI {
             double[] backgrounds = new double[numSources];
             // Creation of an array of rois
             ROI[] rois = new ROI[numSources];
+            // Creation of an array of NoData
+            boolean hasNoDataProp = false;
 
             // Selection of the GridToWorld transformation associated to the External GG2D
             MathTransform g2w = external.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
@@ -369,6 +372,9 @@ public class Mosaic extends OperationJAI {
                     backgrounds[i] = fillValue;
                     // Get ROI from the coverage
                     rois[i] = CoverageUtilities.getROIProperty(coverage);
+                    // Get NoData as property if present
+                    NoDataContainer noDataProperty = CoverageUtilities.getNoDataProperty(coverage);
+                    hasNoDataProp |= noDataProperty != null;
                 } else {
                     // New GridGeometry
                     GridGeometry2D newGG = new GridGeometry2D(PixelInCell.CELL_CORNER, g2w,
@@ -399,6 +405,9 @@ public class Mosaic extends OperationJAI {
                     Object property = propertyGenerator.getProperty("roi", rasters[i]);
                     ROI roi = (property != null && property instanceof ROI ) ? (ROI) property : null;
                     rois[i] = roi;
+                    // Get NoData as property if present
+                    NoDataContainer noDataProperty = CoverageUtilities.getNoDataProperty(coverage);
+                    hasNoDataProp |= noDataProperty != null;
                 }
             }
 
@@ -408,6 +417,8 @@ public class Mosaic extends OperationJAI {
             rr.setRasters(rasters);
             rr.setBackgrounds(backgrounds);
             rr.setRois(rois);
+            rr.setHasNoData(hasNoDataProp);
+
             return rr;
         }
 
@@ -718,7 +729,7 @@ public class Mosaic extends OperationJAI {
         //Object roiParam = jai.getObjectParameter(2);
         ResampledRasters rr = parameters.rr;
         if(rr != null && rr.getRois() != null){
-            ROI[] rois = (ROI[]) rr.getRois();
+            ROI[] rois = rr.getRois();
             ROI finalROI = null;
             for(int i = 0; i < numSources; i++){
                 if(finalROI == null){
@@ -731,7 +742,9 @@ public class Mosaic extends OperationJAI {
         }
         // NoData
         Object nodataParam = jai.getObjectParameter(4);
-        CoverageUtilities.setNoDataProperty(properties, nodataParam);
+        if(nodataParam != null && rr != null && rr.hasNoData()){
+            CoverageUtilities.setNoDataProperty(properties, nodataParam);
+        }
 
         return properties;
     }
@@ -879,6 +892,22 @@ public class Mosaic extends OperationJAI {
         public void setRois(ROI[] rois) {
             this.rois = rois;
         }
+        
+        /**
+         * @return boolean indicating that at least one coverage contains nodata
+         */
+        public boolean hasNoData() {
+            return hasNoData;
+        }
+
+        /**
+         * Set the hasNoData boolean parameter
+         * 
+         * @param hasNoData
+         */
+        public void setHasNoData(boolean hasNoData) {
+            this.hasNoData = hasNoData;
+        }
 
         /**
          * The array of the resampled RenderedImages
@@ -899,5 +928,10 @@ public class Mosaic extends OperationJAI {
          * Array of the final roi values
          */
         private ROI[] rois;
+        
+        /**
+         * Boolean indicating if input nodata values are present
+         */
+        private boolean hasNoData;
     }
 }
