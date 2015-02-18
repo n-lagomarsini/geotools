@@ -699,6 +699,13 @@ public class ImageWorker {
             commonHints.add(hints);
         return this;
     }
+    
+    public final ImageWorker removeRenderingHints() {
+        if (commonHints != null) {
+            commonHints = null;
+        }
+        return this;
+    }
 
     /**
      * Removes a rendering hint. Note that invoking this method is <strong>not</strong> the same than invoking
@@ -4183,6 +4190,10 @@ public class ImageWorker {
         pb.setSource(image, 0);
         pb.set(table, 0);
         pb.set(roi, 2);
+        // Convert the NoData
+        if(nodata != null){
+            nodata = RangeFactory.convert(nodata, image.getSampleModel().getDataType());
+        }
         pb.set(nodata, 3);
         if (isNoDataNeeded()) {
             if (destNoData != null && destNoData.length > 0) {

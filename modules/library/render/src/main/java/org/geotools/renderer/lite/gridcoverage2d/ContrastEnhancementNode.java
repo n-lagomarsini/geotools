@@ -24,6 +24,7 @@ import it.geosolutions.jaiext.piecewise.GenericPiecewiseOpImage;
 import it.geosolutions.jaiext.piecewise.PiecewiseTransform1D;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
+import it.geosolutions.rendered.viewer.RenderedImageBrowser;
 
 import java.awt.RenderingHints;
 import java.awt.Transparency;
@@ -520,6 +521,7 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 			//RenderedImage inputImage,
 	                ImageWorker inputWorker,
 			final Hints hints) {
+	        inputWorker.setRenderingHints(hints);
 		if (type != null && type.length() > 0) {
 		        RenderedImage inputImage = inputWorker.getRenderedImage();
 			assert inputImage.getSampleModel().getNumBands() == 1:inputImage;
@@ -535,6 +537,7 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 			if (type.equalsIgnoreCase("NORMALIZE")) {
 				//step 1 do the extrema to get the statistics for this image
 			        final double[][] extrema = new double[2][];
+			        inputWorker.removeRenderingHints();
 			        extrema[0] = inputWorker.getMinimums();
 			        extrema[1] = inputWorker.getMaximums();
 				//final RenderedOp image = ExtremaDescriptor.create(inputImage,
@@ -569,6 +572,7 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 
 					//do the actual lookup
 					LookupTable table = LookupTableFactory.create(lut, dataType);
+					inputWorker.setRenderingHints(hints);
 					inputWorker.looukp(table);
 					//final LookupTableJAI lookup = new LookupTableJAI(lut);
 					//final ParameterBlock pb = new ParameterBlock();
@@ -599,6 +603,7 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				//pb.add(new double []{scale});
 				//pb.add(new double []{offset});
 				//return JAI.create("rescale", pb, hints);
+				inputWorker.setRenderingHints(hints);
 				inputWorker.rescale(new double []{scale}, new double []{offset});
 				return inputWorker.getRenderedImage();
 			}
@@ -647,6 +652,7 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 						//Integer.valueOf(1), null);
 	                        //final double[] minimum=(double[]) statistics.getProperty("minimum");
 	                        //final double[] maximum=(double[]) statistics.getProperty("maximum");
+				inputWorker.removeRenderingHints();
 				final double[] minimum=inputWorker.getMinimums();
 				final double[] maximum=inputWorker.getMaximums();
 
@@ -742,6 +748,7 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 						//Integer.valueOf(1), null);
 				//final double[] minimum=(double[]) statistics.getProperty("minimum");
 				//final double[] maximum=(double[]) statistics.getProperty("maximum");
+				inputWorker.removeRenderingHints();
 				final double[] minimum=inputWorker.getMinimums();
                                 final double[] maximum=inputWorker.getMaximums();
 				final double normalizationFactor=maximum[0];
@@ -812,7 +819,7 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 						//new int[] { 256 }, new double[] { 0 },
 						//new double[] { 256 }, null);
 				//final Histogram h = (Histogram) hist.getProperty("histogram");
-				final Histogram h = inputWorker.getHistogram(null, null, null);
+				final Histogram h = inputWorker.removeRenderingHints().getHistogram(null, null, null);
 				// now compute the PDF and the CDF for the original image
 				final byte[] cumulative = new byte[h.getNumBins(0)];
 
@@ -834,6 +841,7 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 
                                 //do the actual lookup
                                 LookupTable table = LookupTableFactory.create(cumulative, DataBuffer.TYPE_BYTE);
+                                inputWorker.setRenderingHints(hints);
                                 inputWorker.looukp(table);
                                 return inputWorker.getRenderedImage();
 				//final LookupTableJAI lookup = new LookupTableJAI(cumulative);
@@ -858,8 +866,10 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 			//final RenderedImage inputImage,
 			ImageWorker worker,
 	                final Hints hints) {
+	        worker.setRenderingHints(hints);
 		//note that we should work on a single band
-	        RenderedImage inputImage = worker.getRenderedImage();
+	        RenderedImage inputImage = worker.getRenderedOperation();
+	        //RenderedImageBrowser.showChain(inputImage, false, false);
 		assert inputImage.getSampleModel().getNumBands() == 1:inputImage;
 		
 		final int dataType=inputImage.getSampleModel().getDataType();
