@@ -608,7 +608,7 @@ public class Crop extends Operation2D {
 			// //
 			final PlanarImage croppedImage;
 			//final ParameterBlock pbj = new ParameterBlock();
-			ImageWorker worker = new ImageWorker(sourceImage);
+			ImageWorker worker = new ImageWorker();
 			//pbj.addSource(sourceImage);
 			java.awt.Polygon rasterSpaceROI=null;
 			double[] background = destnodata != null ? destnodata : CoverageUtilities.getBackgroundValues(sourceCoverage);
@@ -653,8 +653,8 @@ public class Crop extends Operation2D {
                     } catch (FactoryException ex) {
 						throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP), ex);
                     }
-                                        worker.setROI(roiarr[0]);
-                                        worker.setnoData(nodata);
+                                        //worker.setROI(roiarr[0]);
+                                        //worker.setnoData(nodata);
                                         worker.setDestinationNoData(background);
                                         
                                         
@@ -680,7 +680,7 @@ public class Crop extends Operation2D {
 					operatioName = "Mosaic";
 					
 					worker.setRenderingHints(targetHints);
-					worker.mosaic(null, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, null, null, null);
+					worker.mosaic(new RenderedImage[]{sourceImage}, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, roiarr, null, null, nodata != null ? new Range[]{nodata} : null);
 				}
 
 			}
@@ -688,6 +688,7 @@ public class Crop extends Operation2D {
             //do we still have to set the operation name? If so that means we have to go for crop.
             if(operatioName==null) {
                 // executing the crop
+                worker.setImage(sourceImage);
                 worker.setRenderingHints(targetHints);
                 worker.crop((float) minX, (float) minY, (float) width, (float) height);
                 operatioName = "Crop";

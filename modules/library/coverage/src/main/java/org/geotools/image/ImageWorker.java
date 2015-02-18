@@ -4058,8 +4058,8 @@ public class ImageWorker {
             Range[] nodata) {
         // ParameterBlock creation
         ParameterBlock pb = new ParameterBlock();
-        int srcNum = 1;
-        pb.addSource(image);
+        int srcNum = 0;
+        //pb.addSource(image);
         if(images != null && images.length > 0){
             for(int i = 0; i < images.length; i++){
                 if(images[i] != null){
@@ -4071,33 +4071,20 @@ public class ImageWorker {
         // Setting ROIs
         ROI[] roisNew = null;
         if(rois != null){
-            roisNew = new ROI[rois.length + 1];
-            roisNew[0] = roi;
-            System.arraycopy(rois, 0, roisNew, 1, rois.length);
-        }else if(roi != null){
             roisNew = new ROI[srcNum];
-            roisNew[0] = roi;
+            System.arraycopy(rois, 0, roisNew, 0, rois.length);
         }
         // Setting Alphas
         PlanarImage[] alphasNew = null;
-        boolean hasAlpha = image.getColorModel().hasAlpha();
         if(alphas != null){
-            alphasNew = new PlanarImage[alphas.length + 1];
-            alphasNew[0] = hasAlpha ? retainLastBand().getPlanarImage() : null;
-            System.arraycopy(alphas, 0, alphasNew, 1, alphas.length);
-        }else if(hasAlpha){
             alphasNew = new PlanarImage[srcNum];
-            alphasNew[0] = retainLastBand().getPlanarImage();
+            System.arraycopy(alphas, 0, alphasNew, 0, alphas.length);
         }
         // Setting NoData
         Range[] nodataNew = null;
         if(nodata != null){
-            nodataNew = new Range[nodata.length + 1];
-            nodataNew[0] = this.nodata;
-            System.arraycopy(nodata, 0, nodataNew, 1, nodata.length);
-        }else if(this.nodata != null){
             nodataNew = new Range[srcNum];
-            nodataNew[0] = this.nodata;
+            System.arraycopy(nodata, 0, nodataNew, 0, nodata.length);
         }
         
         // Setting the parameters
@@ -4168,15 +4155,15 @@ public class ImageWorker {
         pb.set(interp, 1);
         pb.set(roi, 3);
         pb.set(nodata, 4);
-        //if (isNoDataNeeded()) {
+        pb.set(destNoData, 2);
+        if (isNoDataNeeded()) {
             if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData, 2);
                 // We must set the new NoData value
                 setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
             } else {
                 setnoData(RangeFactory.create(0d, 0d));
             }
-        //}
+        }
         image = JAI.create("Warp", pb, getRenderingHints());
         // getting the new ROI property
         PropertyGenerator gen = new WarpDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];

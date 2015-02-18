@@ -653,7 +653,8 @@ final class Resampler2D extends GridCoverage2D {
 //                        .add(Float.valueOf(targetBB.width))
 //                        .add(Float.valueOf(targetBB.height));
             } else {
-                w.mosaic(null, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, null, null, null);
+                w.setnoData(null);
+                w.mosaic(new RenderedImage[]{sourceImage}, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, new ROI[]{roi}, null, null, nodata != null ? new Range[]{nodata} : null);
                 newROI = w.getROI();
                 newNoData = w.getNoData();
                 if(newROI != null){
