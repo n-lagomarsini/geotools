@@ -4168,7 +4168,7 @@ public class ImageWorker {
         pb.set(interp, 1);
         pb.set(roi, 3);
         pb.set(nodata, 4);
-        if (isNoDataNeeded()) {
+        //if (isNoDataNeeded()) {
             if (destNoData != null && destNoData.length > 0) {
                 pb.set(destNoData, 2);
                 // We must set the new NoData value
@@ -4176,7 +4176,7 @@ public class ImageWorker {
             } else {
                 setnoData(RangeFactory.create(0d, 0d));
             }
-        }
+        //}
         image = JAI.create("Warp", pb, getRenderingHints());
         // getting the new ROI property
         PropertyGenerator gen = new WarpDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];

@@ -609,7 +609,9 @@ public class Mosaic extends OperationJAI {
         
 
         // Creation of the finel Parameters
-        return new Params(block, hints, finalGeometry);
+        Params params = new Params(block, hints, finalGeometry);
+        params.rr = rr;
+		return params;
     }
 
     /**
@@ -713,9 +715,10 @@ public class Mosaic extends OperationJAI {
         ParameterBlockJAI jai = parameters.parameters;
         int numSources = jai.getNumSources();
         // ROI
-        Object roiParam = jai.getObjectParameter(2);
-        if(roiParam != null && roiParam instanceof ROI[]){
-            ROI[] rois = (ROI[]) roiParam;
+        //Object roiParam = jai.getObjectParameter(2);
+        ResampledRasters rr = parameters.rr;
+        if(rr != null && rr.getRois() != null){
+            ROI[] rois = (ROI[]) rr.getRois();
             ROI finalROI = null;
             for(int i = 0; i < numSources; i++){
                 if(finalROI == null){
@@ -762,6 +765,8 @@ public class Mosaic extends OperationJAI {
      * @author Nicola Lagomarsini
      */
     protected static final class Params {
+    	
+    	public ResampledRasters rr;
 
         /**
          * The parameters to be given to the {@link JAI#createNS} method.

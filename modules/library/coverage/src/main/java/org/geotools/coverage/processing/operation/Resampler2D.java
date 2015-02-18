@@ -17,6 +17,7 @@
 package org.geotools.coverage.processing.operation;
 
 import it.geosolutions.jaiext.range.Range;
+import it.geosolutions.rendered.viewer.RenderedImageBrowser;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
