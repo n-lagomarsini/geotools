@@ -16,6 +16,8 @@
  */
 package org.geotools.coverage.io.netcdf;
 
+import it.geosolutions.jaiext.range.NoDataContainer;
+
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.io.File;
@@ -32,7 +34,6 @@ import java.util.TimeZone;
 import javax.media.jai.PlanarImage;
 
 import org.apache.commons.io.FileUtils;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;

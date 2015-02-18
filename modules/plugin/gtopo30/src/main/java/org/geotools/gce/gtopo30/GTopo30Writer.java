@@ -17,6 +17,8 @@
  */
 package org.geotools.gce.gtopo30;
 
+import it.geosolutions.jaiext.lookup.LookupTable;
+
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.ColorModel;
@@ -66,6 +68,7 @@ import org.geotools.coverage.processing.operation.SelectSampleDimension;
 import org.geotools.data.DataSourceException;
 import org.geotools.data.DataUtilities;
 import org.geotools.factory.Hints;
+import org.geotools.image.ImageWorker;
 import org.geotools.image.io.ImageIOExt;
 import org.geotools.parameter.Parameter;
 import org.geotools.referencing.operation.matrix.XAffineTransform;
@@ -768,15 +771,21 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
             int targetType = sm.getDataType();
             MathTransform1D transform = LinearTransform1D.create(1, 9999);
             layout.setColorModel(cm).setSampleModel(sm);
-            ParameterBlock param = new ParameterBlock().addSource(image);
+            //ParameterBlock param = new ParameterBlock().addSource(image);
             RenderingHints hints = new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
             hints.put(JAI.KEY_REPLACE_INDEX_COLOR_MODEL, Boolean.FALSE);
             hints.put(JAI.KEY_TRANSFORM_ON_COLORMAP,     Boolean.FALSE);
             try {
                 LookupTableJAI table = LookupTableFactory.create(sourceType, targetType, new MathTransform1D[]{transform});
-                String operation = "Lookup";
-                param = param.add(table);
-                image = JAI.create(operation, param, hints);
+                LookupTable lut = it.geosolutions.jaiext.lookup.LookupTableFactory.create(table, sourceType);
+                ImageWorker worker = new ImageWorker(image);
+                worker.setRenderingHints(hints);
+                worker.looukp(lut);
+                image = worker.getRenderedImage();
+                
+                //String operation = "Lookup";
+                //param = param.add(table);
+                //image = JAI.create(operation, param, hints);
                 
             } catch (TransformException e) {
                 LOGGER.severe(e.getLocalizedMessage());
@@ -897,7 +906,7 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 	 */
 	private void writeStats(final PlanarImage image, String name, Object dest,
 			final GridCoverage2D gc) throws IOException {
-		ParameterBlock pb = new ParameterBlock();
+		//ParameterBlock pb = new ParameterBlock();
 		// /////////////////////////////////////////////////////////////////////
 		//
 		// we need to evaluate stats first using jai
@@ -905,28 +914,32 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 		// /////////////////////////////////////////////////////////////////////
 		final double[] Max = new double[] { Short.MAX_VALUE };//we should encode more than the maximum short anyway
 		final double[] Min = new double[] { Short.MIN_VALUE };//we should avoid No Data values TODO
-
+		final int[] bins = new int[] { (int) (Max[0] - Min[0] + 1) };
 		// histogram
-		pb.addSource(image);
-		pb.add(null); // no roi
-		pb.add(1);
-		pb.add(1);
-		pb.add(new int[] { (int) (Max[0] - Min[0] + 1) });
-		pb.add(Min);
-		pb.add(Max);
-		pb.add(1);
+		ImageWorker w = new ImageWorker(image);
+		w.setRenderingHint(JAI.KEY_TILE_CACHE, null);
+		//pb.addSource(image);
+		//pb.add(null); // no roi
+		//pb.add(1);
+		//pb.add(1);
+		//pb.add(new int[] { (int) (Max[0] - Min[0] + 1) });
+		//pb.add(Min);
+		//pb.add(Max);
+		//pb.add(1);
 
 		// /////////////////////////////////////////////////////////////////////
 		//
 		// Create the histogram
 		//
 		// /////////////////////////////////////////////////////////////////////
-		final PlanarImage histogramImage = JAI.create("histogram", pb,
-				new RenderingHints(JAI.KEY_TILE_CACHE, null));
-		final Histogram hist = (Histogram) histogramImage
-				.getProperty("histogram");
-		pb.removeParameters();
-		pb.removeSources();
+		//final PlanarImage histogramImage = JAI.create("histogram", pb,
+				//new RenderingHints(JAI.KEY_TILE_CACHE, null));
+		final Histogram hist = w.getHistogram(bins, Min, Max); 
+		final PlanarImage histogramImage = w.getPlanarImage();
+		//final Histogram hist = (Histogram) histogramImage
+				//.getProperty("histogram");
+		//pb.removeParameters();
+		//pb.removeSources();
 
 		// /////////////////////////////////////////////////////////////////////
 		//
@@ -971,7 +984,7 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 					.getBytes());
 			((ZipOutputStream) dest).closeEntry();
 		}
-
+		//w.dispose();
 		histogramImage.dispose();
 	}
 
@@ -1132,9 +1145,9 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 	 * @return Untiled image.
 	 */
 	private PlanarImage untileImage(RenderedImage image) {
-		final ParameterBlockJAI pbj = new ParameterBlockJAI("format");
-		pbj.addSource(image);
-		pbj.setParameter("dataType", image.getSampleModel().getTransferType());
+		//final ParameterBlockJAI pbj = new ParameterBlockJAI("format");
+		//pbj.addSource(image);
+		//pbj.setParameter("dataType", image.getSampleModel().getTransferType());
 
 		final ImageLayout layout = new ImageLayout(image);
 		layout.unsetTileLayout();
@@ -1149,8 +1162,11 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 		final RenderingHints hints = new RenderingHints(JAI.KEY_IMAGE_LAYOUT,
 				layout);
 		// avoid caching this image
-
-		return JAI.create("format", pbj, hints);
+		ImageWorker w = new ImageWorker(image);
+		w.setRenderingHints(hints);
+		w.format(image.getSampleModel().getTransferType());
+		return w.getPlanarImage();
+		//return JAI.create("format", pbj, hints);
 	}
 
 }

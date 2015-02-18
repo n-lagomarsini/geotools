@@ -18,6 +18,7 @@ package org.geotools.coverage.grid;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 
 import java.awt.Rectangle;
@@ -36,7 +37,6 @@ import javax.media.jai.PlanarImage;
 import javax.media.jai.ROIShape;
 
 import org.geotools.coverage.CoverageFactoryFinder;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.factory.Hints;
 import org.geotools.referencing.operation.matrix.XAffineTransform;
 import org.geotools.resources.coverage.CoverageUtilities;

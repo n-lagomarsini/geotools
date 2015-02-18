@@ -16,6 +16,7 @@
  */
 package org.geotools.resources.coverage;
 
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 
 import java.awt.Rectangle;
@@ -39,7 +40,6 @@ import javax.media.jai.ROI;
 
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.factory.Hints;
@@ -214,8 +214,12 @@ public final class CoverageUtilities {
     
     public static NoDataContainer getNoDataProperty(GridCoverage2D coverage){
         final Object noData = coverage.getProperty(NoDataContainer.GC_NODATA);
-        if(noData != null && noData instanceof NoDataContainer){
-            return (NoDataContainer) noData;
+        if(noData != null){
+            if(noData instanceof NoDataContainer){
+                return (NoDataContainer) noData;
+            }else if(noData instanceof Double){
+                return new NoDataContainer((Double)noData);
+            }
         }
         return null;
     }
