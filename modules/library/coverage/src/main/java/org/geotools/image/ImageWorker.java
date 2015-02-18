@@ -390,12 +390,24 @@ public class ImageWorker {
     private int tileCacheDisabled = 0;
 
     /**
-     * Creates a new uninitialized builder for an {@linkplain #load image read}.
+     * Creates a new uninitialized builder for an {@linkplain #load image read} or
+     * a {@linkplain #mosaic mosaic operation}
      * 
-     * @see #load
+     * @see #load(String, int, boolean)
+     * @see #mosaic(RenderedImage[], MosaicType, PlanarImage[], ROI[], double[][], Range[])
      */
     public ImageWorker() {
         inheritanceStopPoint = this.image = null;
+    }
+
+    /**
+     * Creates a new uninitialized worker with RenderingHints for a {@linkplain #mosaic mosaic operation}
+     * 
+     * 
+     * @see #mosaic(RenderedImage[], MosaicType, PlanarImage[], ROI[], double[][], Range[])
+     */
+    public ImageWorker(RenderingHints hints) {
+        setRenderingHints(hints);
     }
 
     /**
@@ -682,21 +694,23 @@ public class ImageWorker {
     }
 
     /**
-     * Set a map of rendering hints to use for all images to be computed by this class. This method applies only to the next images to be computed;
+     * Set a map of rendering hints to use for all images to be computed by this class. 
+     * This method applies only to the next images to be computed;
      * images already computed before this method call (if any) will not be affected.
      * 
      * <p>
      * If <code>hints</code> is null we won't modify this list.
      * 
      * @return This ImageWorker
-     * @see #setRenderingHint(RenderingHints)
+     * @see #setRenderingHint(RenderingHint)
      */
     public final ImageWorker setRenderingHints(final RenderingHints hints) {
         if (commonHints == null) {
             commonHints = new RenderingHints(null);
         }
-        if (hints != null)
+        if (hints != null) {
             commonHints.add(hints);
+        }
         return this;
     }
     
@@ -4061,7 +4075,7 @@ public class ImageWorker {
         return this;
     }
     
-    public ImageWorker mosaic(RenderedImage[] images, MosaicType type, ROI[] rois, PlanarImage[] alphas, double[][] thresholds,
+    public ImageWorker mosaic(RenderedImage[] images, MosaicType type, PlanarImage[] alphas, ROI[] rois, double[][] thresholds,
             Range[] nodata) {
         // ParameterBlock creation
         ParameterBlock pb = new ParameterBlock();

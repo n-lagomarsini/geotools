@@ -58,7 +58,6 @@ import javax.media.jai.RenderedOp;
 import javax.media.jai.TileCache;
 import javax.media.jai.TileScheduler;
 import javax.media.jai.operator.ConstantDescriptor;
-import javax.media.jai.operator.FormatDescriptor;
 import javax.media.jai.operator.MosaicDescriptor;
 import javax.media.jai.operator.TranslateDescriptor;
 
@@ -113,7 +112,6 @@ import org.opengis.filter.sort.SortOrder;
 import org.opengis.geometry.BoundingBox;
 import org.opengis.referencing.datum.PixelInCell;
 import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.MathTransform1D;
 import org.opengis.referencing.operation.MathTransform2D;
 import org.opengis.referencing.operation.TransformException;
 import org.opengis.util.InternationalString;
@@ -853,9 +851,10 @@ class RasterLayerResponse{
                     images[i++] = roi.getAsImage();
                 }
                 ROI[] roisArray = (ROI[]) rois.toArray(new ROI[rois.size()]);
-                RenderedOp overallROI = MosaicDescriptor.create(images,
-                        MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, roisArray,
-                        new double[][] { { 1.0 } }, new double[] { 0.0 }, hints);
+                RenderedImage overallROI = new ImageWorker(hints)
+                        .setDestinationNoData(new double[] { 0.0 })
+                        .mosaic(images, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, roisArray,
+                                new double[][] { { 1.0 } }, null).getRenderedImage();
                 return new ROI(overallROI);
             }
         }
@@ -1677,8 +1676,8 @@ class RasterLayerResponse{
                 il.setColorModel(rasterManager.defaultCM);
                 il.setSampleModel(rasterManager.defaultCM.createCompatibleSampleModel(
                         tileSize.width, tileSize.height));
-                finalImage = FormatDescriptor.create(finalImage,
-                        Integer.valueOf(il.getSampleModel(null).getDataType()), renderingHints);
+                finalImage = new ImageWorker(finalImage).setRenderingHints(renderingHints).
+                        format(il.getSampleModel(null).getDataType()).getRenderedImage();
             }
         } else {
             il.setWidth(rasterBounds.width).setHeight(rasterBounds.height);

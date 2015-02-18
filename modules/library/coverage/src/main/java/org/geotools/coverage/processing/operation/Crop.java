@@ -680,7 +680,7 @@ public class Crop extends Operation2D {
 					operatioName = "Mosaic";
 					
 					worker.setRenderingHints(targetHints);
-					worker.mosaic(new RenderedImage[]{sourceImage}, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, roiarr, null, null, nodata != null ? new Range[]{nodata} : null);
+					worker.mosaic(new RenderedImage[]{sourceImage}, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, roiarr, null, nodata != null ? new Range[]{nodata} : null);
 				}
 
 			}
