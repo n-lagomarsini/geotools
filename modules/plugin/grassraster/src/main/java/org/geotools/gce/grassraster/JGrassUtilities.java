@@ -515,7 +515,7 @@ public class JGrassUtilities {
                 0F,
                 0F,
                 interpolation);
-        return worker.getRenderedImage();
+        return worker.getRenderedOperation();
         //ParameterBlock block = new ParameterBlock();
         //block.addSource(translatedImage);
         //block.add((float) requestedCols / (float) translatedImage.getWidth());
