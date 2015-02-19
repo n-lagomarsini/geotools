@@ -16,7 +16,7 @@
   </parent>
   
   <properties>
-    <netcdf.version>4.3.16</netcdf.version>
+    <netcdf.version>4.5.3</netcdf.version>
   </properties>
 
   <!-- =========================================================== -->
