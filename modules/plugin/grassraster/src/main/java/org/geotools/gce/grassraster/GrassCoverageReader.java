@@ -511,8 +511,8 @@ public class GrassCoverageReader extends AbstractGridCoverage2DReader implements
 
     private RenderedImage setPadding( int xPaddingSx, int xPaddingDx, int yPaddingTop, int yPaddingBottom, RenderedImage image ) {
         ImageWorker worker = new ImageWorker(image);
-        worker.border(xPaddingSx, 0, yPaddingTop, 0, new BorderExtenderConstant(new double[]{Double.NaN}));        
-        worker.translate(-xPaddingSx, -yPaddingTop, null);
+        worker.border(Math.abs(xPaddingSx), Math.abs(0), Math.abs(yPaddingTop), Math.abs(0), new BorderExtenderConstant(new double[]{Double.NaN}));        
+        worker.translate((float)-xPaddingSx, (float)-yPaddingTop, null);
         return worker.getRenderedImage();
         
         //ParameterBlock block = new ParameterBlock();

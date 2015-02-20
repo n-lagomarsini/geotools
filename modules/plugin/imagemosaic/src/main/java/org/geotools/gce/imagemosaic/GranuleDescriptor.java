@@ -927,13 +927,15 @@ public class GranuleDescriptor {
                 iw.setRenderingHints(localHints);
                 iw.affine(finalRaster2Model, interpolation, request.getBackgroundValues());
                 
-                		Object roi = iw.getRenderedImage().getProperty("ROI");
+                		RenderedImage renderedImage = iw.getRenderedImage();
+                		renderedImage.getMinX();
+                        Object roi = renderedImage.getProperty("ROI");
 				if( useFootprint && roi instanceof ROIGeometry && ((ROIGeometry) roi).getAsGeometry().isEmpty()){
 				    //JAI not only transforms the ROI, but may also apply clipping to the image boundary
 				    //this results in an empty geometry in some edge cases
                 		    return null;
                 		}
-				return new GranuleLoadingResult(iw.getRenderedImage(), null, granuleUrl, doFiltering, pamDataset);
+				return new GranuleLoadingResult(renderedImage, null, granuleUrl, doFiltering, pamDataset);
 			}
 		
 		} catch (IllegalStateException e) {

@@ -4022,10 +4022,12 @@ public class ImageWorker {
                 }
                 image = JAI.create("Scale", pb, localHints);
                 // getting the new ROI property
-                PropertyGenerator gen = new ScaleDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
-                Object prop = gen.getProperty("roi", image);
-                if(prop != null && prop instanceof ROI){
-                    setROI((ROI) prop);
+                if(roi != null){
+                    PropertyGenerator gen = new ScaleDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
+                    Object prop = gen.getProperty("roi", image);
+                    if(prop != null && prop instanceof ROI){
+                        setROI((ROI) prop);
+                    }
                 }
 
                 // image = ScaleDescriptor.create(source, 1.0f, 1.0f,
@@ -4050,10 +4052,13 @@ public class ImageWorker {
                     }
                 }
                 image = JAI.create("Scale", pb, commonHints);
-                PropertyGenerator gen = new ScaleDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
-                Object prop = gen.getProperty("roi", image);
-                if(prop != null && prop instanceof ROI){
-                    setROI((ROI) prop);
+                if (roi != null) {
+                    PropertyGenerator gen = new ScaleDescriptor()
+                            .getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
+                    Object prop = gen.getProperty("roi", image);
+                    if (prop != null && prop instanceof ROI) {
+                        setROI((ROI) prop);
+                    }
                 }
                 // image = ScaleDescriptor.create(source, (float) tx.getScaleX(),
                 // (float) tx.getScaleY(), (float) tx.getTranslateX(),
@@ -4068,10 +4073,13 @@ public class ImageWorker {
             pb.set(nodata, 6);
             setnoData(RangeFactory.create(bgValues[0], bgValues[0]));
             image = JAI.create("Affine", pb, commonHints);
-            PropertyGenerator gen = new AffineDescriptor().getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
-            Object prop = gen.getProperty("roi", image);
-            if(prop != null && prop instanceof ROI){
-                setROI((ROI) prop);
+            if (roi != null) {
+                PropertyGenerator gen = new AffineDescriptor()
+                        .getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
+                Object prop = gen.getProperty("roi", image);
+                if (prop != null && prop instanceof ROI) {
+                    setROI((ROI) prop);
+                }
             }
             // image = AffineDescriptor.create(source, tx, interpolation, bgValues, commonHints);
         }
@@ -4186,21 +4194,23 @@ public class ImageWorker {
         }
         // Setting ROIs
         ROI[] roisNew = null;
-        if(rois != null){
+        if(rois != null && srcNum > 0){
             roisNew = new ROI[srcNum];
             System.arraycopy(rois, 0, roisNew, 0, rois.length);
         }
         // Setting Alphas
         PlanarImage[] alphasNew = null;
-        if(alphas != null){
+        if(alphas != null && srcNum > 0){
             alphasNew = new PlanarImage[srcNum];
             System.arraycopy(alphas, 0, alphasNew, 0, alphas.length);
         }
         // Setting NoData
         Range[] nodataNew = null;
-        if(nodata != null){
+        if(nodata != null && srcNum > 0){
             nodataNew = new Range[srcNum];
             System.arraycopy(nodata, 0, nodataNew, 0, nodata.length);
+        } else if(thresholds != null){
+            nodataNew = handleMosaicThresholds(thresholds, srcNum);
         }
         
         // Setting the parameters
@@ -4239,6 +4249,30 @@ public class ImageWorker {
         return this;
     }
     
+    private Range[] handleMosaicThresholds(double[][] thresholds, int srcNum) {
+        Range[] nodata = new Range[srcNum];
+        int minSrcNum = Math.min(srcNum, thresholds.length);
+        for(int i = 0; i < minSrcNum; i++){
+            
+            double maxValue = Double.NEGATIVE_INFINITY;
+            int numBands = thresholds[i].length;
+            for(int b = 0; b < numBands; b++){
+                double bandValue = thresholds[i][b];
+                if(bandValue > maxValue){
+                    maxValue = bandValue;
+                }
+            }
+            nodata[i] = RangeFactory.create(Double.NEGATIVE_INFINITY, maxValue);
+        }
+        if(minSrcNum < srcNum){
+            for(int i = minSrcNum; i < srcNum; i++){
+                nodata[i] = nodata[0];
+            }
+        }
+
+        return nodata;
+    }
+
     public ImageWorker border(int leftPad, int rightPad, int topPad, int bottomPad, BorderExtender ext){
         ParameterBlock pb = new ParameterBlock();
         pb.addSource(image);

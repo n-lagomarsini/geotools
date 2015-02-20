@@ -73,7 +73,7 @@ public enum FootprintBehavior {
                         null).getRenderedImage();
 
                 imageWorker.retainBands(mosaic.getColorModel().getNumColorComponents());
-                imageWorker.addBand(maskedAlpha, false);
+                imageWorker.addBand(maskedAlpha, false, true, null);
             } else {
 
                 // turn the roi into a single band image and add it to the mosaic as transparency
@@ -105,7 +105,7 @@ public enum FootprintBehavior {
                             null, 
                             null).getRenderedOperation();
                 }
-                imageWorker.addBand(alpha, false);
+                imageWorker.addBand(alpha, false, true, null);
             }
 
             RenderedImage result = imageWorker.getRenderedImage();

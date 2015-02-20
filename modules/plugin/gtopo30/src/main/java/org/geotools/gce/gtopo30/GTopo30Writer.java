@@ -771,7 +771,7 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
             int targetType = sm.getDataType();
             MathTransform1D transform = LinearTransform1D.create(1, 9999);
             layout.setColorModel(cm).setSampleModel(sm);
-            ParameterBlock param = new ParameterBlock().addSource(image);
+            //ParameterBlock param = new ParameterBlock().addSource(image);
             RenderingHints hints = new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
             hints.put(JAI.KEY_REPLACE_INDEX_COLOR_MODEL, Boolean.FALSE);
             hints.put(JAI.KEY_TRANSFORM_ON_COLORMAP,     Boolean.FALSE);
@@ -935,6 +935,7 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 		//final PlanarImage histogramImage = JAI.create("histogram", pb,
 				//new RenderingHints(JAI.KEY_TILE_CACHE, null));
 		final Histogram hist = w.getHistogram(bins, Min, Max); 
+		final PlanarImage histogramImage = w.getPlanarImage();
 		//final Histogram hist = (Histogram) histogramImage
 				//.getProperty("histogram");
 		//pb.removeParameters();
@@ -983,8 +984,8 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 					.getBytes());
 			((ZipOutputStream) dest).closeEntry();
 		}
-		w.dispose();
-		//histogramImage.dispose();
+		//w.dispose();
+		histogramImage.dispose();
 	}
 
 	/**
