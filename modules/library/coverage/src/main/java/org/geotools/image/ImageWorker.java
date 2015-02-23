@@ -35,6 +35,7 @@ import it.geosolutions.jaiext.scale.ScaleDescriptor;
 import it.geosolutions.jaiext.stats.HistogramWrapper;
 import it.geosolutions.jaiext.stats.Statistics;
 import it.geosolutions.jaiext.stats.Statistics.StatsType;
+import it.geosolutions.jaiext.translate.TranslateDescriptor;
 import it.geosolutions.jaiext.warp.WarpDescriptor;
 
 import java.awt.Color;
@@ -126,6 +127,8 @@ import com.sun.imageio.plugins.png.PNGImageWriter;
 import com.sun.media.imageioimpl.common.BogusColorSpace;
 import com.sun.media.imageioimpl.common.PackageUtil;
 import com.sun.media.imageioimpl.plugins.gif.GIFImageWriter;
+import com.sun.media.jai.opimage.ScaleCRIF;
+import com.sun.media.jai.opimage.TranslateCRIF;
 import com.sun.media.jai.util.ImageUtil;
 
 /**
@@ -2873,8 +2876,8 @@ public class ImageWorker {
 
     private void prepareOpConstOperation(Operator op, double[] values, ParameterBlock pb, ROI roi,
             Range nodata, boolean setDestNoData) {
-        pb.set(op, 0);
-        pb.set(values, 1);
+        pb.set(op, 1);
+        pb.set(values, 0);
         pb.set(roi, 2);
         pb.set(nodata, 3);
         if (destNoData != null && destNoData.length > 0) {
@@ -2884,6 +2887,7 @@ public class ImageWorker {
                 setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
             }
         } else {
+        	pb.set(0d, 4);
             if (setDestNoData) {
                 setnoData(RangeFactory.create(0, 0));
             }
@@ -4229,7 +4233,7 @@ public class ImageWorker {
         // Setting the final ROI as union of the older ROIs
         if(roisNew != null){
             int numROI = roisNew.length;
-            ROI finalROI = roisNew[0];
+            ROI finalROI = new ROI(roisNew[0].getAsImage());//roisNew[0];
             for(int i = 1; i < numROI; i++){
                 ROI added = roisNew[i];
                 if(added != null){
