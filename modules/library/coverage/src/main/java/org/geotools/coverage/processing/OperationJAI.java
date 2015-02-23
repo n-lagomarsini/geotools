@@ -17,6 +17,7 @@
 package org.geotools.coverage.processing;
 
 import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
 
@@ -44,7 +45,6 @@ import javax.media.jai.registry.RenderedRegistryMode;
 
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.grid.InvalidGridGeometryException;

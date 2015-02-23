@@ -65,7 +65,7 @@ public class BandMergeProcess implements RasterProcess {
     private static final CoverageProcessor PROCESSOR = CoverageProcessor.getInstance();
 
     /** The {@link BandMerge} operation to execute */
-    private static final Operation BANDMERGE = PROCESSOR.getOperation("BandMergeOp");
+    private static final Operation BANDMERGE = PROCESSOR.getOperation("BandMerge");
 
     @DescribeResult(name = "result", description = "Merged Rasters")
     public GridCoverage2D execute(

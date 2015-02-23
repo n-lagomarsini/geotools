@@ -18,6 +18,7 @@
 package org.geotools.coverage.processing.operation;
 
 import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
 
@@ -43,7 +44,6 @@ import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.ROI;
 
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;
@@ -535,7 +535,7 @@ public class BandMerge extends OperationJAI {
         final CoordinateReferenceSystem crs = primarySource.getCoordinateReferenceSystem();
         final MathTransform toCRS = parameters.gridToCRS;
         final RenderedImage data = createRenderedImage(parameters.parameters, hints);
-        final Map properties = getProperties(data, crs, name, toCRS, sources, null);
+        final Map properties = getProperties(data, crs, name, toCRS, sources, parameters);
         return getFactory(parameters.hints).create(name, // The grid coverage name
                 data, // The underlying data
                 crs, // The coordinate system (may not be 2D).
@@ -567,7 +567,7 @@ public class BandMerge extends OperationJAI {
 
     protected Map getProperties(RenderedImage data, CoordinateReferenceSystem crs,
             InternationalString name, MathTransform toCRS, GridCoverage2D[] sources,
-            Parameters parameters) {
+            BandMergeParams parameters) {
         // Check the property names of the created image
 //        String[] propNames = data.getPropertyNames();
 //        // If no property is present then the null is returned

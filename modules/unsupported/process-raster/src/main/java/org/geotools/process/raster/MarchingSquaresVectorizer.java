@@ -593,6 +593,7 @@ public final class MarchingSquaresVectorizer {
                 //inputRI = BandCombineDescriptor.create(inputRI, matrix, localHints);
             }
             //imagesStack.push(inputRI);
+            inputRI = worker.getRenderedImage();
             imagesStack.push(worker.getRenderedImage());
             numBands = inputRI.getSampleModel().getNumBands();
             assert numBands == 1;

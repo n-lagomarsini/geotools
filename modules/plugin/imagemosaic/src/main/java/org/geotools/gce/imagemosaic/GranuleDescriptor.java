@@ -19,6 +19,7 @@ package org.geotools.gce.imagemosaic;
 import it.geosolutions.imageio.pam.PAMDataset;
 import it.geosolutions.imageio.pam.PAMParser;
 import it.geosolutions.imageio.utilities.ImageIOUtilities;
+import it.geosolutions.jaiext.range.NoDataContainer;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -926,15 +927,18 @@ public class GranuleDescriptor {
                 ImageWorker iw = new ImageWorker(raster);
                 iw.setRenderingHints(localHints);
                 iw.affine(finalRaster2Model, interpolation, request.getBackgroundValues());
-                
-                		RenderedImage renderedImage = iw.getRenderedImage();
-                		renderedImage.getMinX();
+                        RenderedImage renderedImage = iw.getRenderedImage();
                         Object roi = renderedImage.getProperty("ROI");
 				if( useFootprint && roi instanceof ROIGeometry && ((ROIGeometry) roi).getAsGeometry().isEmpty()){
 				    //JAI not only transforms the ROI, but may also apply clipping to the image boundary
 				    //this results in an empty geometry in some edge cases
                 		    return null;
                 		}
+				// Propagate NoData
+				if(iw.getNoData() != null){
+				    PlanarImage t = PlanarImage.wrapRenderedImage(renderedImage);
+				    t.setProperty(NoDataContainer.GC_NODATA, new NoDataContainer(iw.getNoData()));
+				}
 				return new GranuleLoadingResult(renderedImage, null, granuleUrl, doFiltering, pamDataset);
 			}
 		

@@ -29,6 +29,7 @@ import it.geosolutions.jaiext.lookup.LookupTableFactory;
 import it.geosolutions.jaiext.piecewise.DefaultPiecewiseTransform1D;
 import it.geosolutions.jaiext.piecewise.DefaultPiecewiseTransform1DElement;
 import it.geosolutions.jaiext.piecewise.PiecewiseTransform1D;
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
 import it.geosolutions.jaiext.scale.ScaleDescriptor;
@@ -106,7 +107,6 @@ import javax.media.jai.operator.MosaicType;
 import javax.media.jai.operator.SubtractDescriptor;
 import javax.media.jai.registry.RenderedRegistryMode;
 
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.factory.Hints;
 import org.geotools.image.io.ImageIOExt;
 import org.geotools.referencing.ReferencingFactoryFinder;
@@ -436,10 +436,19 @@ public class ImageWorker {
      */
     public ImageWorker(final RenderedImage image) {
         inheritanceStopPoint = this.image = image;
+        setnoData(extractNoDataProperty(image));
+    }
+
+    private Range extractNoDataProperty(final RenderedImage image) {
         Object property = image.getProperty(NoDataContainer.GC_NODATA);
-        if(property != null && property instanceof Double){
-            setnoData(RangeFactory.create((Double)property, (Double)property));
+        if(property != null){
+            if(property instanceof NoDataContainer){
+                return ((NoDataContainer)property).getAsRange();
+            }else if(property instanceof Double){
+                return RangeFactory.create((Double)property, (Double)property);
+            }
         }
+        return null;
     }
 
     /**
@@ -450,10 +459,7 @@ public class ImageWorker {
      */
     public final ImageWorker setImage(final RenderedImage image) {
         inheritanceStopPoint = this.image = image;
-        Object property = image.getProperty(NoDataContainer.GC_NODATA);
-        if(property != null && property instanceof Double){
-            setnoData(RangeFactory.create((Double)property, (Double)property));
-        }
+        setnoData(extractNoDataProperty(image));
         return this;
     }
 
@@ -656,6 +662,15 @@ public class ImageWorker {
      */
     public final ImageWorker setnoData(final Range nodata) {
         this.nodata = nodata;
+        if(nodata != null && image != null){
+            PlanarImage img = getPlanarImage();
+            img.setProperty(NoDataContainer.GC_NODATA, new NoDataContainer(nodata));
+            image = img;
+        } else {
+            PlanarImage img = getPlanarImage();
+            img.removeProperty(NoDataContainer.GC_NODATA);
+            image = img;
+        }
         invalidateStatistics();
         return this;
     }
@@ -4048,7 +4063,7 @@ public class ImageWorker {
                 pb.set(nodata, 7);
                 if (isNoDataNeeded()) {
                     if (destNoData != null && destNoData.length > 0) {
-                        pb.set(destNoData[0], 8);
+                        pb.set(destNoData, 8);
                         // We must set the new NoData value
                         setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
                     } else {
@@ -4141,7 +4156,7 @@ public class ImageWorker {
         pb.set(nodata, 5);
         if (isNoDataNeeded()) {
             if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 5);
+                pb.set(destNoData, 6);
                 // We must set the new NoData value
                 setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
             } else {
@@ -4215,6 +4230,12 @@ public class ImageWorker {
             System.arraycopy(nodata, 0, nodataNew, 0, nodata.length);
         } else if(thresholds != null){
             nodataNew = handleMosaicThresholds(thresholds, srcNum);
+        } else {
+            nodataNew = new Range[srcNum];
+            for(int i = 0; i < srcNum; i++){
+                RenderedImage img = pb.getRenderedSource(i);
+                nodataNew[i] = extractNoDataProperty(img);
+            }
         }
         
         // Setting the parameters
@@ -4224,20 +4245,26 @@ public class ImageWorker {
         pb.add(thresholds);
         pb.add(destNoData);
         pb.add(nodataNew);
+        Range nod = null;
         if (destNoData != null && destNoData.length > 0) {
             // We must set the new NoData value
-            setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+            nod = (RangeFactory.create(destNoData[0], destNoData[0]));
         } else {
-            setnoData(RangeFactory.create(0d, 0d));
+            nod = (RangeFactory.create(0d, 0d));
         }
         // Setting the final ROI as union of the older ROIs
         if(roisNew != null){
             int numROI = roisNew.length;
-            ROI finalROI = new ROI(roisNew[0].getAsImage());//roisNew[0];
+            ROI roi2 = roisNew[0];
+            ROI finalROI = roi2 != null  ? new ROI(roi2.getAsImage()) : null;//roisNew[0];
             for(int i = 1; i < numROI; i++){
                 ROI added = roisNew[i];
                 if(added != null){
-                    finalROI.add(added);
+                    if(finalROI != null){
+                        finalROI.add(added);
+                    }else{
+                        finalROI = new ROI(added.getAsImage());
+                    }
                 }
             }
             if(numROI != srcNum){
@@ -4250,6 +4277,9 @@ public class ImageWorker {
             setROI(finalROI);
         }
         image = JAI.create("Mosaic", pb, getRenderingHints());
+        
+        setnoData(nod);
+        
         return this;
     }
     

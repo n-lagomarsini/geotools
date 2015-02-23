@@ -1205,6 +1205,11 @@
 		<groupId>it.geosolutions.jaiext.rlookup</groupId>
 		<artifactId>jt-rlookup</artifactId>
 		<version>${jaiext.version}</version>
+	  </dependency>		
+	  <dependency>
+		<groupId>it.geosolutions.jaiext.vectorbin</groupId>
+		<artifactId>jt-vectorbin</artifactId>
+		<version>${jaiext.version}</version>
 	  </dependency>		  
     </dependencies>
   </dependencyManagement>

@@ -17,6 +17,7 @@
 package org.geotools.gce.imagemosaic;
 
 import it.geosolutions.imageio.pam.PAMDataset;
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
 
@@ -65,7 +66,6 @@ import javax.media.jai.operator.MosaicDescriptor;
 import org.apache.commons.io.FilenameUtils;
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.TypeMap;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
@@ -1880,8 +1880,13 @@ class RasterLayerResponse{
     private Double getNoDataProperty(RenderedImage image) {
         if (image != null) {
             Object obj = image.getProperty(NoDataContainer.GC_NODATA);
-            if (obj != null && obj instanceof Double) {
-                return (Double) obj; 
+            if (obj != null) {
+                if(obj instanceof NoDataContainer){
+                    return ((NoDataContainer) obj).getAsSingleValue();
+                }else if(obj instanceof Double){
+                    return (Double) obj;
+                }
+                 
             }
         }
         return null;

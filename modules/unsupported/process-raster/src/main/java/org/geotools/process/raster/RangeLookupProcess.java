@@ -20,6 +20,7 @@ package org.geotools.process.raster;
 //import it.geosolutions.jaiext.rlookup.RangeLookupTable;
 
 import it.geosolutions.jaiext.JAIExt;
+import it.geosolutions.jaiext.range.NoDataContainer;
 
 import java.awt.image.DataBuffer;
 import java.awt.image.RenderedImage;
@@ -35,7 +36,6 @@ import org.geotools.process.factory.DescribeResult;
 import org.geotools.coverage.Category;
 import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.factory.GeoTools;

@@ -252,6 +252,10 @@
 		<groupId>it.geosolutions.jaiext.rlookup</groupId>
 		<artifactId>jt-rlookup</artifactId>
 	</dependency>	
+	<dependency>
+		<groupId>it.geosolutions.jaiext.vectorbin</groupId>
+		<artifactId>jt-vectorbin</artifactId>
+	</dependency>		
     
     <!-- Test dependencies -->
     <dependency>

@@ -16,6 +16,7 @@
  */
 package org.geotools.coverage.processing.operation;
 
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.rendered.viewer.RenderedImageBrowser;
 
@@ -48,7 +49,6 @@ import javax.media.jai.WarpGrid;
 import javax.media.jai.operator.MosaicDescriptor;
 
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GeneralGridEnvelope;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;

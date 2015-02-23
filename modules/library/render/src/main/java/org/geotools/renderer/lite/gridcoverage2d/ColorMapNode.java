@@ -20,6 +20,7 @@ import it.geosolutions.jaiext.classifier.ColorMapTransform;
 import it.geosolutions.jaiext.classifier.LinearColorMap;
 import it.geosolutions.jaiext.classifier.LinearColorMapElement;
 import it.geosolutions.jaiext.piecewise.Domain1D;
+import it.geosolutions.jaiext.range.NoDataContainer;
 
 import java.awt.Color;
 import java.awt.image.DataBuffer;
@@ -30,7 +31,6 @@ import java.util.Map;
 import javax.media.jai.RenderedOp;
 
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.TypeMap;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.factory.Hints;

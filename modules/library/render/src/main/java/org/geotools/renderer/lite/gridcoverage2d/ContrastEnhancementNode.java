@@ -22,6 +22,7 @@ import it.geosolutions.jaiext.piecewise.DefaultPiecewiseTransform1D;
 import it.geosolutions.jaiext.piecewise.DefaultPiecewiseTransform1DElement;
 import it.geosolutions.jaiext.piecewise.GenericPiecewiseOpImage;
 import it.geosolutions.jaiext.piecewise.PiecewiseTransform1D;
+import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
 import it.geosolutions.rendered.viewer.RenderedImageBrowser;
@@ -46,7 +47,6 @@ import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.ROI;
 
 import org.geotools.coverage.GridSampleDimension;
-import org.geotools.coverage.NoDataContainer;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridGeometry2D;

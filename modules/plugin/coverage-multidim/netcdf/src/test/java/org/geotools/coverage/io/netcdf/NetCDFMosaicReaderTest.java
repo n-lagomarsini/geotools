@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.logging.Logger;
 
 import javax.media.jai.ImageLayout;
@@ -466,7 +467,7 @@ public class NetCDFMosaicReaderTest extends Assert {
             useJai.setValue(false);
             // specify time
             ParameterValue<List> time = ImageMosaicFormat.TIME.createValue();
-            final Date timeD = parseTimeStamp("2013-01-01T00:00:00.000Z");
+            final Date timeD = parseTimeStamp("2013-01-01T00:00:00.000");
             time.setValue(new ArrayList() {
                 {
                     add(timeD);
@@ -475,7 +476,7 @@ public class NetCDFMosaicReaderTest extends Assert {
             GeneralParameterValue[] params = new GeneralParameterValue[] { useJai, time };
             GridCoverage2D coverage1 = reader.read(params);
             // Specify a new time (Check if two times returns two different coverages)
-            final Date timeD2 = parseTimeStamp("2013-01-08T00:00:00.000Z");
+            final Date timeD2 = parseTimeStamp("2013-01-08T00:00:00.000");
             time.setValue(new ArrayList() {
                 {
                     add(timeD2);
@@ -988,7 +989,8 @@ public class NetCDFMosaicReaderTest extends Assert {
         }
     
     private Date parseTimeStamp(String timeStamp) throws ParseException {
-        final SimpleDateFormat formatD = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        final SimpleDateFormat formatD = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+        formatD.setTimeZone(TimeZone.getTimeZone("Zulu"));
         return formatD.parse(timeStamp);
     }
 
