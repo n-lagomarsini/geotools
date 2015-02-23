@@ -668,8 +668,11 @@ public class ImageWorker {
             image = img;
         } else {
             PlanarImage img = getPlanarImage();
-            img.removeProperty(NoDataContainer.GC_NODATA);
-            image = img;
+            Object property = img.getProperty(NoDataContainer.GC_NODATA);
+			if(property != null && property != Image.UndefinedProperty){
+	            img.removeProperty(NoDataContainer.GC_NODATA);
+	            image = img;
+            }
         }
         invalidateStatistics();
         return this;
@@ -4032,7 +4035,7 @@ public class ImageWorker {
                 pb.set(nodata, 7);
                 if (isNoDataNeeded()) {
                     if (destNoData != null && destNoData.length > 0) {
-                        pb.set(destNoData[0], 8);
+                        pb.set(destNoData, 8);
                         // We must set the new NoData value
                         setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
                     } else {
