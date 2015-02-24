@@ -60,7 +60,7 @@ public class AffineTest extends GridProcessingTestBase {
      */
     @Before
     public void setUp() {
-        JAIExt.initJAIEXT((ConcurrentOperationRegistry) ConcurrentOperationRegistry.initializeRegistry());
+        JAIExt.initJAIEXT();
         processor = CoverageProcessor.getInstance(null);
     }
 

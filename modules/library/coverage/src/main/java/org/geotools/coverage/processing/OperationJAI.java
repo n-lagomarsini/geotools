@@ -1154,9 +1154,6 @@ public class OperationJAI extends Operation2D {
                         // Undefined, set 0
                         
                     }
-                } else {
-                    // Set 0 as NoData
-                    CoverageUtilities.setNoDataProperty(properties, 0d);
                 }
             }
         }

@@ -214,8 +214,12 @@ public final class CoverageUtilities {
     
     public static NoDataContainer getNoDataProperty(GridCoverage2D coverage){
         final Object noData = coverage.getProperty(NoDataContainer.GC_NODATA);
-        if(noData != null && noData instanceof NoDataContainer){
-            return (NoDataContainer) noData;
+        if(noData != null){
+            if(noData instanceof NoDataContainer){
+                return (NoDataContainer) noData;
+            }else if(noData instanceof Double){
+                return new NoDataContainer((Double)noData);
+            }
         }
         return null;
     }

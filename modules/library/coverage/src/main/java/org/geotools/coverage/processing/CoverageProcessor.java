@@ -16,6 +16,8 @@
  */
 package org.geotools.coverage.processing;
 
+import it.geosolutions.jaiext.JAIExt;
+
 import java.awt.RenderingHints;
 import java.io.IOException;
 import java.io.Writer;
@@ -173,6 +175,7 @@ public class CoverageProcessor {
             record.setLoggerName(LOGGER.getName());
             LOGGER.log(record);
         }
+        JAIExt.initJAIEXT();
     }
     
 	/**

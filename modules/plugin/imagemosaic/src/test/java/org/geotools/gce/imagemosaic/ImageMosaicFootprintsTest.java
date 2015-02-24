@@ -16,13 +16,16 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Properties;
 
+import javax.media.jai.Interpolation;
 import javax.media.jai.PlanarImage;
+import javax.media.jai.ROIShape;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;
+import org.geotools.coverage.grid.Interpolator2D;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.shapefile.ShapefileDataStore;
@@ -273,10 +276,8 @@ public class ImageMosaicFootprintsTest {
         saveFootprintProperties(p);
 
         GridCoverage2D coverage = readCoverage();
-//         RenderedImageBrowser.showChain(coverage.getRenderedImage());
-//         System.in.read();
         
-//        // check the footprints have been applied by pocking the output image
+        // check the footprints have been applied by pocking the output image
         byte[] pixel = new byte[3];
         // Close to San Marino, black if we have the insets
         coverage.evaluate(new DirectPosition2D(12.54, 44.03), pixel);
@@ -333,7 +334,7 @@ public class ImageMosaicFootprintsTest {
         pixel = new byte[4];
         // Close to San Marino, black if we have the insets
         coverage.evaluate(tr.transform(new DirectPosition2D(coverage.getRenderedImage().getMinX(),coverage.getRenderedImage().getMinY()),null), pixel);
-//        RenderedImageBrowser.showChain(coverage.getRenderedImage());
+
         assertEquals(0, pixel[0]);
         assertEquals(0, pixel[1]);
         assertEquals(0, pixel[2]);
@@ -352,8 +353,6 @@ public class ImageMosaicFootprintsTest {
         saveFootprintProperties(p);
 
         GridCoverage2D coverage = readCoverage();
-//         RenderedImageBrowser.showChain(coverage.getRenderedImage());
-//         System.in.read();
         
 //        // check the footprints have been applied by pocking the output image
         byte[] pixel = new byte[3];
