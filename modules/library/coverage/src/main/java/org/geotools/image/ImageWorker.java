@@ -4179,19 +4179,23 @@ public class ImageWorker {
         }
         // Setting NoData
         Range[] nodataNew = null;
+        boolean noInternalNoData = true;
         if(nodata != null && srcNum > 0){
             nodataNew = new Range[srcNum];
             System.arraycopy(nodata, 0, nodataNew, 0, nodata.length);
-        } else if(thresholds != null){
-            nodataNew = handleMosaicThresholds(thresholds, srcNum);
         } else {
             nodataNew = new Range[srcNum];
             for(int i = 0; i < srcNum; i++){
                 RenderedImage img = pb.getRenderedSource(i);
-                nodataNew[i] = extractNoDataProperty(img);
+                Range nodProp = extractNoDataProperty(img);
+                noInternalNoData &= (nodProp == null);
+                nodataNew[i] = nodProp;
             }
         }
         
+        if(noInternalNoData && thresholds != null){
+            nodataNew = handleMosaicThresholds(thresholds, srcNum);
+        }
         // Setting the parameters
         pb.add(type);
         pb.add(alphasNew);
