@@ -91,7 +91,7 @@ public class MultiplyConst extends OperationJAI {
      * Constructs a default {@code "MultiplyConst"} operation.
      */
     public MultiplyConst() {
-    	super("MultiplyConst", getOperationDescriptor(getOperationName("MultiplyConst")));
+    	super("MultiplyConst", getOperationDescriptor(JAIExt.getOperationName("MultiplyConst")));
     }
     
     public String getName() {

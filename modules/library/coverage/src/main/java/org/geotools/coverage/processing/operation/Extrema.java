@@ -111,7 +111,7 @@ public class Extrema extends BaseStatisticsOperationJAI {
 	 * Constructs a default {@code "Extrema"} operation.
 	 */
 	public Extrema() throws OperationNotFoundException {
-		super("Extrema", getOperationDescriptor(getOperationName("Extrema")));
+		super("Extrema", getOperationDescriptor(JAIExt.getOperationName("Extrema")));
 	}
 	
     public String getName() {

@@ -16,6 +16,8 @@
  */
 package org.geotools.coverage.processing;
 
+import it.geosolutions.jaiext.JAIExt;
+
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
@@ -161,7 +163,7 @@ public abstract class BaseStatisticsOperationJAI extends
 	 * @param name of the underlying JAI operation.
 	 */
 	public BaseStatisticsOperationJAI(String name, OperationDescriptor operationDescriptor) {
-		super(getOperationDescriptor(getOperationName(name)),new ExtendedImagingParameterDescriptors(
+		super(getOperationDescriptor(JAIExt.getOperationName(name)),new ExtendedImagingParameterDescriptors(
 				name,
 				operationDescriptor,
 				new HashSet<ParameterDescriptor>(REPLACED_DESCRIPTORS)));

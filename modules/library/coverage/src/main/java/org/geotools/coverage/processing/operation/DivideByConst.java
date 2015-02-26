@@ -92,7 +92,7 @@ public class DivideByConst extends OperationJAI {
      * Constructs a default {@code "DivideByConst"} operation.
      */
     public DivideByConst() {
-    	super("DivideByConst", getOperationDescriptor(getOperationName("DivideByConst")));
+    	super("DivideByConst", getOperationDescriptor(JAIExt.getOperationName("DivideByConst")));
     }
     
     public String getName() {

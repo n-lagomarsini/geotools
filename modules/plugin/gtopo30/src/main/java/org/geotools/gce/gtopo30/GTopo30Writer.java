@@ -63,6 +63,7 @@ import org.geotools.coverage.grid.LookupTableFactory;
 import org.geotools.coverage.grid.io.AbstractGridCoverageWriter;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.imageio.GeoToolsWriteParams;
+import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.coverage.processing.operation.Resample;
 import org.geotools.coverage.processing.operation.SelectSampleDimension;
 import org.geotools.data.DataSourceException;
@@ -110,14 +111,14 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 	}
 
 	/** Cached factory for a {@link SelectSampleDimension} operation. */
-	private final static SelectSampleDimension sdFactory = new SelectSampleDimension();
+	//private final static SelectSampleDimension sdFactory = new SelectSampleDimension();
 
 
-
+	private final static CoverageProcessor PROCESSOR = CoverageProcessor.getInstance();
 
 
 	/** Cached factory for {@link Resample} operation. */
-	private final static Resample resampleFactory = new Resample();
+	//private final static Resample resampleFactory = new Resample();
 
 	/**
 	 * Standard width for the GIF image.
@@ -319,11 +320,11 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 		// limitation.
 		//
 		// /////////////////////////////////////////////////////////////////////
-		final ParameterValueGroup pvg = sdFactory.getParameters();
+		final ParameterValueGroup pvg = PROCESSOR.getOperation("SelectSampleDimension").getParameters();
 		pvg.parameter("Source").setValue(gc2D);
 		pvg.parameter("SampleDimensions").setValue(new int[]{writeBand});
 		pvg.parameter("VisibleSampleDimension").setValue(writeBand);
-		gc2D = (GridCoverage2D) sdFactory.doOperation(pvg, hints);
+		gc2D = (GridCoverage2D) ((SelectSampleDimension)PROCESSOR.getOperation("SelectSampleDimension")).doOperation(pvg, hints);
 
 		// /////////////////////////////////////////////////////////////////////
 		//
@@ -777,7 +778,7 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
             hints.put(JAI.KEY_TRANSFORM_ON_COLORMAP,     Boolean.FALSE);
             try {
                 LookupTableJAI table = LookupTableFactory.create(sourceType, targetType, new MathTransform1D[]{transform});
-                LookupTable lut = it.geosolutions.jaiext.lookup.LookupTableFactory.create(table, sourceType);
+                LookupTable lut = it.geosolutions.jaiext.lookup.LookupTableFactory.create(table);
                 ImageWorker worker = new ImageWorker(image);
                 worker.setRenderingHints(hints);
                 worker.looukp(lut);
@@ -850,11 +851,11 @@ final public class GTopo30Writer extends AbstractGridCoverageWriter implements
 		final GridGeometry2D newGridGeometry = new GridGeometry2D(newGridrange,gc.getEnvelope());
 
 		// resample this coverage
-		final ParameterValueGroup pvg= resampleFactory.getParameters();
+		final ParameterValueGroup pvg= PROCESSOR.getOperation("Resample").getParameters();
 		pvg.parameter("Source").setValue(gc);
 		pvg.parameter("GridGeometry").setValue(newGridGeometry);
 		pvg.parameter("InterpolationType").setValue(new InterpolationBilinear());
-		return (GridCoverage2D) resampleFactory.doOperation(pvg, hints);
+		return (GridCoverage2D) ((Resample)PROCESSOR.getOperation("Resample")).doOperation(pvg, hints);
 
 	}
 

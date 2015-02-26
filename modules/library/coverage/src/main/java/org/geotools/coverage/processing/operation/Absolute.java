@@ -80,7 +80,7 @@ public class Absolute extends BaseMathOperationJAI {
      * Constructs a default {@code "Absolute"} operation.
      */
     public Absolute() {
-        super("Absolute", getOperationDescriptor(getOperationName("Absolute")));
+        super("Absolute", getOperationDescriptor(JAIExt.getOperationName("Absolute")));
     }
     
     public String getName() {

@@ -140,7 +140,7 @@ public abstract class BaseMathOperationJAI extends OperationJAI {
      * @param name of the underlying JAI operation.
      */
     public BaseMathOperationJAI(String name, OperationDescriptor operationDescriptor) {
-        super(getOperationDescriptor(getOperationName(name)),
+        super(getOperationDescriptor(JAIExt.getOperationName(name)),
                 new ExtendedImagingParameterDescriptors(name, operationDescriptor,
                         new HashSet<ParameterDescriptor>(REPLACED_DESCRIPTORS)));
     }
@@ -159,7 +159,7 @@ public abstract class BaseMathOperationJAI extends OperationJAI {
     protected void extractSources(final ParameterValueGroup parameters,
             final Collection<GridCoverage2D> sources, final String[] sourceNames)
             throws ParameterNotFoundException, InvalidParameterValueException {
-        if (!JAIExt.isJAIExtOperation(getOperationName(getName()))) {
+        if (!JAIExt.isJAIExtOperation(JAIExt.getOperationName(getName()))) {
             super.extractSources(parameters, sources, sourceNames);
         } else {
             Utilities.ensureNonNull("parameters", parameters);

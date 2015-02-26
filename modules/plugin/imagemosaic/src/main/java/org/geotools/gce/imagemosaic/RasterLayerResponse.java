@@ -1861,7 +1861,8 @@ class RasterLayerResponse{
             properties.put(Utils.PAM_DATASET, mosaicOutput.pamDataset);
         }
         // Setting NoData as the NoData for the first Band
-        CoverageUtilities.setNoDataProperty(properties, bands[0].getNoDataValues());
+        ImageWorker w = new ImageWorker(image);
+        CoverageUtilities.setNoDataProperty(properties, w.getNoData());
         
         return coverageFactory.create(
                 rasterManager.getCoverageIdentifier(),

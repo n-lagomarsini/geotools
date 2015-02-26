@@ -95,7 +95,7 @@ public class Multiply extends BaseMathOperationJAI {
      * Constructs a default {@code "MultiplyConst"} operation.
      */
     public Multiply() {
-    	super("Multiply", getOperationDescriptor(getOperationName("Multiply")));
+    	super("Multiply", getOperationDescriptor(JAIExt.getOperationName("Multiply")));
     }
     
     public String getName() {

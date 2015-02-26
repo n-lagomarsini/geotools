@@ -80,7 +80,7 @@ public class Exp extends BaseMathOperationJAI {
      * Constructs a default {@code "Exp"} operation.
      */
     public Exp() {
-    	super("Exp", getOperationDescriptor(getOperationName("Exp")));
+    	super("Exp", getOperationDescriptor(JAIExt.getOperationName("Exp")));
     }
     
     public String getName() {

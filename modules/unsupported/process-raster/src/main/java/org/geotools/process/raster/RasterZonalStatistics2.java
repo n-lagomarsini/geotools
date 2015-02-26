@@ -64,7 +64,7 @@ public class RasterZonalStatistics2 implements RasterProcess {
     /**
      * {@link Operation} associated with the "ZonalStats" operation.
      */
-    private static final Operation ZONAL = PROCESSOR.getOperation("Zonal");
+    //private static final Operation ZONAL = PROCESSOR.getOperation("Zonal");
 
     /**
      * Default statistics to calculate.
@@ -121,7 +121,7 @@ public class RasterZonalStatistics2 implements RasterProcess {
         }
 
         // Selection of the operation
-        final ParameterValueGroup param = ZONAL.getParameters();
+        final ParameterValueGroup param = PROCESSOR.getOperation("Zonal").getParameters();
         // Setting of the parameters
         param.parameter("Source").setValue(coverage);
         param.parameter("bands").setValue(bands);

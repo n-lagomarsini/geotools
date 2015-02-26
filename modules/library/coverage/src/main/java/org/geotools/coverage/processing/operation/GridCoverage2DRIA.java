@@ -561,7 +561,30 @@ public class GridCoverage2DRIA extends GeometricOpImage {
         
         // If a ROI is present, then only the part contained inside the current tile bounds is taken.
         if (hasROI) {
-            Rectangle srcRectExpanded = mapDestRect(destRect, 0);
+            Rectangle srcRectExpanded = null;//mapDestRect(destRect, 0);
+            int x = (int) destRect.getMinX();
+            int y = (int) destRect.getMinY();
+            int w = (int) destRect.getWidth();
+            int h = (int) destRect.getHeight();
+            float[] src = new float[w * h * 2];
+            warpRect(x, y, w, h, src);
+            
+            double minX = Double.POSITIVE_INFINITY;
+            double minY = Double.POSITIVE_INFINITY;
+            double maxX = Double.NEGATIVE_INFINITY;
+            double maxY = Double.NEGATIVE_INFINITY;
+            int numP = src.length;
+            for(int i = 0; i < numP; i=i+2){
+                float xi = src[i];
+                float yi = src[i + 1];
+                minX = xi < minX ? xi : minX;
+                minY = yi < minY ? yi : minY;
+                maxX = xi > maxX ? xi : maxX;
+                maxY = yi > maxY ? yi : maxY;
+            }
+            srcRectExpanded = new Rectangle((int)minX, (int)minY, (int)(maxX - minX) + 1, (int)(maxY - minY) + 1);
+            
+            
             // The tile dimension is extended for avoiding border errors
             srcRectExpanded.setRect(
                     srcRectExpanded.getMinX() - interp.getLeftPadding(), 

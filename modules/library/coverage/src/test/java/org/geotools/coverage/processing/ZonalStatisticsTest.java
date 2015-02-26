@@ -74,6 +74,9 @@ public class ZonalStatisticsTest extends TestCase {
     /** {@link Logger} used */
     private final static Logger LOGGER = Logging.getLogger(ZonalStatisticsTest.class.toString());
 
+    /** CoverageProcessor*/
+    private final static CoverageProcessor PROCESSOR = CoverageProcessor.getInstance();
+    
     /**
      * Utility class used for calculating and preparing the results
      * 
@@ -129,8 +132,8 @@ public class ZonalStatisticsTest extends TestCase {
             final StatsType[] statistis = statisticsSet
                     .toArray(new StatsType[statisticsSet.size()]);
 
-            final OperationJAI op = new ZonalStatistics();
-            ParameterValueGroup params = op.getParameters();
+            //final OperationJAI op = new ZonalStatistics();
+            ParameterValueGroup params = PROCESSOR.getOperation("Zonal").getParameters();
             params.parameter("Source").setValue(gridCoverage2D);
             params.parameter("stats").setValue(statistis);
             params.parameter("bands").setValue(bands);
@@ -138,7 +141,7 @@ public class ZonalStatisticsTest extends TestCase {
             params.parameter("rangeData").setValue(ranges);
             params.parameter("localStats").setValue(localStats);
             // Execution of the operation
-            final GridCoverage2D coverage = (GridCoverage2D) op.doOperation(params, null);
+            final GridCoverage2D coverage = (GridCoverage2D) ((ZonalStatistics)PROCESSOR.getOperation("Zonal")).doOperation(params, null);
             // Results for each geometry
             final List<ZoneGeometry> zoneList = (List<ZoneGeometry>) coverage
                     .getProperty(ZonalStatsDescriptor.ZS_PROPERTY);

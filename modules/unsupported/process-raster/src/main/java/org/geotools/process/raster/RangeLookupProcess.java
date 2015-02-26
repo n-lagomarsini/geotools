@@ -131,7 +131,7 @@ public class RangeLookupProcess implements RasterProcess {
         Object lookupTable;
         final int size=classificationRanges.size();
         int transferType = ColorUtilities.getTransferType(size);
-        if(JAIExt.isJAIExtOperation("RangeLookup")){
+        if(JAIExt.isJAIExtOperation("RLookup")){
             lookupTable = CoverageUtilities.getRangeLookupTableJAIEXT(classificationRanges, outputPixelValues, nd, transferType);
         }else{
             // Builds the range lookup table
