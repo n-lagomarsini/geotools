@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -37,6 +38,7 @@ import java.util.logging.Logger;
 
 import javax.media.jai.Interpolation;
 import javax.media.jai.JAI;
+import javax.media.jai.OperationDescriptor;
 import javax.media.jai.TileCache;
 
 import org.geotools.coverage.AbstractCoverage;
@@ -261,7 +263,37 @@ public class CoverageProcessor {
     	return processor;
     }
 
-
+    /**
+     * This method is called when the user has registered another {@link OperationDescriptor} for an operation
+     * and requires to update the various CoverageProcessors.
+     */
+    public static synchronized void updateProcessors(){
+        Set<Hints> keySet = processorsPool.keySet();
+        for(Hints key : keySet){
+            CoverageProcessor processor = processorsPool.get(key);
+            processor.scanForPlugins();
+        }
+    }
+    
+    /**
+     * This method is called when the user has registered another {@link OperationDescriptor} and must remove the old operation
+     * instance from the processors.
+     * 
+     * @param operationName Name of the operation to remove
+     */
+    public static synchronized void removeOperationFromProcessors(String operationName){
+        List<String> operations = JAIExt.getJAINames(operationName); 
+        Set<Hints> keySet = processorsPool.keySet();
+        for (Hints key : keySet) {
+            for (String opName : operations) {
+                CoverageProcessor processor = processorsPool.get(key);
+                Operation op = processor.getOperation(opName);
+                if (op != null) {
+                    processor.removeOperation(op);
+                }
+            }
+        }
+    }
 
     /**
      * The locale for logging message or reporting errors. The default implementations

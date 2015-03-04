@@ -102,7 +102,7 @@ public class Histogram extends BaseStatisticsOperationJAI {
 	 * @throws OperationNotFoundException
 	 */
 	public Histogram() throws OperationNotFoundException {
-		super("Histogram", getOperationDescriptor(getOperationName("Histogram")));
+		super("Histogram", getOperationDescriptor(JAIExt.getOperationName("Histogram")));
 	}
 
     public String getName() {

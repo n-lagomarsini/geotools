@@ -38,6 +38,7 @@ import it.geosolutions.jaiext.stats.Statistics;
 import it.geosolutions.jaiext.stats.Statistics.StatsType;
 import it.geosolutions.jaiext.translate.TranslateDescriptor;
 import it.geosolutions.jaiext.warp.WarpDescriptor;
+import it.geosolutions.rendered.viewer.RenderedImageBrowser;
 
 import java.awt.Color;
 import java.awt.HeadlessException;
@@ -1498,8 +1499,7 @@ public class ImageWorker {
                 for (int i = 0; i < mapSize; i++) {
                     table[i] = (short) ((oldCM.getAlpha(i) == 0) ? suggestedTransparent : i);
                 }
-                lookupTable = LookupTableFactory.create(table, true, image.getSampleModel()
-                        .getDataType());
+                lookupTable = LookupTableFactory.create(table, true);
             }
             /*
              * Now we need to perform the look up transformation. First of all we create the new color model with a bitmask transparency using the
@@ -1710,7 +1710,7 @@ public class ImageWorker {
                         data[3][i] = (short) icm.getAlpha(i);
                     }
                 }
-                lut = LookupTableFactory.create(data, datatype == DataBuffer.TYPE_USHORT, datatype);
+                lut = LookupTableFactory.create(data, datatype == DataBuffer.TYPE_USHORT);
 
             }
                 break;
@@ -2373,10 +2373,9 @@ public class ImageWorker {
                         DataBuffer.TYPE_BYTE);
             } else if (max < 65536) {
                 table = LookupTableFactory.create(new short[] { (short) value0, (short) value1 },
-                        true, DataBuffer.TYPE_BYTE);
+                        true);
             } else {
-                table = LookupTableFactory.create(new int[] { value0, value1 },
-                        DataBuffer.TYPE_BYTE);
+                table = LookupTableFactory.create(new int[] { value0, value1 });
             }
         } else {
             table = LookupTableFactory.create(new int[] { value0, value1 }, DataBuffer.TYPE_BYTE);
@@ -4238,7 +4237,7 @@ public class ImageWorker {
             setROI(finalROI);
         }
         image = JAI.create("Mosaic", pb, getRenderingHints());
-        if(nodata != null || (thresholds == null && nodataNew != null)){
+        if(nodata != null || (!noInternalNoData && nodataNew != null)){
             setnoData(nod);
         }
         
@@ -4258,7 +4257,7 @@ public class ImageWorker {
                     maxValue = bandValue;
                 }
             }
-            nodata[i] = RangeFactory.create(Double.NEGATIVE_INFINITY, maxValue);
+            nodata[i] = RangeFactory.create(Double.NEGATIVE_INFINITY, true, maxValue, false);
         }
         if(minSrcNum < srcNum){
             for(int i = minSrcNum; i < srcNum; i++){
@@ -4323,6 +4322,7 @@ public class ImageWorker {
         if(prop != null && prop instanceof ROI){
             setROI((ROI) prop);
         }
+
         return this;
     }
 
@@ -4509,7 +4509,12 @@ public class ImageWorker {
                 setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
             }
         }
-        image = JAI.create("RangeLookup", pb, getRenderingHints());
+        if(JAIExt.isJAIExtOperation("RLookup")){
+            image = JAI.create("RLookup", pb, getRenderingHints());
+        }else{
+            image = JAI.create("RangeLookup", pb, getRenderingHints());
+        }
+        
         
         return this;
     }

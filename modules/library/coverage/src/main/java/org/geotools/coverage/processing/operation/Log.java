@@ -80,7 +80,7 @@ public class Log extends BaseMathOperationJAI {
      * Constructs a default {@code "Log"} operation.
      */
     public Log() {
-    	super("Log", getOperationDescriptor(getOperationName("Log")));
+    	super("Log", getOperationDescriptor(JAIExt.getOperationName("Log")));
     }
     
     public String getName() {

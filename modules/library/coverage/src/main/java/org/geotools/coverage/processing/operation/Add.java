@@ -92,10 +92,10 @@ public class Add extends BaseMathOperationJAI {
     private static final long serialVersionUID = -4029879745691129215L;
 
     /**
-     * Constructs a default {@code "AddConst"} operation.
+     * Constructs a default {@code "Add"} operation.
      */
     public Add() {
-    	super("Add", getOperationDescriptor(getOperationName("Add")));
+    	super("Add", getOperationDescriptor(JAIExt.getOperationName("Add")));
     }
     
     public String getName() {

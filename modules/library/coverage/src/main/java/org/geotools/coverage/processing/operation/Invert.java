@@ -85,7 +85,7 @@ public class Invert extends BaseMathOperationJAI {
      * Constructs a default {@code "Invert"} operation.
      */
     public Invert() {
-    	super("Invert", getOperationDescriptor(getOperationName("Invert")));
+    	super("Invert", getOperationDescriptor(JAIExt.getOperationName("Invert")));
     }
     
     public String getName() {

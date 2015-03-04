@@ -106,7 +106,7 @@ public class BinaryOpTest extends GridProcessingTestBase {
 
         // Getting parameters for doing a scale.
         final ParameterValueGroup param = processor.getOperation(operationName).getParameters();
-        if(JAIExt.isJAIExtOperation(OperationJAI.getOperationName(operationName))){
+        if(JAIExt.isJAIExtOperation(JAIExt.getOperationName(operationName))){
             List<GridCoverage2D> sources = new ArrayList<>();
             sources.add(coverage0);
             sources.add(coverage1);

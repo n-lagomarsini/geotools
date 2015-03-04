@@ -1099,32 +1099,6 @@ public class OperationJAI extends Operation2D {
             return null;
         }
     }
-
-    /**
-     * Utility method for substituting the JAI operation names with the AJI-EXT ones, if they are present
-     * 
-     * @param name
-     * @return
-     */
-    public static String getOperationName(String name) {
-        if (JAIExt.isJAIExtOperation("Stats")
-                && (name.equalsIgnoreCase("Extrema") || name.equalsIgnoreCase("Histogram"))) {
-            return "Stats";
-        } else if (JAIExt.isJAIExtOperation("algebric")
-                && (name.equalsIgnoreCase("Add") || name.equalsIgnoreCase("Exp")
-                        || name.equalsIgnoreCase("Invert") || name.equalsIgnoreCase("Log") || name
-                            .equalsIgnoreCase("Multiply"))) {
-            return "algebric";
-        } else if (JAIExt.isJAIExtOperation("operationConst")
-                && (name.equalsIgnoreCase("AddConst") || name.equalsIgnoreCase("DivideByConst")
-                        || name.equalsIgnoreCase("MultiplyConst")
-                        || name.equalsIgnoreCase("SubtractConst") || name
-                            .equalsIgnoreCase("SubtractFromConst"))) {
-            return "operationConst";
-        }
-
-        return name;
-    }
     
     protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
         return;
