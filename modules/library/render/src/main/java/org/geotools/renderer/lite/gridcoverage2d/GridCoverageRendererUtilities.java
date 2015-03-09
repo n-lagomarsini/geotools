@@ -56,7 +56,7 @@ import com.sun.media.jai.util.Rational;
  */
 final class GridCoverageRendererUtilities {
 
-	private static final CoverageProcessor processor = new CoverageProcessor(new Hints(Hints.LENIENT_DATUM_SHIFT, Boolean.TRUE));
+	private static final CoverageProcessor processor = CoverageProcessor.getInstance(new Hints(Hints.LENIENT_DATUM_SHIFT, Boolean.TRUE));
 
     static {
     

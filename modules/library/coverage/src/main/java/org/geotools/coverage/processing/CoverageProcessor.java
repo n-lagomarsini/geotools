@@ -253,6 +253,7 @@ public class CoverageProcessor {
     	if(hints==null||hints.isEmpty()){
 	        if (DEFAULT == null) {
 	            DEFAULT = new CacheableCoverageProcessor();
+	            processorsPool.put(new Hints(), DEFAULT);
 	        }
 	        return DEFAULT;
     	}
