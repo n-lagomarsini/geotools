@@ -64,7 +64,7 @@ import org.geotools.referencing.CRS;
 import org.geotools.referencing.operation.builder.GridToEnvelopeMapper;
 import org.geotools.referencing.operation.matrix.XAffineTransform;
 import org.geotools.referencing.operation.transform.AffineTransform2D;
-import org.geotools.renderedimage.viewer.RenderedImageBrowser;
+//import org.geotools.renderedimage.viewer.RenderedImageBrowser;
 import org.geotools.renderer.crs.ProjectionHandler;
 import org.geotools.renderer.crs.ProjectionHandlerFinder;
 import org.geotools.renderer.crs.WrappingProjectionHandler;
@@ -875,7 +875,7 @@ public final class GridCoverageRenderer {
 //>>>>>>> 255c399... Allow warp-affine reduction in advanced projection handling
         }
 
-        RenderedImageBrowser.showChain(cropped.getRenderedImage());
+        //RenderedImageBrowser.showChain(cropped.getRenderedImage());
         return cropped.getRenderedImage();
 
     }
