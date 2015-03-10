@@ -154,6 +154,11 @@
        <groupId>org.jaitools</groupId>
        <artifactId>jt-utils</artifactId>
      </dependency>
+	 <dependency>
+	   <groupId>org.jaitools</groupId>
+       <artifactId>jt-rangelookup</artifactId>
+       <version>${jt.version}</version>
+	 </dependency>     
     
     <!-- Test dependencies -->
     <dependency>

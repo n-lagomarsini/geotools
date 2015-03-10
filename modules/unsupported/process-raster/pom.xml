@@ -100,11 +100,6 @@
         </dependency>
         <dependency>
           <groupId>org.jaitools</groupId>
-          <artifactId>jt-rangelookup</artifactId>
-          <version>${jt.version}</version>
-        </dependency>
-        <dependency>
-          <groupId>org.jaitools</groupId>
           <artifactId>jt-contour</artifactId>
           <version>${jt.version}</version>
         </dependency>    

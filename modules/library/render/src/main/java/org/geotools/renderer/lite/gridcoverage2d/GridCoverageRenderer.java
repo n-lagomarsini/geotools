@@ -17,6 +17,8 @@
 package org.geotools.renderer.lite.gridcoverage2d;
 
 // J2SE dependencies
+import it.geosolutions.rendered.viewer.RenderedImageBrowser;
+
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -836,7 +838,7 @@ public final class GridCoverageRenderer {
             mosaicked = displacedCoverages.get(0);
         } else {
             mosaicked = GridCoverageRendererUtilities.mosaic(displacedCoverages,
-                    destinationEnvelope, hints);
+                    destinationEnvelope, hints, bgValues);
         }
 
         // the mosaicking can cut off images that are just slightly out of the
@@ -852,7 +854,7 @@ public final class GridCoverageRenderer {
         if (result == null) {
             return null;
         } else {
-            // RenderedImageBrowser.showChain(result.getRenderedImage());
+            //RenderedImageBrowser.showChain(result.getRenderedImage());
             return result.getRenderedImage();
         }
     }

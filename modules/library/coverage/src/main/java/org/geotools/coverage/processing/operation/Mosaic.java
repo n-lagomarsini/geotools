@@ -21,6 +21,7 @@ import java.awt.RenderingHints;
 import java.awt.image.IndexColorModel;
 import java.awt.image.MultiPixelPackedSampleModel;
 import java.awt.image.RenderedImage;
+import java.awt.image.renderable.ParameterBlock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,10 +31,12 @@ import java.util.Set;
 
 import javax.media.jai.ImageLayout;
 import javax.media.jai.JAI;
+import javax.media.jai.LookupTableJAI;
 import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.PlanarImage;
 import javax.media.jai.ROI;
 import javax.media.jai.ROIShape;
+import javax.media.jai.RenderedOp;
 import javax.media.jai.operator.MosaicDescriptor;
 
 import org.geotools.coverage.grid.GridCoverage2D;
@@ -60,6 +63,11 @@ import org.geotools.resources.i18n.Errors;
 import org.geotools.resources.image.ImageUtilities;
 import org.geotools.util.Utilities;
 import org.jaitools.imageutils.ImageLayout2;
+import org.jaitools.media.jai.rangelookup.RangeLookupDescriptor;
+import org.jaitools.media.jai.rangelookup.RangeLookupTable;
+import org.jaitools.media.jai.rangelookup.RangeLookupTable.Builder;
+import org.jaitools.numeric.Range;
+import org.jaitools.numeric.RangeComparator;
 import org.opengis.coverage.Coverage;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.metadata.spatial.PixelOrientation;
@@ -333,6 +341,8 @@ public class Mosaic extends OperationJAI {
             MathTransform g2w = external.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
             // Initial null value for NoData
             Double nodata = null;
+            // Alpha bands array
+            PlanarImage[] alphas = new PlanarImage[numSources];
 
             // Check if the output nodata value is set as parameter
             Object outputNodata = parameters.parameter(OUTNODATA_NAME).getValue();
@@ -377,17 +387,56 @@ public class Mosaic extends OperationJAI {
                     } catch (TransformException e) {
                         throw new CoverageProcessingException(e);
                     }
+
+                    // Getting the Coverage RenderedImage
+                    RenderedImage input = coverage.getRenderedImage();
+                    double[] background = null;
+                    // Getting the BackgroundValues if present
+                    if(input instanceof RenderedOp){
+                        RenderedOp op = (RenderedOp) input;
+                        // Search for the background
+                        ParameterBlock block = op.getParameterBlock();
+                        int numParam = block.getNumParameters();
+                        for(int j = 0; j < numParam; j++){
+                            Object obj = block.getObjectParameter(j);
+                            if(obj instanceof double[]){
+                                background = (double[]) obj;
+                            }
+                        }
+                    }
+
                     // Initialization of the nodata value
                     double fillValue = 0;
+
                     // Selection of the nodata value
-                    if (nodata == null) {
+                    boolean hasBackGround = background != null && background.length > 0;
+                    if (hasBackGround) {
+                        fillValue = background[0];
+                    } else if (nodata == null) {
                         fillValue = CoverageUtilities.getBackgroundValues(coverage)[0];
                     } else {
                         fillValue = nodata;
                     }
-
+                    
                     // Resample to the new resolution
-                    rasters[i] = GridCoverage2DRIA.create(coverage, newGG, fillValue);
+                    RenderedImage resampled = GridCoverage2DRIA.create(coverage, newGG, fillValue);
+                    rasters[i] = resampled;
+
+                    //alphas
+                    // Getting the PlanarImage masking Background
+                    if(hasBackGround || nodata != null){
+                        ImageWorker w = new ImageWorker(resampled);
+                        // Using only the first band for masking
+                        RenderedImage image = w.retainFirstBand().getRenderedImage();
+                        ParameterBlock pb = new ParameterBlock();
+                        pb.addSource(image);
+                        Builder<Double, Byte> builder = new RangeLookupTable.Builder<Double, Byte>();
+                        builder.add(new Range<Double>(null, true, fillValue, false), (byte)1);
+                        builder.add(new Range<Double>(fillValue, true, fillValue, true), (byte)0);
+                        builder.add(new Range<Double>(fillValue, false, null, true), (byte)0);
+                        pb.add(builder.build());
+                        alphas[i] = JAI.create("RangeLookup", pb);
+                    }
                 }
             }
 
@@ -395,6 +444,7 @@ public class Mosaic extends OperationJAI {
             ResampledRasters rr = new ResampledRasters();
             rr.setFinalGeometry(external);
             rr.setRasters(rasters);
+            rr.setAlphas(alphas);
             return rr;
         }
 
@@ -603,9 +653,13 @@ public class Mosaic extends OperationJAI {
 
         // Setting of the optional Alpha channels
         PlanarImage[] alpha = new PlanarImage[numSources];
-        boolean alphaChannel = true;
+        // Getting the alpha channels from the GridCoverage2DRIA
+        PlanarImage[] masks = rr.getAlphas();
+        
+        //boolean alphaChannel = false;
 
         for (int i = 0; i < numSources; i++) {
+            PlanarImage mask = masks[i];
             RenderedImage img = rasters[i];
             // ImageWorker to use for elaborating each raster
             ImageWorker w = new ImageWorker(img);
@@ -618,14 +672,21 @@ public class Mosaic extends OperationJAI {
             }
             boolean hasAlpha = img.getColorModel() != null ? img.getColorModel().hasAlpha() : false;
             if (hasAlpha) {
-                alphaChannel |= hasAlpha;
+                //alphaChannel |= hasAlpha;
                 alpha[i] = w.retainLastBand().getPlanarImage();
+                // If the Alpha Band Was already present, we should do a masking of the generated alpha band
+                if(mask != null){
+                    w.mask(mask, false, 0);
+                    alpha[i] = w.getPlanarImage();
+                }
+            } else {
+                alpha[i] = mask;
             }
         }
         // If at least one image contains Alpha channel, it is used for the mosaic
-        if (alphaChannel) {
+        //if (alphaChannel) {
             block.setParameter("sourceAlpha", alpha);
-        }
+        //}
 
         // Creation of the finel Parameters
         return new Params(block, hints, finalGeometry);
@@ -805,6 +866,22 @@ public class Mosaic extends OperationJAI {
         }
 
         /**
+         * @return The {@link PlanarImage} array to use for the mosaic
+         */
+        public PlanarImage[] getAlphas() {
+            return alphas;
+        }
+
+        /**
+         * Sets the {@link PlanarImage} array to use for the mosaic
+         * 
+         * @param finalGeometry
+         */
+        public void setAlphas(PlanarImage[] alphas) {
+            this.alphas = alphas;
+        }
+        
+        /**
          * The array of the resampled RenderedImages
          */
         private RenderedImage[] rasters;
@@ -813,5 +890,10 @@ public class Mosaic extends OperationJAI {
          * The {@link GridGeometry2D} object to use for the mosaic
          */
         private GridGeometry2D finalGeometry;
+        
+        /**
+         * The array of the final PlanarImages
+         */
+        private PlanarImage[] alphas;
     }
 }
