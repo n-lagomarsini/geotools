@@ -38,6 +38,7 @@ import javax.media.jai.ROI;
 import javax.media.jai.ROIShape;
 import javax.media.jai.RenderedOp;
 import javax.media.jai.operator.MosaicDescriptor;
+import javax.media.jai.operator.MultiplyDescriptor;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
@@ -676,8 +677,13 @@ public class Mosaic extends OperationJAI {
                 alpha[i] = w.retainLastBand().getPlanarImage();
                 // If the Alpha Band Was already present, we should do a masking of the generated alpha band
                 if(mask != null){
-                    w.mask(mask, false, 0);
-                    alpha[i] = w.getPlanarImage();
+                    int numB = w.getNumBands();
+                    int numBM = mask.getSampleModel().getNumBands();
+                    ImageWorker mw = new ImageWorker(mask);
+                    mw.format(alpha[i].getSampleModel().getDataType());
+                    //w.mask(mask, false, 0).retainFirstBand();
+                    RenderedOp result = MultiplyDescriptor.create(alpha[i], mw.getRenderedImage(), null);
+                    alpha[i] = result;
                 }
             } else {
                 alpha[i] = mask;

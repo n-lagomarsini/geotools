@@ -867,15 +867,9 @@ public final class GridCoverageRenderer {
         GridCoverage2D cropped = crop(symbolized, destinationEnvelope, false);
         if (cropped == null) {
             return null;
-//<<<<<<< HEAD
-       // } else {
-            //RenderedImageBrowser.showChain(result.getRenderedImage());
-            //return result.getRenderedImage();
-//=======
-//>>>>>>> 255c399... Allow warp-affine reduction in advanced projection handling
         }
 
-        //RenderedImageBrowser.showChain(cropped.getRenderedImage());
+        //RenderedImageBrowser.showChain(cropped.getRenderedImage(),false,false);
         return cropped.getRenderedImage();
 
     }
