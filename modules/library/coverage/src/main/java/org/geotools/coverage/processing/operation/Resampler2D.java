@@ -59,6 +59,7 @@ import org.geotools.referencing.CRS;
 import org.geotools.referencing.ReferencingFactoryFinder;
 import org.geotools.referencing.operation.AbstractCoordinateOperationFactory;
 import org.geotools.referencing.operation.matrix.XAffineTransform;
+import org.geotools.referencing.operation.projection.ProjectionException;
 import org.geotools.referencing.operation.transform.AffineTransform2D;
 import org.geotools.referencing.operation.transform.DimensionFilter;
 import org.geotools.referencing.operation.transform.IdentityTransform;
@@ -470,21 +471,29 @@ final class Resampler2D extends GridCoverage2D {
                 throw new CannotReprojectException(Errors.format(ErrorKeys.UNSPECIFIED_CRS));
             }
             Envelope        sourceEnvelope;
-            final GeneralEnvelope targetEnvelope;
+            GeneralEnvelope targetEnvelope = null;
             final CoordinateOperation operation = factory.createOperation(sourceCRS, targetCRS);
             final boolean force2D = (sourceCRS != compatibleSourceCRS);
             step2          = factory.createOperation(targetCRS, compatibleSourceCRS).getMathTransform();
             step3          = (force2D ? sourceGG.getGridToCRS2D(CORNER) : sourceGG.getGridToCRS(CORNER)).inverse();
             sourceEnvelope = sourceCoverage.getEnvelope(); // Don't force this one to 2D.
-            Envelope domainOfValidity = CRS.getEnvelope(sourceCRS);
-            // Crop to the CRS Domain validity
-            if(domainOfValidity != null){
-                ReferencedEnvelope sourceRef = new ReferencedEnvelope(sourceEnvelope);
-                ReferencedEnvelope validityRef = new ReferencedEnvelope(domainOfValidity);
-                com.vividsolutions.jts.geom.Envelope intersection = sourceRef.intersection(validityRef);
-                sourceEnvelope = new ReferencedEnvelope(intersection, sourceCRS);
+            // Try to transform using the input source envelope
+            //try{
+                targetEnvelope = CRS.transform(operation, sourceEnvelope);
+            /*}catch(Exception e){
+                LOGGER.log(Level.SEVERE, e.getLocalizedMessage());
             }
-            targetEnvelope = CRS.transform(operation, sourceEnvelope);
+            if(targetEnvelope == null){
+                Envelope domainOfValidity = CRS.getEnvelope(compatibleSourceCRS);
+                // Crop to the CRS Domain validity
+                if(domainOfValidity != null){
+                    ReferencedEnvelope sourceRef = new ReferencedEnvelope(sourceEnvelope);
+                    ReferencedEnvelope validityRef = new ReferencedEnvelope(domainOfValidity);
+                    com.vividsolutions.jts.geom.Envelope intersection = sourceRef.intersection(validityRef);
+                    sourceEnvelope = new ReferencedEnvelope(intersection, sourceCRS);
+                }
+                targetEnvelope = CRS.transform(operation, sourceEnvelope);
+            }*/
             targetEnvelope.setCoordinateReferenceSystem(targetCRS);
             // 'targetCRS' may be different than the one set by CRS.transform(...).
             /*
