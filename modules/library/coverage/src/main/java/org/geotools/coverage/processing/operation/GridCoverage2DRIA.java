@@ -107,9 +107,10 @@ public class GridCoverage2DRIA extends GeometricOpImage {
      *            bands will share the same nodata value.
      * @return an instance of Coverage2RenderedImageAdapter
      */
-    public static GridCoverage2DRIA create(final GridCoverage2D src, final GridGeometry2D dst, final double nodata) {
+    public static GridCoverage2DRIA create(final GridCoverage2D src, final GridGeometry2D dst, final double[] nodata) {
         return create(src, dst, nodata, null);
     }
+
 
     /**
      * Wrap the src coverage in the dst layout. <BR>
@@ -127,7 +128,7 @@ public class GridCoverage2DRIA extends GeometricOpImage {
      * @return an instance of Coverage2RenderedImageAdapter
      */
     public static GridCoverage2DRIA create(GridCoverage2D src, GridGeometry2D dst,
-            double nodata, Hints hints) {
+            double nodata[], Hints hints) {
         
         Utilities.ensureNonNull("dst", dst);
         
@@ -159,12 +160,11 @@ public class GridCoverage2DRIA extends GeometricOpImage {
         // to check for region overlapping and return a nodata value by hand,
         // so to avoid problems with interpolation at source raster borders.
         //
-        BorderExtender extender = new BorderExtenderConstant(new double[] { nodata });
+        BorderExtender extender = new BorderExtenderConstant(nodata);
         
         return new GridCoverage2DRIA(src, dst, vectorize(src.getRenderedImage()), imageLayout,
                 null, false, extender, Interpolation.getInstance(Interpolation.INTERP_NEAREST),
-                new double[] { nodata });
-        
+                nodata);
     }
     
     // need it

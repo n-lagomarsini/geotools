@@ -333,12 +333,12 @@ public class Mosaic extends OperationJAI {
             // Selection of the GridToWorld transformation associated to the External GG2D
             MathTransform g2w = external.getGridToCRS2D(PixelOrientation.UPPER_LEFT);
             // Initial null value for NoData
-            Double nodata = null;
+            double[] nodata = null;
 
             // Check if the output nodata value is set as parameter
             Object outputNodata = parameters.parameter(OUTNODATA_NAME).getValue();
             if (outputNodata != null && outputNodata instanceof double[]) {
-                nodata = ((double[]) outputNodata)[0];
+                nodata = ((double[]) outputNodata);
             }
 
             // Cycle around the various sources
@@ -379,10 +379,10 @@ public class Mosaic extends OperationJAI {
                         throw new CoverageProcessingException(e);
                     }
                     // Initialization of the nodata value
-                    double fillValue = 0;
+                    double[] fillValue = null;
                     // Selection of the nodata value
                     if (nodata == null) {
-                        fillValue = CoverageUtilities.getBackgroundValues(coverage)[0];
+                        fillValue = CoverageUtilities.getBackgroundValues(coverage);
                     } else {
                         fillValue = nodata;
                     }
@@ -573,16 +573,16 @@ public class Mosaic extends OperationJAI {
         }
 
         // Setting the nodata values for the areas not covered by any GridCoverage.
-        double nodata = 0;
+        double[] nodata = null;
         // Check if the output nodata value is present
         Object outputNodata = parameters.parameter(OUTNODATA_NAME).getValue();
         if (outputNodata != null && outputNodata instanceof double[]) {
-            nodata = ((double[]) outputNodata)[0];
+            nodata = ((double[]) outputNodata);
         } else {
-            nodata = CoverageUtilities.getBackgroundValues(sources[PRIMARY_SOURCE_INDEX])[0];
+            nodata = CoverageUtilities.getBackgroundValues(sources[PRIMARY_SOURCE_INDEX]);
         }
         // Setting of the output nodata
-        block.setParameter("backgroundValues", new double[] { nodata });
+        block.setParameter("backgroundValues", nodata);
 
         // Setting of the Threshold to use
         double threshold = CoverageUtilities.getMosaicThreshold(rasters[PRIMARY_SOURCE_INDEX]
@@ -604,7 +604,7 @@ public class Mosaic extends OperationJAI {
 
         // Setting of the optional Alpha channels
         PlanarImage[] alpha = new PlanarImage[numSources];
-        boolean alphaChannel = true;
+        boolean alphaChannel = false;
 
         for (int i = 0; i < numSources; i++) {
             RenderedImage img = rasters[i];

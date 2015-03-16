@@ -361,6 +361,7 @@ final class GridCoverageRendererUtilities {
 
     /**
      * Mosaicking the provided coverages to the requested geographic area.
+     * @param background 
      * 
      * @param gc
      * @param envelope
@@ -368,7 +369,7 @@ final class GridCoverageRendererUtilities {
      * @return
      */
     static GridCoverage2D mosaic(List<GridCoverage2D> coverages, GeneralEnvelope renderingEnvelope,
-            final Hints hints) {
+            final Hints hints, double[] background) {
 
         Collections.sort(coverages, new Comparator<GridCoverage2D>() {
 
@@ -423,6 +424,10 @@ final class GridCoverageRendererUtilities {
             final ParameterValueGroup param = MOSAIC_PARAMS.clone();
             param.parameter("sources").setValue(coverages);
             param.parameter("geometry").setValue(gridGeometry);
+            if(background != null){
+                param.parameter(Mosaic.OUTNODATA_NAME).setValue(background);
+                
+            }
             return (GridCoverage2D) MOSAIC_FACTORY.doOperation(param, hints);
         } catch (Exception e) {
             throw new RuntimeException("Failed to mosaic the input coverages", e);

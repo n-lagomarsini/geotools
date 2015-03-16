@@ -727,7 +727,12 @@
         <artifactId>jt-zonalstats</artifactId>
         <version>${jt.version}</version>
        </dependency>
-      
+      <dependency>
+        <groupId>org.jaitools</groupId>
+        <artifactId>jt-rangelookup</artifactId>
+        <version>${jt.version}</version>
+       </dependency>      
+	  
       <!-- Mathematic, geometries, SVG... -->
       <dependency>
         <groupId>java3d</groupId>
