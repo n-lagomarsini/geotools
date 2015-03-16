@@ -603,7 +603,7 @@ public class Mosaic extends OperationJAI {
 
         // Setting of the optional Alpha channels
         PlanarImage[] alpha = new PlanarImage[numSources];
-        boolean alphaChannel = true;
+        boolean alphaChannel = false;
 
         for (int i = 0; i < numSources; i++) {
             RenderedImage img = rasters[i];

@@ -851,7 +851,7 @@ public final class GridCoverageRenderer {
             mosaicked = symbolizedCoverages.get(0);
         } else {
             mosaicked = GridCoverageRendererUtilities.mosaic(symbolizedCoverages,
-                    destinationEnvelope, hints);
+                    destinationEnvelope, hints, bgValues);
         }
 
         // the mosaicking can cut off images that are just slightly out of the
