@@ -44,6 +44,7 @@ import javax.media.jai.InterpolationNearest;
 import javax.media.jai.JAI;
 import javax.media.jai.PlanarImage;
 import javax.media.jai.operator.ConstantDescriptor;
+import javax.media.jai.operator.MultiplyDescriptor;
 
 import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.GridSampleDimension;
@@ -789,9 +790,6 @@ public final class GridCoverageRenderer {
         // mosaiking issues
         //
         /////////////////////////////////////////////////////
-        boolean removeAlpha = false;
-        boolean indexed = false;
-        double[] bgValues = GridCoverageRendererUtilities.colorToArray(background);
         List<GridCoverage2D> alphaCoverages = new ArrayList<GridCoverage2D>();
         if(coverages.size() > 1){
             boolean reprojectionNeeded = false;
@@ -807,65 +805,46 @@ public final class GridCoverageRenderer {
             }
             // TODO OPTIMIZE BY CHECKING IF THE REPROJECTION ADD ROTATION ELEMENTS
             if(reprojectionNeeded){
-                boolean hasAlpha = false;
                 // Apply the alpha band
                 for (GridCoverage2D coverage : coverages) {
                     if (coverage == null) {
                         continue;
                     }
-                    RenderedImage image = coverage.getRenderedImage();
-                    ColorModel colorModel = image.getColorModel();
-                    hasAlpha |= colorModel != null && colorModel.hasAlpha();
-                    indexed |= new ImageWorker(image).isIndexed();
                     // Apply the alpha band
-                    GridCoverage2D alphaCoverage = addAlphaBand(coverage);
+                    GridCoverage2D alphaCoverage = createAlphaBand(coverage);
                     // Add to the list
                     alphaCoverages.add(alphaCoverage);
                 }
-                // Expand the Background value
-                if(bgValues != null && bgValues.length > 0){
-                    // Getting the image
-                    RenderedImage c0 = alphaCoverages.get(0).getRenderedImage();
-                    // Checking colormodel
-                    //ColorModel cm0 = c0.getColorModel();
-                    int numBands = c0.getSampleModel().getNumBands();
-                    double[] bgValuesAlpha = new double[numBands];
-                    // Copy background values
-                    System.arraycopy(bgValues, 0, bgValuesAlpha, 0, bgValues.length);
-                    // Further checks on array length
-                    if(bgValues.length < (bgValuesAlpha.length - 1)){
-                        int lastIdx = bgValues.length + (bgValuesAlpha.length - bgValues.length);
-                        for(int i = lastIdx ; i < bgValuesAlpha.length; i++){
-                            bgValuesAlpha[i] = bgValues[0];
-                        }
-                    }
-                    // Then set alpha band related value to 0
-                    bgValuesAlpha[bgValuesAlpha.length - 1] = 0;
-                    // Update background
-                    bgValues = bgValuesAlpha;
-                }
-                removeAlpha = reprojectionNeeded && !hasAlpha;
-            } else {
-                alphaCoverages.addAll(coverages);
             }
-        } else {
-            alphaCoverages.addAll(coverages);
         }
 
         // reproject if needed
+        double[] bgValues = GridCoverageRendererUtilities.colorToArray(background);
         List<GridCoverage2D> reprojectedCoverages = new ArrayList<GridCoverage2D>();
-        for (GridCoverage2D coverage : alphaCoverages) {
+        List<GridCoverage2D> reprojectedAlphas = new ArrayList<GridCoverage2D>();
+        boolean setAlpha = alphaCoverages.size() > 1;
+        int index = 0;
+        for (GridCoverage2D coverage : coverages) {
+        	GridCoverage2D alpha = null;
+        	if(setAlpha){
+        		alpha = alphaCoverages.get(index);
+        		index++;
+        	}
             if (coverage == null) {
                 continue;
             }
             final CoordinateReferenceSystem coverageCRS = coverage.getCoordinateReferenceSystem();
             if (!CRS.equalsIgnoreMetadata(coverageCRS, destinationCRS)) {
                 GridCoverage2D reprojected = reproject(coverage, true, bgValues);
+                GridCoverage2D reprojectedAlpha = alpha != null ? reproject(alpha, true, new double[1]) : null;
                 if (reprojected != null) {
                     reprojectedCoverages.add(reprojected);
                 }
+                if (reprojectedAlpha != null) {
+                	reprojectedAlphas.add(reprojectedAlpha);
+                }
             } else {
-                reprojectedCoverages.addAll(alphaCoverages);
+                reprojectedCoverages.addAll(coverages);
             }
         }
 
@@ -913,6 +892,10 @@ public final class GridCoverageRenderer {
             symbolizedCoverages.add(symbolized);
         }
 
+        // Parameters used for taking into account an optional removal of the alpha band 
+        // and an optional reindexing after color expansion
+        boolean indexed = false;
+        boolean removeAlpha = false;
 
         // if more than one coverage, mosaic
         GridCoverage2D mosaicked = null;
@@ -921,7 +904,46 @@ public final class GridCoverageRenderer {
         } else if (symbolizedCoverages.size() == 1) {
             mosaicked = symbolizedCoverages.get(0);
         } else {
-            mosaicked = GridCoverageRendererUtilities.mosaic(symbolizedCoverages,
+        	// Add alpha band if needed
+        	List<GridCoverage2D> alphaAdded = new ArrayList<GridCoverage2D>();
+        	// Expand the dataset and add the alpha band if needed
+        	if(setAlpha){
+        	// Getting the first coverage
+        	GridCoverage2D s0 = symbolizedCoverages.get(0);
+        	// Getting its renderedImage
+        	ImageWorker w = new ImageWorker(s0.getRenderedImage());
+        	// Checking Alpha
+        	ColorModel cm0 = w.getRenderedImage().getColorModel();
+        	removeAlpha = !(cm0 != null && cm0.hasAlpha());
+        	// Check indexed
+        	indexed = w.isIndexed();
+        	List<GridCoverage2D> expandedCovs = new ArrayList<GridCoverage2D>();
+        	if(indexed){
+        		// Expand ColorModel
+        		for(GridCoverage2D cov : symbolizedCoverages){
+        			RenderedImage img = cov.getRenderedImage();
+        			ImageWorker worker = new ImageWorker(img);
+        			worker.forceComponentColorModel();
+        			GridCoverage2D expanded = gridCoverageFactory.create(cov.getName(),
+                            worker.getRenderedImage(), cov.getGridGeometry(), null,
+                            new GridCoverage2D[] { cov }, cov.getProperties());
+        			expandedCovs.add(expanded);
+        		}
+        	}else{
+        		expandedCovs.addAll(symbolizedCoverages);
+        	}
+
+    		int i = 0;
+        	for(GridCoverage2D cov : expandedCovs){
+        		GridCoverage2D alpha = alphaCoverages.get(i);
+    			GridCoverage2D added = addAlphaBand(cov, alpha, removeAlpha);
+    			alphaAdded.add(added);
+    		}
+        	} else {
+        		alphaAdded.addAll(symbolizedCoverages);
+        	}
+        	
+            mosaicked = GridCoverageRendererUtilities.mosaic(alphaAdded,
                     destinationEnvelope, hints, bgValues);
         }
 
@@ -967,45 +989,60 @@ public final class GridCoverageRenderer {
 
     }
 
-    private GridCoverage2D addAlphaBand(GridCoverage2D coverage) {
+    private GridCoverage2D createAlphaBand(GridCoverage2D coverage) {
+    	// Getting input image
+    	RenderedImage input = coverage.getRenderedImage();
+    	// Define image layout
+    	ImageLayout layout = new ImageLayout();
+    	layout.setMinX(input.getMinX());
+    	layout.setMinY(input.getMinY());
+    	layout.setWidth(input.getWidth());
+    	layout.setHeight(input.getHeight());
+    	// Define rendering hints
+    	RenderingHints renderHints = new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
+    	// Create an image with all 255
+		RenderedImage alpha = ConstantDescriptor.create(
+				Float.valueOf(input.getWidth()),
+				Float.valueOf(input.getHeight()), new Byte[] { (byte) 255 },
+				renderHints);
+		// Format Image
+		ImageWorker w = new ImageWorker(alpha).format(input.getSampleModel().getDataType());
+    	
+    	// Create the GridCoverage
+        GridCoverage2D newCoverage = gridCoverageFactory.create(coverage.getName() + "Alpha",
+                w.getRenderedImage(), coverage.getGridGeometry(), null,
+                new GridCoverage2D[] { coverage }, coverage.getProperties());
+		return newCoverage;
+	}
+
+	private GridCoverage2D addAlphaBand(GridCoverage2D coverage, GridCoverage2D alphaCoverage, boolean removeAlpha) {
         // Getting RenderedImage
         RenderedImage img = coverage.getRenderedImage();
+        // Alpha
+        RenderedImage alpha = alphaCoverage.getRenderedImage();
         // Using ImageWorker
         ImageWorker w = new ImageWorker(img);
-        // Check colormodel
-        boolean indexed = w.isIndexed();
-        if(indexed){
-            // Force componentColorModel
-            w.forceComponentColorModel();
-        }
-        // Check if the Alpha band is already present
-        ColorModel colorModel = w.getRenderedImage().getColorModel();
-        boolean hasAlpha = colorModel != null && colorModel.hasAlpha();
-        if(!hasAlpha){
-            // Create an alpha band
-            // Defining hints
-            ImageLayout layout = new ImageLayout();
-            layout.setMinX(img.getMinX());
-            layout.setMinY(img.getMinY());
-            layout.setWidth(img.getWidth());
-            layout.setHeight(img.getHeight());
-            RenderingHints hints = new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
-            RenderedImage alpha = ConstantDescriptor.create(Float.valueOf(img.getWidth()),
-                    Float.valueOf(img.getHeight()), new Byte[] { (byte) 255 },
-                    hints);
-            ImageWorker alphaW = new ImageWorker(alpha);
-            alpha = alphaW.format(w.getRenderedImage().getSampleModel().getDataType()).getRenderedImage();
-            // Defining the new layout
-            ImageLayout layout2 = new ImageLayout(w.getRenderedImage());
-            layout2.unsetValid(ImageLayout.COLOR_MODEL_MASK).unsetValid(ImageLayout.SAMPLE_MODEL_MASK);
-            w.setRenderingHint(JAI.KEY_IMAGE_LAYOUT, layout2);
+        // Define the final image
+        RenderedImage image;
+        if(removeAlpha){
             // Merge the new band
             w.addBand(alpha, false);
+            // Get the image
+            image = w.getRenderedImage();
+        } else {
+        	RenderedImage innerAlpha = w.retainLastBand().getRenderedImage();
+        	ImageWorker alphaW = new ImageWorker(alpha);
+        	alphaW.binarize(1).format(innerAlpha.getSampleModel().getDataType());
+			RenderedImage finalAlpha = MultiplyDescriptor.create(innerAlpha,
+					alphaW.getRenderedImage(), hints);
+			ImageWorker imgW = new ImageWorker(img);
+			imgW.retainBands(imgW.getNumBands() - 1).addBand(finalAlpha, false);
+			// Get the image
+			image = imgW.getRenderedImage();
         }
-        // Define the final image
-        RenderedImage image = w.getRenderedImage();
+
         // Define the Sample Dimensions
-        GridSampleDimension[] sampleDimensions = (indexed ? null : (hasAlpha ? coverage.getSampleDimensions() : null));
+        GridSampleDimension[] sampleDimensions = (removeAlpha ? null : coverage.getSampleDimensions());
         // Create the GridCoverage
         GridCoverage2D newCoverage = gridCoverageFactory.create(coverage.getName(),
                 image, coverage.getGridGeometry(), sampleDimensions,
