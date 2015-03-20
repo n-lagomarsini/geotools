@@ -26,7 +26,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.awt.image.ImagingOpException;
 import java.awt.image.RenderedImage;
 import java.io.File;
@@ -44,7 +43,6 @@ import javax.media.jai.InterpolationNearest;
 import javax.media.jai.JAI;
 import javax.media.jai.PlanarImage;
 import javax.media.jai.operator.ConstantDescriptor;
-import javax.media.jai.operator.MultiplyDescriptor;
 
 import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.GridSampleDimension;
@@ -822,11 +820,11 @@ public final class GridCoverageRenderer {
         double[] bgValues = GridCoverageRendererUtilities.colorToArray(background);
         List<GridCoverage2D> reprojectedCoverages = new ArrayList<GridCoverage2D>();
         List<GridCoverage2D> reprojectedAlphas = new ArrayList<GridCoverage2D>();
-        boolean setAlpha = alphaCoverages.size() > 1;
+        boolean alphaAdded = alphaCoverages.size() > 1;
         int index = 0;
         for (GridCoverage2D coverage : coverages) {
         	GridCoverage2D alpha = null;
-        	if(setAlpha){
+        	if(alphaAdded){
         		alpha = alphaCoverages.get(index);
         		index++;
         	}
@@ -850,11 +848,17 @@ public final class GridCoverageRenderer {
 
         // displace them if needed via a projection handler
         List<GridCoverage2D> displacedCoverages = new ArrayList<GridCoverage2D>();
+        List<GridCoverage2D> displacedAlphas = new ArrayList<GridCoverage2D>();
         if (handler != null) {
             Envelope testEnvelope = ReferencedEnvelope.reference(destinationEnvelope);
             MathTransform mt = CRS.findMathTransform(sourceCRS, targetCRS);
             PolygonExtractor polygonExtractor = new PolygonExtractor();
+            int i = 0;
             for (GridCoverage2D coverage : reprojectedCoverages) {
+                GridCoverage2D alpha = null;
+                if(alphaAdded){
+                    alpha = reprojectedAlphas.get(i);
+                }
                 Polygon polygon = JTS.toGeometry((BoundingBox) coverage.getEnvelope2D());
                 Geometry postProcessed = handler.postProcess(mt, polygon);
                 // extract sub-polygons and displace
@@ -869,33 +873,52 @@ public final class GridCoverageRenderer {
                     }
                     if (displaced.equals(polygon)) {
                         displacedCoverages.add(coverage);
+                        if(alpha != null){
+                            displacedAlphas.add(alpha);
+                        }
                     } else {
                         double[] tx = getTranslationFactors(polygon, displaced);
                         if (tx != null) {
                             GridCoverage2D displacedCoverage = displaceCoverage(coverage, tx[0],
                                     tx[1]);
                             displacedCoverages.add(displacedCoverage);
+                            if(alpha != null){
+                                GridCoverage2D displacedAlpha = displaceCoverage(alpha, tx[0],
+                                        tx[1]);
+                                displacedAlphas.add(displacedAlpha);
+                            }
                         }
                     }
                 }
+                i++;
             }
         } else {
+            displacedAlphas.addAll(reprojectedAlphas);
             displacedCoverages.addAll(reprojectedCoverages);
         }
         
         // symbolize each bit (done here to make sure we can perform the warp/affine reduction)
         List<GridCoverage2D> symbolizedCoverages = new ArrayList<>();
+        List<GridCoverage2D> affineAlphas = new ArrayList<>();
+        int ii = 0;
         for (GridCoverage2D displaced : displacedCoverages) {
             GridCoverage2D symbolized = symbolize(displaced, symbolizer,
                     //GridCoverageRendererUtilities.colorToArray(background));
                     bgValues);
+            if(alphaAdded){
+                GridCoverage2D alpha = displacedAlphas.get(ii);
+                GridCoverage2D affineAlpha = affine(alpha, new double[1]);
+                affineAlphas.add(affineAlpha);
+            } else {
+                affineAlphas.addAll(displacedAlphas);
+            }
             symbolizedCoverages.add(symbolized);
+            ii++;
         }
 
         // Parameters used for taking into account an optional removal of the alpha band 
         // and an optional reindexing after color expansion
         boolean indexed = false;
-        boolean removeAlpha = false;
 
         // if more than one coverage, mosaic
         GridCoverage2D mosaicked = null;
@@ -904,46 +927,42 @@ public final class GridCoverageRenderer {
         } else if (symbolizedCoverages.size() == 1) {
             mosaicked = symbolizedCoverages.get(0);
         } else {
-        	// Add alpha band if needed
-        	List<GridCoverage2D> alphaAdded = new ArrayList<GridCoverage2D>();
-        	// Expand the dataset and add the alpha band if needed
-        	if(setAlpha){
-        	// Getting the first coverage
-        	GridCoverage2D s0 = symbolizedCoverages.get(0);
-        	// Getting its renderedImage
-        	ImageWorker w = new ImageWorker(s0.getRenderedImage());
-        	// Checking Alpha
-        	ColorModel cm0 = w.getRenderedImage().getColorModel();
-        	removeAlpha = !(cm0 != null && cm0.hasAlpha());
-        	// Check indexed
-        	indexed = w.isIndexed();
-        	List<GridCoverage2D> expandedCovs = new ArrayList<GridCoverage2D>();
-        	if(indexed){
-        		// Expand ColorModel
-        		for(GridCoverage2D cov : symbolizedCoverages){
-        			RenderedImage img = cov.getRenderedImage();
-        			ImageWorker worker = new ImageWorker(img);
-        			worker.forceComponentColorModel();
-        			GridCoverage2D expanded = gridCoverageFactory.create(cov.getName(),
-                            worker.getRenderedImage(), cov.getGridGeometry(), null,
-                            new GridCoverage2D[] { cov }, cov.getProperties());
-        			expandedCovs.add(expanded);
-        		}
-        	}else{
-        		expandedCovs.addAll(symbolizedCoverages);
-        	}
-
-    		int i = 0;
-        	for(GridCoverage2D cov : expandedCovs){
-        		GridCoverage2D alpha = alphaCoverages.get(i);
-    			GridCoverage2D added = addAlphaBand(cov, alpha, removeAlpha);
-    			alphaAdded.add(added);
-    		}
-        	} else {
-        		alphaAdded.addAll(symbolizedCoverages);
-        	}
-        	
-            mosaicked = GridCoverageRendererUtilities.mosaic(alphaAdded,
+            // Add alpha band if needed
+            List<GridCoverage2D> expandedCoverages = new ArrayList<GridCoverage2D>();
+            List<GridCoverage2D> alphas = new ArrayList<GridCoverage2D>();
+            // Expand the dataset if needed
+            if (alphaAdded) {
+                // Getting the first coverage
+                GridCoverage2D s0 = symbolizedCoverages.get(0);
+                // Getting its renderedImage
+                ImageWorker w = new ImageWorker(s0.getRenderedImage());
+                // Check indexed
+                indexed = w.isIndexed();
+                List<GridCoverage2D> expandedCovs = new ArrayList<GridCoverage2D>();
+                if (indexed) {
+                    // Expand ColorModel
+                    for (GridCoverage2D cov : symbolizedCoverages) {
+                        RenderedImage img = cov.getRenderedImage();
+                        ImageWorker worker = new ImageWorker(img);
+                        worker.forceComponentColorModel();
+                        GridCoverage2D expanded = gridCoverageFactory.create(cov.getName(),
+                                worker.getRenderedImage(), cov.getGridGeometry(), null,
+                                new GridCoverage2D[] { cov }, cov.getProperties());
+                        expandedCovs.add(expanded);
+                    }
+                } else {
+                    // Simply copy the data
+                    expandedCovs.addAll(symbolizedCoverages);
+                }
+                // Add the coverages to the main coverage list
+                expandedCoverages.addAll(expandedCovs);
+                // Add alpha bands
+                alphas.addAll(affineAlphas);
+            } else {
+                expandedCoverages.addAll(symbolizedCoverages);
+            }
+            // Mosaic input data
+            mosaicked = GridCoverageRendererUtilities.mosaic(expandedCoverages, alphas,
                     destinationEnvelope, hints, bgValues);
         }
 
@@ -951,17 +970,6 @@ public final class GridCoverageRenderer {
         // request (effect of the read buffer + a request touching the actual data area)
         if (mosaicked == null) {
             return null;
-        } else if(removeAlpha){
-            // Create a new gridCoverage without the alpha band
-            RenderedImage result = mosaicked.getRenderedImage();
-            ImageWorker w = new ImageWorker(result);
-            w.retainBands(w.getNumBands() - 1);
-            result = w.getRenderedImage();
-            // Create the GridCoverage
-            GridCoverage2D newCoverage = gridCoverageFactory.create(mosaicked.getName(),
-                    result, mosaicked.getGridGeometry(), null,
-                    new GridCoverage2D[] { mosaicked }, mosaicked.getProperties());
-            mosaicked = newCoverage;
         }
 
         // If the image was indexed with must return to the original colormodel
@@ -990,62 +998,27 @@ public final class GridCoverageRenderer {
     }
 
     private GridCoverage2D createAlphaBand(GridCoverage2D coverage) {
-    	// Getting input image
-    	RenderedImage input = coverage.getRenderedImage();
-    	// Define image layout
-    	ImageLayout layout = new ImageLayout();
-    	layout.setMinX(input.getMinX());
-    	layout.setMinY(input.getMinY());
-    	layout.setWidth(input.getWidth());
-    	layout.setHeight(input.getHeight());
-    	// Define rendering hints
-    	RenderingHints renderHints = new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
-    	// Create an image with all 255
-		RenderedImage alpha = ConstantDescriptor.create(
-				Float.valueOf(input.getWidth()),
-				Float.valueOf(input.getHeight()), new Byte[] { (byte) 255 },
-				renderHints);
-		// Format Image
-		ImageWorker w = new ImageWorker(alpha).format(input.getSampleModel().getDataType());
-    	
-    	// Create the GridCoverage
+        // Getting input image
+        RenderedImage input = coverage.getRenderedImage();
+        // Define image layout
+        ImageLayout layout = new ImageLayout();
+        layout.setMinX(input.getMinX());
+        layout.setMinY(input.getMinY());
+        layout.setWidth(input.getWidth());
+        layout.setHeight(input.getHeight());
+        layout.setTileHeight(input.getTileHeight());
+        layout.setTileWidth(input.getTileWidth());
+        // Define rendering hints
+        RenderingHints renderHints = new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
+        // Create an image with all 255
+        RenderedImage alpha = ConstantDescriptor.create(Float.valueOf(input.getWidth()),
+                Float.valueOf(input.getHeight()), new Byte[] { (byte) 255 }, renderHints);
+        // Format Image
+        ImageWorker w = new ImageWorker(alpha).format(input.getSampleModel().getDataType());
+
+        // Create the GridCoverage
         GridCoverage2D newCoverage = gridCoverageFactory.create(coverage.getName() + "Alpha",
                 w.getRenderedImage(), coverage.getGridGeometry(), null,
-                new GridCoverage2D[] { coverage }, coverage.getProperties());
-		return newCoverage;
-	}
-
-	private GridCoverage2D addAlphaBand(GridCoverage2D coverage, GridCoverage2D alphaCoverage, boolean removeAlpha) {
-        // Getting RenderedImage
-        RenderedImage img = coverage.getRenderedImage();
-        // Alpha
-        RenderedImage alpha = alphaCoverage.getRenderedImage();
-        // Using ImageWorker
-        ImageWorker w = new ImageWorker(img);
-        // Define the final image
-        RenderedImage image;
-        if(removeAlpha){
-            // Merge the new band
-            w.addBand(alpha, false);
-            // Get the image
-            image = w.getRenderedImage();
-        } else {
-        	RenderedImage innerAlpha = w.retainLastBand().getRenderedImage();
-        	ImageWorker alphaW = new ImageWorker(alpha);
-        	alphaW.binarize(1).format(innerAlpha.getSampleModel().getDataType());
-			RenderedImage finalAlpha = MultiplyDescriptor.create(innerAlpha,
-					alphaW.getRenderedImage(), hints);
-			ImageWorker imgW = new ImageWorker(img);
-			imgW.retainBands(imgW.getNumBands() - 1).addBand(finalAlpha, false);
-			// Get the image
-			image = imgW.getRenderedImage();
-        }
-
-        // Define the Sample Dimensions
-        GridSampleDimension[] sampleDimensions = (removeAlpha ? null : coverage.getSampleDimensions());
-        // Create the GridCoverage
-        GridCoverage2D newCoverage = gridCoverageFactory.create(coverage.getName(),
-                image, coverage.getGridGeometry(), sampleDimensions,
                 new GridCoverage2D[] { coverage }, coverage.getProperties());
         return newCoverage;
     }

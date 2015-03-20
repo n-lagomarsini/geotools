@@ -160,7 +160,7 @@ public class GridCoverage2DRIA extends GeometricOpImage {
         // to check for region overlapping and return a nodata value by hand,
         // so to avoid problems with interpolation at source raster borders.
         //
-        BorderExtender extender = new BorderExtenderConstant(nodata);
+        BorderExtender extender = new BorderExtenderConstant(new double[] {nodata[0]});
         
         return new GridCoverage2DRIA(src, dst, vectorize(src.getRenderedImage()), imageLayout,
                 null, false, extender, Interpolation.getInstance(Interpolation.INTERP_NEAREST),
