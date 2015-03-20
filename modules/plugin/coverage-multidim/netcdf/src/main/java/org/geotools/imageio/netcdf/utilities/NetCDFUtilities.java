@@ -362,33 +362,6 @@ public class NetCDFUtilities {
     }
 
     /**
-     * Transcode a NetCDF data type into a java2D DataBuffer type.
-     * 
-     * @param TYPE the {@link DataType} to transcode.
-     * @param unsigned if the original data is unsigned or not
-     * @return an int representing the correct DataBuffer type.
-     */
-    public static DataType transcodeDataType(final int dataType) {
-        switch (dataType) {
-        case DataBuffer.TYPE_BYTE:
-            return DataType.BYTE;
-        case DataBuffer.TYPE_DOUBLE:
-            return DataType.DOUBLE;
-        case DataBuffer.TYPE_FLOAT:
-            return DataType.FLOAT;
-        case DataBuffer.TYPE_INT:
-            return DataType.INT;
-        case DataBuffer.TYPE_SHORT:
-            return DataType.SHORT;
-        case DataBuffer.TYPE_USHORT:
-            return DataType.SHORT;
-        case DataBuffer.TYPE_UNDEFINED:
-        default:
-            throw new IllegalArgumentException("Invalid input data type:" + dataType);
-        }
-    }
-
-    /**
      * NetCDF files may contains a wide set of coverageDescriptorsCache. Some of them are unuseful for our purposes. The method returns {@code true}
      * if the specified variable is accepted.
      */
