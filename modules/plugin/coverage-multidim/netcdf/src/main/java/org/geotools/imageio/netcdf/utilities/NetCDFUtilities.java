@@ -219,9 +219,9 @@ public class NetCDFUtilities {
     public static final Set<DataType> VALID_TYPES = new HashSet<DataType>(12);
 
     public static final String NC4_ERROR_MESSAGE = "Native NetCDF C library is not available. "
-            + "Unable to handle NetCDF-4C files on input/output."
-            + "\nPlease make sure to specify JNA_PATH referring to the Native NetCDF C library"
-            + " if you want to support NetCDF-4C files";
+            + "Unable to handle NetCDF4 files on input/output."
+            + "\nPlease make sure to add the paht of the Native NetCDF C libraries to the "
+            + "PATH environment variable\n if you want to support NetCDF4-Classic files";
 
     static {
         // Setting the LINUX Epoch as start time
