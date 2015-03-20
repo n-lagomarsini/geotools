@@ -288,10 +288,15 @@ public class CoverageProcessor {
         for (Hints key : keySet) {
             for (String opName : operations) {
                 CoverageProcessor processor = processorsPool.get(key);
-                Operation op = processor.getOperation(opName);
-                if (op != null) {
-                    processor.removeOperation(op);
+                try{
+                    Operation op = processor.getOperation(opName);
+                    if (op != null) {
+                        processor.removeOperation(op);
+                    }
+                }catch(OperationNotFoundException e){
+                    LOGGER.warning("Operation: " + opName + " not found in CoverageProcessor");
                 }
+                
             }
         }
     }
