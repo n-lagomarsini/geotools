@@ -91,6 +91,7 @@ import org.geotools.image.ImageWorker;
 import org.geotools.image.io.ImageIOExt;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.operation.matrix.XAffineTransform;
+import org.geotools.referencing.operation.transform.AffineTransform2D;
 import org.geotools.referencing.operation.transform.ProjectiveTransform;
 import org.geotools.resources.coverage.CoverageUtilities;
 import org.geotools.resources.i18n.Vocabulary;
@@ -374,7 +375,9 @@ public class GeoTiffReader extends AbstractGridCoverage2DReader implements GridC
             // create envelope using corner transformation
             final AffineTransform tempTransform = new AffineTransform(
                     (AffineTransform) raster2Model);
+            
             tempTransform.concatenate(CoverageUtilities.CENTER_TO_CORNER);
+            raster2Model = new AffineTransform2D(tempTransform);
             originalEnvelope = CRS.transform(ProjectiveTransform.create(tempTransform),
                     new GeneralEnvelope(actualDim));
             originalEnvelope.setCoordinateReferenceSystem(crs);

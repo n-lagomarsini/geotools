@@ -93,21 +93,26 @@ import com.vividsolutions.jts.geom.Envelope;
 public class GridCoverageRendererTest  {
 
 
-	private static final String AFRICA_EQUIDISTANT_CONIC_WKT = "PROJCS[\"Africa_Equidistant_Conic\"," +
-                    "GEOGCS[\"GCS_WGS_1984\"," +
-                    "DATUM[\"WGS_1984\"," +
-                    "SPHEROID[\"WGS_1984\",6378137,298.257223563]]," +
-                    "PRIMEM[\"Greenwich\",0]," +
-                    "UNIT[\"Degree\",0.017453292519943295]]," +
-                    "PROJECTION[\"Equidistant_Conic\"]," +
-                    "PARAMETER[\"False_Easting\",0]," +
-                    "PARAMETER[\"False_Northing\",0]," +
-                    "PARAMETER[\"Central_Meridian\",25]," +
-                    "PARAMETER[\"Standard_Parallel_1\",20]," +
-                    "PARAMETER[\"Standard_Parallel_2\",-23]," +
-                    "PARAMETER[\"Latitude_Of_Origin\",0]," +
-                    "UNIT[\"Meter\",1]," +
-                    "AUTHORITY[\"EPSG\",\"102023\"]]";
+    public static final String AFRICA_EQUIDISTANT_CONIC_WKT = "PROJCS[\"Africa_Equidistant_Conic\","
+            + "GEOGCS[\"GCS_WGS_1984\","
+            + "DATUM[\"WGS_1984\","
+            + "SPHEROID[\"WGS_1984\",6378137,298.257223563]],"
+            + "PRIMEM[\"Greenwich\",0],"
+            + "UNIT[\"Degree\",0.017453292519943295]],"
+            + "PROJECTION[\"Equidistant_Conic\"],"
+            + "PARAMETER[\"False_Easting\",0],"
+            + "PARAMETER[\"False_Northing\",0],"
+            + "PARAMETER[\"Central_Meridian\",25],"
+            + "PARAMETER[\"Standard_Parallel_1\",20],"
+            + "PARAMETER[\"Standard_Parallel_2\",-23],"
+            + "PARAMETER[\"Latitude_Of_Origin\",0],"
+            + "UNIT[\"Meter\",1]," + "AUTHORITY[\"EPSG\",\"102023\"]]";
+
+    public static final String VAN_DER_GRINTEN_WKT = "PROJCS[\"World_Van_der_Grinten_I\","
+            + "GEOGCS[\"GCS_WGS_1984\"," + "DATUM[\"D_WGS_1984\","
+            + "SPHEROID[\"WGS_1984\",6378137.0,298.257223563]]," + "PRIMEM[\"Greenwich\",0.0],"
+            + "UNIT[\"Degree\",0.0174532925199433]]," + "PROJECTION[\"Van_der_Grinten_I\"],"
+            + "PARAMETER[\"Central_Meridian\",0.0]," + "UNIT[\"Meter\",1.0]]";
 
     String FILENAME = "TestGridCoverage.jpg";
 
@@ -765,6 +770,30 @@ public class GridCoverageRendererTest  {
         // Check the image
         File reference = new File(
                 "src/test/resources/org/geotools/renderer/lite/gridcoverage2d/africa-conic-palette.png");
+        ImageAssert.assertEquals(reference, image, 0);
+    }
+    
+    @Test
+    public void testVanDerGrintenI() throws Exception {
+        CoordinateReferenceSystem crs = CRS.parseWKT(VAN_DER_GRINTEN_WKT);
+        //CoordinateReferenceSystem crs = CRS.decode("EPSG:54029", true);
+        // across the dateline, not including the pole
+        ReferencedEnvelope mapExtent = new ReferencedEnvelope(-40030154.742485225,
+                 40030154.742485225, -43235694.4777233, 36668247.21528432, crs);
+
+        Rectangle screenSize = new Rectangle(400, (int) (mapExtent.getHeight()
+                / mapExtent.getWidth() * 400));
+        AffineTransform w2s = RendererUtilities.worldToScreenTransform(mapExtent, screenSize);
+        GridCoverageRenderer renderer = new GridCoverageRenderer(
+                mapExtent.getCoordinateReferenceSystem(), mapExtent, screenSize, w2s);
+
+        RasterSymbolizer rasterSymbolizer = new StyleBuilder().createRasterSymbolizer();
+
+        RenderedImage image = renderer.renderImage(worldReader, null, rasterSymbolizer, Interpolation.getInstance(Interpolation.INTERP_NEAREST),
+                Color.RED, 256, 256);
+        assertNotNull(image);
+        File reference = new File(
+                "src/test/resources/org/geotools/renderer/lite/gridcoverage2d/vandergrinten.png");
         ImageAssert.assertEquals(reference, image, 0);
     }
 
