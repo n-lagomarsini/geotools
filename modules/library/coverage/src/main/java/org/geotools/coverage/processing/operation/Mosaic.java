@@ -439,7 +439,7 @@ public class Mosaic extends OperationJAI {
                                 new double[1], hints);
                         alphaArray[i] = PlanarImage.wrapRenderedImage(al);
                     }
-                    backgrounds[i] = fillValue;
+                    backgrounds[i] = fillValue[0];
                     // Resample to the new resolution
                     GridCoverage2DRIA.GridCoverage2DRIAPropertyGenerator propertyGenerator = new GridCoverage2DRIA.GridCoverage2DRIAPropertyGenerator();
                     ROI roi = (ROI) propertyGenerator.getProperty("roi", rasters[i]);
@@ -645,7 +645,7 @@ public class Mosaic extends OperationJAI {
         block.setParameter("mosaicType", MosaicDescriptor.MOSAIC_TYPE_OVERLAY);
         // If at least one image contains Alpha channel, it is used for the mosaic
         if (rr.getAlphas() != null) {
-            block.setParameter(rr.getAlphas(), 1);
+            block.set(rr.getAlphas(), 1);
 	}
 
         block.set(rois, 2);

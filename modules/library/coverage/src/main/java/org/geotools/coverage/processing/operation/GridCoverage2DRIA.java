@@ -131,7 +131,7 @@ public class GridCoverage2DRIA extends GeometricOpImage {
     }
     
     public static GridCoverage2DRIA create(GridCoverage2D src, GridGeometry2D dst,
-            double nodata, Hints hints){
+            double nodata[], Hints hints){
         return create(src, dst, nodata, hints, null);
     }
 
@@ -1436,7 +1436,7 @@ public class GridCoverage2DRIA extends GeometricOpImage {
 
                 // Creating warped roi by the same way (Warp, Interpolation, source ROI) we warped the
                 // input image.
-                roiImage = create(input, op.dst, 0d, null, srcROI);
+                roiImage = create(input, op.dst, new double[]{0d}, null, srcROI);
 
                 ROI dstROI = new ROI(roiImage, 1);
 
