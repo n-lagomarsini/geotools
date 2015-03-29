@@ -21,6 +21,7 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.RenderedImage;
@@ -51,6 +52,7 @@ import org.geotools.factory.Hints;
 import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.geometry.jts.JTS;
+import org.geotools.geometry.jts.LiteCoordinateSequence;
 import org.geotools.geometry.jts.LiteShape2;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.image.crop.GTCropDescriptor;
@@ -65,6 +67,8 @@ import org.geotools.resources.coverage.FeatureUtilities;
 import org.geotools.resources.coverage.IntersectUtils;
 import org.geotools.resources.i18n.ErrorKeys;
 import org.geotools.resources.i18n.Errors;
+import org.jaitools.imageutils.ROIGeometry;
+import org.jaitools.imageutils.shape.LiteShape;
 import org.opengis.coverage.Coverage;
 import org.opengis.coverage.grid.GridCoverage;
 import org.opengis.geometry.Envelope;
@@ -82,7 +86,9 @@ import org.opengis.referencing.operation.TransformException;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiPolygon;
+import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
 
@@ -586,8 +592,10 @@ public class Crop extends Operation2D {
                     final ROI[] roiarr;
                     try {
                         if(cropROI != null) {
-                            final Shape cropRoiLS2 = new LiteShape2(cropROI, ProjectiveTransform.create(sourceWorldToGridTransform), null, false);
-                            final ROIShape cropRS = new ROIShape(cropRoiLS2);
+                            final LiteShape2 cropRoiLS2 = new LiteShape2(cropROI, ProjectiveTransform.create(sourceWorldToGridTransform), null, false);
+                            Geometry geo = (Geometry) cropRoiLS2.getGeometry().clone();
+                            geo = approximateGeometry(geo);
+                            final ROI cropRS = new ROIShape(new LiteShape2(geo, null, null, false));//new ROIGeometry(geo);//new ROIShape(cropRoiLS2);
                             roiarr = new ROI[]{cropRS};
                         } else {
                             final ROIShape roi = new ROIShape(rasterSpaceROI);
@@ -678,6 +686,64 @@ public class Crop extends Operation2D {
 
 	}
 
+    private static Geometry approximateGeometry(Geometry geo) {
+        transformGeometry(geo);
+        Geometry newgeo = transformMultiPolygon(geo);
+        return newgeo;
+    }
+
+    private static Geometry transformMultiPolygon(Geometry geo) {
+        Geometry finalGeo = null;
+        if(geo instanceof GeometryCollection){
+            GeometryCollection coll = (GeometryCollection)geo;
+            int numGeo = coll.getNumGeometries();
+            List<Polygon> polys = new ArrayList<Polygon>();
+            for(int i = 0;i < numGeo; i++){
+                Geometry poly = coll.getGeometryN(i);
+                if(poly != null && poly instanceof Polygon){
+                    polys.add((Polygon) poly);
+                }
+            }
+            if(polys.size() > 0){
+                Polygon[] array = new Polygon[polys.size()];
+                polys.toArray(array);
+                finalGeo = new MultiPolygon(array, array[0].getFactory());
+            }
+        }
+        if(finalGeo == null && geo instanceof Polygon){
+            finalGeo = (Polygon)geo;
+        }
+        return finalGeo;
+    }
+
+    private static void transformGeometry(Geometry geometry) {
+        if(geometry == null){
+            return;
+        }
+
+        if (geometry instanceof GeometryCollection) {
+            GeometryCollection collection = (GeometryCollection) geometry;
+            for (int i = 0; i < collection.getNumGeometries(); i++) {
+                transformGeometry(collection.getGeometryN(i));
+            } 
+        } else if (geometry instanceof Polygon) {
+            Polygon polygon = (Polygon) geometry;
+            transformGeometry(polygon.getExteriorRing());
+            for (int i = 0; i < polygon.getNumInteriorRing(); i++) {
+                transformGeometry(polygon.getInteriorRingN(i));
+            }
+        } else if (geometry instanceof LineString) {
+            LiteCoordinateSequence seq = (LiteCoordinateSequence) ((LineString) geometry)
+                    .getCoordinateSequence();
+            double[] coords = seq.getArray();
+            for(int i = 0; i < coords.length;i++){
+                coords[i] = (int)(coords[i] + 0.5d);
+            }
+            //mathTransform.transform(coords, 0, coords, 0, seq.size());
+            seq.setArray(coords);
+        }
+    }
+    
     /**
      * Initialize a layout object using the provided {@link RenderedImage} and the provided {@link Hints}.
      *
