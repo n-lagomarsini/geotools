@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -18,10 +18,6 @@ package org.geotools.coverage.processing;
 
 import it.geosolutions.jaiext.JAIExt;
 
-import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
-import java.awt.geom.Rectangle2D;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,57 +26,34 @@ import java.util.logging.Logger;
 
 import javax.media.jai.JAI;
 import javax.media.jai.OperationDescriptor;
-import javax.media.jai.ParameterBlockJAI;
-import javax.media.jai.ROIShape;
 import javax.media.jai.StatisticsOpImage;
 import javax.media.jai.registry.RenderedRegistryMode;
 
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.GridGeometry2D;
-import org.geotools.geometry.DirectPosition2D;
-import org.geotools.geometry.Envelope2D;
-import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.metadata.iso.citation.Citations;
 import org.geotools.parameter.DefaultParameterDescriptor;
 import org.geotools.parameter.ImagingParameterDescriptors;
 import org.geotools.parameter.ImagingParameters;
-import org.geotools.referencing.CRS;
-import org.geotools.referencing.operation.transform.ProjectiveTransform;
 import org.geotools.resources.i18n.ErrorKeys;
 import org.geotools.resources.i18n.Errors;
 import org.geotools.util.Utilities;
 import org.geotools.util.logging.Logging;
-import org.opengis.metadata.spatial.PixelOrientation;
 import org.opengis.parameter.InvalidParameterValueException;
 import org.opengis.parameter.ParameterDescriptor;
 import org.opengis.parameter.ParameterNotFoundException;
 import org.opengis.parameter.ParameterValueGroup;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.TransformException;
-
-import com.vividsolutions.jts.geom.CoordinateSequence;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.Polygon;
 
 /**
- * This class is the root class for the Statistics operations based on {@link JAI}'s {@link StatisticsOpImage} like Extrema and Histogram. It provides
+ * This class is the root class for the Maths operations. It provides
  * basic capabilities for management of geospatial parameters like {@link javax.media.jai.ROI}s and subsampling factors.
  * 
- * @author Simone Giannecchini
- * @since 2.4.x
- * 
- * 
- * 
+ * @author Nicola Lagomarsini, GeoSolutions SAS
+ * @since 14.x
  * 
  * @source $URL$
  */
 public abstract class BaseMathOperationJAI extends OperationJAI {
 
-    /**
-	 * 
-	 */
     private static final long serialVersionUID = 6830028735162290160L;
 
     /** {@link Logger} for this class. */

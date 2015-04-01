@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2014, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2015, Open Source Geospatial Foundation (OSGeo)
  *    (C) 2014 TOPP - www.openplans.org.
  *
  *    This library is free software; you can redistribute it and/or
@@ -25,7 +25,6 @@ import it.geosolutions.jaiext.range.RangeFactory;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
-import java.awt.image.DataBuffer;
 import java.awt.image.RenderedImage;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,7 +51,6 @@ import org.geotools.coverage.processing.OperationJAI;
 import org.geotools.factory.Hints;
 import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.jts.JTS;
-import org.geotools.image.jai.Registry;
 import org.geotools.metadata.iso.citation.Citations;
 import org.geotools.parameter.DefaultParameterDescriptor;
 import org.geotools.parameter.ImagingParameterDescriptors;
@@ -80,7 +78,6 @@ import org.opengis.referencing.operation.MathTransform2D;
 import org.opengis.referencing.operation.TransformException;
 import org.opengis.util.InternationalString;
 
-import com.sun.media.jai.util.ImageUtil;
 import com.vividsolutions.jts.geom.Geometry;
 
 /**
@@ -568,38 +565,22 @@ public class BandMerge extends OperationJAI {
     protected Map getProperties(RenderedImage data, CoordinateReferenceSystem crs,
             InternationalString name, MathTransform toCRS, GridCoverage2D[] sources,
             BandMergeParams parameters) {
-        // Check the property names of the created image
-//        String[] propNames = data.getPropertyNames();
-//        // If no property is present then the null is returned
-//        if (propNames == null || propNames.length == 0) {
-//            return null;
-//        } else {
-//            // Else a property map is returned
-//            Map properties = new HashMap();
-//            // All the image properties are stored inside a map
-//            for (String key : propNames) {
-//                properties.put(key, data.getProperty(key));
-//            }
-//
-//            return properties;
-//        }
         // Merge the coverage properties
         Map properties = new HashMap();
-        
-        for(GridCoverage2D cov : sources){
-            if(cov != null){
+
+        for (GridCoverage2D cov : sources) {
+            if (cov != null) {
                 properties.putAll(cov.getProperties());
             }
         }
-        
+
         // Setting ROI and NoData if present
-        if(JAIExt.isJAIExtOperation("BandMerge")){
+        if (JAIExt.isJAIExtOperation("BandMerge")) {
             ParameterBlockJAI pb = parameters.parameters;
             CoverageUtilities.setROIProperty(properties, (ROI) pb.getObjectParameter(3));
             CoverageUtilities.setNoDataProperty(properties, pb.getObjectParameter(1));
         }
-        
-        
+
         return properties;
     }
 
@@ -665,11 +646,11 @@ public class BandMerge extends OperationJAI {
             // Creation of the NoData range associated
             nodata[i] = createNoDataRange(cov, dataType);
         }
-        
-        if(JAIExt.isJAIExtOperation("BandMerge")){
+
+        if (JAIExt.isJAIExtOperation("BandMerge")) {
             // Setting NoData
             block.setParameter("noData", nodata);
-            
+
             // Setting Transformations
             block.setParameter("transformations", tr);
 
@@ -681,38 +662,39 @@ public class BandMerge extends OperationJAI {
                         .getValue(), crsToGRID));
             }
             // Check if the coverages contains a ROI property
-            for(int i = 0; i < sources.length; i++){
+            for (int i = 0; i < sources.length; i++) {
                 GridCoverage2D cov = sources[i];
                 ROI covROI = CoverageUtilities.getROIProperty(cov);
-                if(covROI != null){
+                if (covROI != null) {
                     ROI newROI = null;
                     // Check if it must be transformed
-                    if(tr != null){
+                    if (tr != null) {
                         try {
                             AffineTransform trans = tr.get(i).createInverse();
                             newROI = covROI.transform(trans);
                         } catch (NoninvertibleTransformException e) {
                             LOGGER.log(Level.SEVERE, e.getMessage(), e);
                         }
-                    }else{
+                    } else {
                         newROI = covROI;
                     }
-                    
-                    if(roi == null){
+
+                    if (roi == null) {
                         roi = newROI;
-                    }else {
+                    } else {
                         roi = roi.intersect(newROI);
                     }
                 }
             }
 
             // Addition of the ROI to the ParameterBlock
-            if(roi != null){
-                block.setParameter("roi", roi); 
+            if (roi != null) {
+                block.setParameter("roi", roi);
             }
 
             // Setting the destination No Data Value as the NoData of the principal coverage selected
-            block.setParameter("destinationNoData", nodata[getIndex(parameters)].getMin().doubleValue());
+            block.setParameter("destinationNoData", nodata[getIndex(parameters)].getMin()
+                    .doubleValue());
         }
 
         return block;

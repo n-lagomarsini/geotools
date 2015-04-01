@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -108,18 +108,6 @@ public class Histogram extends BaseStatisticsOperationJAI {
     public String getName() {
         return "Histogram";
     }
-	
-	/**
-	 * This operation MUST be performed on the geophysics data for this
-	 * {@link GridCoverage2D}.
-	 * 
-	 * @param parameters
-	 *            {@link ParameterValueGroup} that describes this operation
-	 * @return always true.
-	 */
-	protected boolean computeOnGeophysicsValues(ParameterValueGroup parameters) {
-		return true;
-	}
 
 	/**
 	 * Prepare the {@link javax.media.jai.Histogram} property for this histogram
@@ -149,40 +137,41 @@ public class Histogram extends BaseStatisticsOperationJAI {
 			
                         final Map<String, Object> synthProp = new HashMap<String, Object>();
 
-			if(JAIExt.isJAIExtOperation("Stats")){
-		                // get the properties
-	                        Statistics[][] results = ((Statistics[][])result.getProperty(Statistics.STATS_PROPERTY));
-	                        // Extracting the bins
-	                        int numBands = result.getNumBands();
-	                        int[][] bins = new int[numBands][];
-	                        
-	                        // Cycle on the bands
-	                        for(int i = 0; i < results.length; i++){
-	                            Statistics stat = results[i][0];
-	                            double[] binsDouble = (double[]) stat.getResult();
-	                            bins[i] = new int[binsDouble.length];
-	                            for(int j = 0; j < binsDouble.length; j++){
-	                                bins[i][j] = (int) binsDouble[j];
-	                            }
-	                        }
-	                        // Getting numBins, LowBounds, MaxBounds parameters
-	                        ParameterBlock parameterBlock = result.getParameterBlock();
-	                        double[] lowValues = (double[]) parameterBlock.getObjectParameter(7);
-	                        double[] highValues = (double[]) parameterBlock.getObjectParameter(8);
-	                        int[] numBins = (int[]) parameterBlock.getObjectParameter(9);
-	                        
-	                        HistogramWrapper wrapper = new HistogramWrapper(numBins, lowValues, highValues, bins);
+            if (JAIExt.isJAIExtOperation("Stats")) {
+                // get the properties
+                Statistics[][] results = ((Statistics[][]) result
+                        .getProperty(Statistics.STATS_PROPERTY));
+                // Extracting the bins
+                int numBands = result.getNumBands();
+                int[][] bins = new int[numBands][];
 
-	                        // return the map
-	                        synthProp.put(GT_SYNTHETIC_PROPERTY_HISTOGRAM, wrapper);
-                            } else {
-                
-                                final javax.media.jai.Histogram hist = (javax.media.jai.Histogram) result
-                                        .getProperty(GT_SYNTHETIC_PROPERTY_HISTOGRAM);
-                
-                                // return the map
-                                synthProp.put(GT_SYNTHETIC_PROPERTY_HISTOGRAM, hist);
-                            }
+                // Cycle on the bands
+                for (int i = 0; i < results.length; i++) {
+                    Statistics stat = results[i][0];
+                    double[] binsDouble = (double[]) stat.getResult();
+                    bins[i] = new int[binsDouble.length];
+                    for (int j = 0; j < binsDouble.length; j++) {
+                        bins[i][j] = (int) binsDouble[j];
+                    }
+                }
+                // Getting numBins, LowBounds, MaxBounds parameters
+                ParameterBlock parameterBlock = result.getParameterBlock();
+                double[] lowValues = (double[]) parameterBlock.getObjectParameter(7);
+                double[] highValues = (double[]) parameterBlock.getObjectParameter(8);
+                int[] numBins = (int[]) parameterBlock.getObjectParameter(9);
+
+                HistogramWrapper wrapper = new HistogramWrapper(numBins, lowValues, highValues, bins);
+
+                // return the map
+                synthProp.put(GT_SYNTHETIC_PROPERTY_HISTOGRAM, wrapper);
+            } else {
+
+                final javax.media.jai.Histogram hist = (javax.media.jai.Histogram) result
+                        .getProperty(GT_SYNTHETIC_PROPERTY_HISTOGRAM);
+
+                // return the map
+                synthProp.put(GT_SYNTHETIC_PROPERTY_HISTOGRAM, hist);
+            }
 			// Addition of the ROI property and NoData property
 			GridCoverage2D source = sources[0];
 			CoverageUtilities.setROIProperty(synthProp, CoverageUtilities.getROIProperty(source));
@@ -203,18 +192,18 @@ public class Histogram extends BaseStatisticsOperationJAI {
         }
         return block;
     }
-    
+
     protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
-        if(JAIExt.isJAIExtOperation("Stats")){
+        if (JAIExt.isJAIExtOperation("Stats")) {
             GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
             // Handle ROI and NoData
             handleROINoDataInternal(parameters, source, "Stats", 2, 3);
             // Setting the Statistic operation
-            parameters.set(new StatsType[]{StatsType.HISTOGRAM}, 6);
+            parameters.set(new StatsType[] { StatsType.HISTOGRAM }, 6);
             // Check on the band numnber
             int b = source.getRenderedImage().getSampleModel().getNumBands();
             int[] indexes = new int[b];
-            for(int i = 0; i < b; i++){
+            for (int i = 0; i < b; i++) {
                 indexes[i] = i;
             }
             parameters.set(indexes, 5);

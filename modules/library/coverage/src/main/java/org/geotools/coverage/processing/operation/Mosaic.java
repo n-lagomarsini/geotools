@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2014, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2014-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -575,8 +575,6 @@ public class Mosaic extends OperationJAI {
             GridCoverage2D[] sources, Hints hints) {
         final ImagingParameters copy = (ImagingParameters) descriptor.createValue();
         final ParameterBlockJAI block = (ParameterBlockJAI) copy.parameters;
-        //final ParameterBlock block = new ParameterBlock();
-        // org.geotools.parameter.Parameters.copy(parameters, copy);
 
         // Object indicating the policy to use for resampling all the GridCoverages to the same GridGeometry
         GridGeometryPolicy policy = null;
@@ -622,7 +620,7 @@ public class Mosaic extends OperationJAI {
         }
 
         int numSources = rasters.length;
-     // Setting the source rasters for the mosaic
+        // Setting the source rasters for the mosaic
         for (int i = 0; i < numSources; i++) {
             block.setSource(rasters[i], i);
         }
@@ -681,7 +679,7 @@ public class Mosaic extends OperationJAI {
         // Creation of the finel Parameters
         Params params = new Params(block, hints, finalGeometry);
         params.rr = rr;
-	return params;
+        return params;
     }
 
     /**
@@ -774,26 +772,26 @@ public class Mosaic extends OperationJAI {
     protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,
             InternationalString name, MathTransform gridToCRS, GridCoverage2D[] sources,
             Params parameters) {
-        Map  properties;
-        if(sources[0].getProperties() == null){
+        Map properties;
+        if (sources[0].getProperties() == null) {
             properties = new HashMap<>();
-        }else {
+        } else {
             properties = new HashMap<>(sources[0].getProperties());
         }
-        
+
         // Get the ROI and NoData property from the parameterBlock
         ParameterBlockJAI jai = parameters.parameters;
         int numSources = jai.getNumSources();
         // ROI
-        //Object roiParam = jai.getObjectParameter(2);
+        // Object roiParam = jai.getObjectParameter(2);
         ResampledRasters rr = parameters.rr;
-        if(rr != null && rr.getRois() != null){
+        if (rr != null && rr.getRois() != null) {
             ROI[] rois = rr.getRois();
             ROI finalROI = null;
-            for(int i = 0; i < numSources; i++){
-                if(finalROI == null){
+            for (int i = 0; i < numSources; i++) {
+                if (finalROI == null) {
                     finalROI = rois[i];
-                }else {
+                } else {
                     finalROI.add(rois[i]);
                 }
             }
@@ -801,7 +799,7 @@ public class Mosaic extends OperationJAI {
         }
         // NoData
         Object nodataParam = jai.getObjectParameter(4);
-        if(nodataParam != null && rr != null && rr.hasNoData()){
+        if (nodataParam != null && rr != null && rr.hasNoData()) {
             CoverageUtilities.setNoDataProperty(properties, nodataParam);
         }
 

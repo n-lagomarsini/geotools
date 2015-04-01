@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -451,21 +451,23 @@ public class CoverageProcessor {
 				}
 			}
 
-        /**
-         * Removes the specified operation to this processor. This method is usually invoked at construction time before this processor is made accessible.
-         * 
-         * @param operation The operation to remove.
-         */
-        protected void removeOperation(final Operation operation) {
-            Utilities.ensureNonNull("operation", operation);
-            synchronized (operations) {
-    
-                if (operations.isEmpty()) {
-                    return;
-                }
-                operations.remove(operation.getName().trim());
+    /**
+     * Removes the specified operation to this processor. 
+     * This method is usually invoked at construction time before this processor is made
+     * accessible.
+     * 
+     * @param operation The operation to remove.
+     */
+    protected void removeOperation(final Operation operation) {
+        Utilities.ensureNonNull("operation", operation);
+        synchronized (operations) {
+
+            if (operations.isEmpty()) {
+                return;
             }
-        }	
+            operations.remove(operation.getName().trim());
+        }
+    }
 
 	/**
 	 * Implementation of {@link #addOperation} method. Also used by {@link #scanForPlugins}

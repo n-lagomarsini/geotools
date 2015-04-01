@@ -200,16 +200,8 @@ public class GridCoverageFactory extends AbstractFactory {
         final double xTrans = -at.getTranslateX()/xScale;
         final double yTrans = -at.getTranslateY()/yScale;
         final GridEnvelope      range = gridGeometry.getGridRange();
-//        final ParameterBlock param = new ParameterBlock().add(function)
-//                                                         .add(range.getSpan(0)) // width
-//                                                         .add(range.getSpan(1)) // height
-//                                                         .add((float) xScale)
-//                                                         .add((float) yScale)
-//                                                         .add((float) xTrans)
-//                                                         .add((float) yTrans);
         final PlanarImage image = new ImageWorker().function(function, range.getSpan(0),
                 range.getSpan(1), (float) xScale, (float) yScale, (float) xTrans, (float) yTrans).getPlanarImage();
-                //JAI.create("ImageFunction", param);
         return create(name, image, gridGeometry, bands, null, properties);
     }
 

@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2011-2014, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2011-2015, Open Source Geospatial Foundation (OSGeo)
  *    (C) 2014 TOPP - www.openplans.org.
  *
  *    This library is free software; you can redistribute it and/or
@@ -548,30 +548,30 @@ public class GridCoverage2DRIA extends GeometricOpImage {
         RasterFormatTag[] formatTags = getFormatTags();
 
         RasterAccessor d = new RasterAccessor(dest, destRect, formatTags[1], getColorModel());
-        
+
         ROI roiTile = null;
-        
+
         RandomIter roiIter = null;
 
         boolean roiContainsTile = false;
         boolean roiDisjointTile = false;
-        
+
         // If a ROI is present, then only the part contained inside the current tile bounds is taken.
         if (hasROI) {
-            Rectangle srcRectExpanded = null;//mapDestRect(destRect, 0);
+            Rectangle srcRectExpanded = null;
             int x = (int) destRect.getMinX();
             int y = (int) destRect.getMinY();
             int w = (int) destRect.getWidth();
             int h = (int) destRect.getHeight();
             float[] src = new float[w * h * 2];
             warpRect(x, y, w, h, src);
-            
+
             double minX = Double.POSITIVE_INFINITY;
             double minY = Double.POSITIVE_INFINITY;
             double maxX = Double.NEGATIVE_INFINITY;
             double maxY = Double.NEGATIVE_INFINITY;
             int numP = src.length;
-            for(int i = 0; i < numP; i=i+2){
+            for (int i = 0; i < numP; i = i + 2) {
                 float xi = src[i];
                 float yi = src[i + 1];
                 minX = xi < minX ? xi : minX;
@@ -589,28 +589,27 @@ public class GridCoverage2DRIA extends GeometricOpImage {
                     srcRectExpanded.getWidth() + interp.getRightPadding() + interp.getLeftPadding(), 
                     srcRectExpanded.getHeight() + interp.getBottomPadding() + interp.getTopPadding());
             roiTile = roi.intersect(new ROIShape(srcRectExpanded));
-            
-            if(!roiBounds.intersects(srcRectExpanded)) {
+
+            if (!roiBounds.intersects(srcRectExpanded)) {
                 roiDisjointTile = true;
             } else {
                 roiContainsTile = roiTile.contains(srcRectExpanded);
                 if (!roiContainsTile) {
                     if (!roiTile.intersects(srcRectExpanded)) {
                         roiDisjointTile = true;
-                    }else{
+                    } else {
                         PlanarImage roiIMG = getImage();
                         roiIter = RandomIterFactory.create(roiIMG, null, true, true);
                     }
                 }
             }
         }
-        
-        if(roiDisjointTile){
+
+        if (roiDisjointTile) {
             double[] bkg = setBackground ? backgroundValues : new double[dest.getNumBands()];
             ImageUtil.fillBackground(dest, destRect, bkg);
             return;
         }
-        
 
         switch (d.getDataType()) {
         case DataBuffer.TYPE_BYTE:
@@ -697,7 +696,6 @@ public class GridCoverage2DRIA extends GeometricOpImage {
                 int pixelOffset = lineOffset;
                 lineOffset += lineStride;
 
-                // warp.warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
                 warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
 
                 int count = 0;
@@ -741,7 +739,6 @@ public class GridCoverage2DRIA extends GeometricOpImage {
                 int pixelOffset = lineOffset;
                 lineOffset += lineStride;
 
-                // warp.warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
                 warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
 
                 int count = 0;
@@ -842,7 +839,6 @@ public class GridCoverage2DRIA extends GeometricOpImage {
             int pixelOffset = lineOffset;
             lineOffset += lineStride;
 
-            // warp.warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
             warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
 
             int count = 0;
@@ -940,7 +936,6 @@ public class GridCoverage2DRIA extends GeometricOpImage {
             int pixelOffset = lineOffset;
             lineOffset += lineStride;
 
-            // warp.warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
             warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
 
             int count = 0;
@@ -1038,7 +1033,6 @@ public class GridCoverage2DRIA extends GeometricOpImage {
             int pixelOffset = lineOffset;
             lineOffset += lineStride;
 
-            // warp.warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
             warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
 
             int count = 0;
@@ -1133,7 +1127,6 @@ public class GridCoverage2DRIA extends GeometricOpImage {
             int pixelOffset = lineOffset;
             lineOffset += lineStride;
 
-            // warp.warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
             warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
 
             int count = 0;
@@ -1223,7 +1216,6 @@ public class GridCoverage2DRIA extends GeometricOpImage {
             int pixelOffset = lineOffset;
             lineOffset += lineStride;
 
-            // warp.warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
             warpRect(dst.getX(), dst.getY() + h, dstWidth, 1, warpData);
 
             int count = 0;

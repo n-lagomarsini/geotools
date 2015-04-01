@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2006-2013, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2006-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -21,10 +21,8 @@ import it.geosolutions.jaiext.range.Range;
 
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
-import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
-import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.RenderedImage;
@@ -68,8 +66,6 @@ import org.geotools.resources.coverage.FeatureUtilities;
 import org.geotools.resources.coverage.IntersectUtils;
 import org.geotools.resources.i18n.ErrorKeys;
 import org.geotools.resources.i18n.Errors;
-import org.jaitools.imageutils.ROIGeometry;
-import org.jaitools.imageutils.shape.LiteShape;
 import org.opengis.coverage.Coverage;
 import org.opengis.coverage.grid.GridCoverage;
 import org.opengis.geometry.Envelope;
@@ -89,7 +85,6 @@ import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
 //import org.geotools.image.crop.GTCropDescriptor;
@@ -184,8 +179,6 @@ public class Crop extends Operation2D {
 		}
 		GFACTORY = new GeometryFactory(pm, 0);
 		
-//        // Register manually the GTCrop operation, in web containers JAI registration may fails
-//        GTCropDescriptor.register();
 	}
 
     public static final String PARAMNAME_ENVELOPE = "Envelope";
@@ -535,12 +528,6 @@ public class Crop extends Operation2D {
 		final ImageLayout layout = initLayout(sourceImage, targetHints);
 		targetHints.put(JAI.KEY_IMAGE_LAYOUT, layout);
 
-		//
-		// prepare the processor to use for this operation
-		//
-		final JAI processor = OperationJAI.getJAI(targetHints);
-		final boolean useProvidedProcessor = !processor.equals(JAI.getDefaultInstance());
-
 		try {
 
             if (cropROI != null) {
@@ -666,8 +653,6 @@ public class Crop extends Operation2D {
                     } catch (FactoryException ex) {
 						throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP), ex);
                     }
-                                        //worker.setROI(roiarr[0]);
-                                        //worker.setnoData(nodata);
                                         worker.setDestinationNoData(background);
                                         
                                         
@@ -711,11 +696,6 @@ public class Crop extends Operation2D {
             // Apply operation
             //
             // //
-//            if (!useProvidedProcessor) {
-//                croppedImage = JAI.create(operatioName, pbj, targetHints);
-//            } else {
-//                croppedImage = processor.createNS(operatioName, pbj, targetHints);
-//            }
             croppedImage = worker.getPlanarImage();
 
 		    //conserve the input grid to world transformation
@@ -725,31 +705,31 @@ public class Crop extends Operation2D {
                 properties = new HashMap(sourceProperties);
             }
             if (rasterSpaceROI != null || internalROI != null) {
-            	ROI finalROI = null;
-                if(rasterSpaceROI != null){
-                	finalROI = new ROIShape(rasterSpaceROI);
+                ROI finalROI = null;
+                if (rasterSpaceROI != null) {
+                    finalROI = new ROIShape(rasterSpaceROI);
                 }
-                if(finalROI != null && internalROI != null){
-                	finalROI = finalROI.intersect(internalROI);
-                }else if(internalROI != null){
-                	finalROI = internalROI;
+                if (finalROI != null && internalROI != null) {
+                    finalROI = finalROI.intersect(internalROI);
+                } else if (internalROI != null) {
+                    finalROI = internalROI;
                 }
 
                 if (properties == null) {
-                    properties = new HashMap(); 
+                    properties = new HashMap();
                 }
-                if(finalROI != null){
+                if (finalROI != null) {
                     CoverageUtilities.setROIProperty(properties, finalROI);
                 }
             }
-            
-            if(worker.getNoData() != null ){
+
+            if (worker.getNoData() != null) {
                 if (properties == null) {
-                    properties = new HashMap(); 
+                    properties = new HashMap();
                 }
                 CoverageUtilities.setNoDataProperty(properties, worker.getNoData());
             }
-            
+
             return new GridCoverageFactory(hints).create(
             		sourceCoverage.getName(), 
             		croppedImage,

@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2001-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2001-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -318,7 +318,6 @@ public class OperationJAI extends Operation2D {
             {
                 throw new IllegalArgumentException(Errors.format(ErrorKeys.INCOMPATIBLE_GRID_GEOMETRY));
             }
-            //String sourceName = (sourceNames != null && sourceNames.length == sources.length) ? sourceNames[i] : "Source"+i;
             block.setSource(source.getRenderedImage(), i);
         }
         /*
@@ -1133,36 +1132,34 @@ public class OperationJAI extends Operation2D {
         }
         return prop;
     }
-    
-    
+
     protected static void handleROINoDataInternal(ParameterBlockJAI parameters,
-            GridCoverage2D sourceCoverage, String operationName, int roiIndex, int noDataIndex){
+            GridCoverage2D sourceCoverage, String operationName, int roiIndex, int noDataIndex) {
         // Getting the internal ROI property
-        ROI innerROI = CoverageUtilities.getROIProperty(sourceCoverage);  
-        if(JAIExt.isJAIExtOperation(operationName)){
-                ROI roiParam = (ROI) parameters.getObjectParameter(roiIndex);
-                ROI newROI = null;
-                if(innerROI == null ){
-                        newROI = roiParam;
-                } else {
-                        newROI = roiParam != null ? innerROI.intersect(roiParam) : innerROI;
-                }
-                parameters.set(newROI, roiIndex);
+        ROI innerROI = CoverageUtilities.getROIProperty(sourceCoverage);
+        if (JAIExt.isJAIExtOperation(operationName)) {
+            ROI roiParam = (ROI) parameters.getObjectParameter(roiIndex);
+            ROI newROI = null;
+            if (innerROI == null) {
+                newROI = roiParam;
+            } else {
+                newROI = roiParam != null ? innerROI.intersect(roiParam) : innerROI;
+            }
+            parameters.set(newROI, roiIndex);
         }
-        
-        
+
         NoDataContainer nodataProp = CoverageUtilities.getNoDataProperty(sourceCoverage);
-        Range innerNodata = (Range) ((nodataProp != null) ? nodataProp.getAsRange() : null);  
-        if(JAIExt.isJAIExtOperation(operationName)){
-                Range noDataParam = (Range) parameters.getObjectParameter(noDataIndex);
-                if(noDataParam == null ){
-                        parameters.set(innerNodata, noDataIndex);
-                }
+        Range innerNodata = (Range) ((nodataProp != null) ? nodataProp.getAsRange() : null);
+        if (JAIExt.isJAIExtOperation(operationName)) {
+            Range noDataParam = (Range) parameters.getObjectParameter(noDataIndex);
+            if (noDataParam == null) {
+                parameters.set(innerNodata, noDataIndex);
+            }
         }
     }
-    
+
     /**
-     * Extraction of the sources from the parameter called SOURCES. The sources are stored inside a List. 
+     * Extraction of the sources from the parameter called SOURCES. The sources are stored inside a List.
      * 
      * @param parameters
      * @param sources

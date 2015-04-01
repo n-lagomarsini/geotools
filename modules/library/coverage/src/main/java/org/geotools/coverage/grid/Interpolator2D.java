@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2001-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2001-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -139,21 +139,25 @@ public final class Interpolator2D extends GridCoverage2D {
     private transient int[][] ints;
 
     /** The {@link BorderExtender} for this {@link Interpolator2D} instance .*/
-	private final BorderExtender borderExtender;
+    private final BorderExtender borderExtender;
 
-	/** Inner Coverage ROI used in interpolation*/
-        private ROI roi;
+    /** Inner Coverage ROI used in interpolation */
+    private ROI roi;
 
-        /** Inner Coverage NoData used in interpolation*/
-        private Range nodata;
-        /** Value to set as background*/
-        private double background;
-        /** Boolean for checking if ROI is present*/
-        private boolean hasROI;
-        /** Boolean for checking if NoData are present*/
-        private boolean hasNoData;
-        /** ROIBounds used for a quicker check on the pixel points*/
-        private Rectangle roiBounds;
+    /** Inner Coverage NoData used in interpolation */
+    private Range nodata;
+
+    /** Value to set as background */
+    private double background;
+
+    /** Boolean for checking if ROI is present */
+    private boolean hasROI;
+
+    /** Boolean for checking if NoData are present */
+    private boolean hasNoData;
+
+    /** ROIBounds used for a quicker check on the pixel points */
+    private Rectangle roiBounds;
 
 	/**
 	 * Default {@link BorderExtender} is {@link BorderExtenderCopy}.
@@ -289,24 +293,24 @@ public final class Interpolator2D extends GridCoverage2D {
 	
 	    bounds = new Rectangle(0, 0, interpolation.getWidth(), interpolation.getHeight());
 	    
-	    // Check ROI and NoData
-	    ROI roiProp = CoverageUtilities.getROIProperty(coverage);
-            hasROI = roiProp != null;
-            NoDataContainer noDataProp = CoverageUtilities.getNoDataProperty(coverage);
-            hasNoData = noDataProp != null;
-            if(hasROI){
-                roi = roiProp;
-                roiBounds = roi.getBounds(); 
-            }
-	    nodata = hasNoData ? noDataProp.getAsRange() : null;
-	    
-	    // Create a value to set as background
-	    if(nodata != null){
-	        background = nodata.getMin(true).doubleValue();
-	    }else {
-	        background = 0.0d;
-	    }
-	}
+        // Check ROI and NoData
+        ROI roiProp = CoverageUtilities.getROIProperty(coverage);
+        hasROI = roiProp != null;
+        NoDataContainer noDataProp = CoverageUtilities.getNoDataProperty(coverage);
+        hasNoData = noDataProp != null;
+        if (hasROI) {
+            roi = roiProp;
+            roiBounds = roi.getBounds();
+        }
+        nodata = hasNoData ? noDataProp.getAsRange() : null;
+
+        // Create a value to set as background
+        if (nodata != null) {
+            background = nodata.getMin(true).doubleValue();
+        } else {
+            background = 0.0d;
+        }
+    }
 
     /**
      * Returns interpolations. The first array's element is the interpolation for

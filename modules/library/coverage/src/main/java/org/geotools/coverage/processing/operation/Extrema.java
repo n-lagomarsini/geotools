@@ -118,17 +118,6 @@ public class Extrema extends BaseStatisticsOperationJAI {
         return "Extrema";
     }
 
-	/**
-	 * This operation MUST be performed on the geophysics data for this
-	 * {@link GridCoverage2D}.
-	 * 
-	 * @param parameters
-	 *            {@link ParameterValueGroup} that describes this operation
-	 * @return always true.
-	 */
-	protected boolean computeOnGeophysicsValues(ParameterValueGroup parameters) {
-		return true;
-	}
 
 	/**
 	 * Prepare the minimum and maximum properties for this extream operation.
