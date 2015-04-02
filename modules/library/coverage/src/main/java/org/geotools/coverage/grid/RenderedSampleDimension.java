@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2001-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2001-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -117,10 +117,9 @@ final class RenderedSampleDimension extends GridSampleDimension {
         /*
          * Now, we know that the number of bands and the array length are consistent.
          * Search if there is any null SampleDimension. If any, replace the null value
-         * by a default SampleDimension. In all cases, count the number of geophysics
-         * and non-geophysics sample dimensions.
+         * by a default SampleDimension. 
          */
-        int countGeophysics = 0;
+        int count = 0;
         GridSampleDimension[] defaultSD = null;
         for (int i=0; i<numBands; i++) {
             GridSampleDimension sd = (src!=null) ? src[i] : null;
@@ -139,9 +138,9 @@ final class RenderedSampleDimension extends GridSampleDimension {
             }
             sd = new RenderedSampleDimension(sd, image, i);
             dst[i] = sd;
-            countGeophysics++;
+            count++;
         }
-        if (countGeophysics == numBands) {
+        if (count == numBands) {
             return true;
         }
         throw new IllegalArgumentException(Errors.format(ErrorKeys.MIXED_CATEGORIES));
@@ -159,9 +158,7 @@ final class RenderedSampleDimension extends GridSampleDimension {
      *         bands, or {@code null} for a default color palette. If non-null, each arrays
      *         {@code colors[b]} may have any length; colors will be interpolated as needed.
      * @param  hints An optional set of rendering hints, or {@code null} if none. Those hints will
-     *         not affect the sample dimensions to be created. However, they may affect the sample
-     *         dimensions to be returned by <code>{@link #geophysics geophysics}(false)</code>, i.e.
-     *         the view to be used at rendering time. The optional hint
+     *         not affect the sample dimensions to be created. The optional hint
      *         {@link Hints#SAMPLE_DIMENSION_TYPE} specifies the {@link SampleDimensionType}
      *         to be used at rendering time, which can be one of
      *         {@link SampleDimensionType#UBYTE UBYTE} or
@@ -197,10 +194,7 @@ final class RenderedSampleDimension extends GridSampleDimension {
      * @param  dst The array where to store sample dimensions. The array length must matches
      *         the number of bands.
      * @param  hints An optional set of rendering hints, or {@code null} if none.
-     *         Those hints will not affect the sample dimensions to be created. However,
-     *         they may affect the sample dimensions to be returned by
-     *         <code>{@link #geophysics geophysics}(false)</code>, i.e.
-     *         the view to be used at rendering time. The optional hint
+     *         Those hints will not affect the sample dimensions to be created. The optional hint
      *         {@link Hints#SAMPLE_DIMENSION_TYPE} specifies the {@link SampleDimensionType}
      *         to be used at rendering time, which can be one of
      *         {@link SampleDimensionType#UBYTE UBYTE} or
@@ -236,7 +230,7 @@ final class RenderedSampleDimension extends GridSampleDimension {
          * STEP 2: Range of source (geophysics) values. It will be computed one block later.
          *
          * The target (sample) values will typically range from 0 to 255 or 0 to 65535, but the
-         * general case is handled as well. If the source (geophysics) raster uses floating point
+         * general case is handled as well. If the source raster uses floating point
          * numbers, then a "nodata" category may be added in order to handle NaN values. If the
          * source raster use integer numbers instead, then we will rescale samples only if they
          * would not fit in the target data type.

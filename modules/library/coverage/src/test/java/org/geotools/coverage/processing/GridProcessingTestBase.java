@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2002-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2002-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -92,7 +92,6 @@ public class GridProcessingTestBase extends GridCoverageTestBase {
      * @param geometry  The target geometry, or {@code null} if the same.
      * @param interpolationType The target interpolation.
      * @param hints     An optional set of hints, or {@code null} if none.
-     * @param useGeophysics {@code true} for projecting the geophysics view.
      * @return The operation name which was applied on the image, or {@code null} if none.
      */
     protected static GridCoverage2D project(GridCoverage2D            coverage,
@@ -162,8 +161,6 @@ public class GridProcessingTestBase extends GridCoverageTestBase {
      *          The coverage to apply the operation on.
      * @param hints
      *          An optional set of hints, or {@code null} if none.
-     * @param useGeophysics
-     *          {@code true} for performing the operation on the geophysics view.
      * @param asCRS
      *          The expected operation name if the resampling is performed as a CRS change.
      * @param asGG

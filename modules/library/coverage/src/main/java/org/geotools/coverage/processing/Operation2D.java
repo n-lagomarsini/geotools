@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2001-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2001-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -89,27 +89,6 @@ public abstract class Operation2D extends AbstractOperation {
      */
     public Operation2D(final ParameterDescriptorGroup descriptor) {
         super(descriptor);
-    }
-
-    /**
-     * Returns {@code true} if grid coverage content should be converted from sample values
-     * to geophysics value before to apply an operation. This method is invoked automatically
-     * by {@link OperationJAI#doOperation doOperation}. If this method returns {@code true},
-     * then the computation will be performed on the <cite>geophysics</cite> view as returned
-     * by <code>{@linkplain GridCoverage2D#geophysics GridCoverage2D.geophysics}(true)</code>.
-     * If this method returns {@code false}, then the view will <strong>not</strong> be changed
-     * before the operation is applied (i.e. the {@code geophysics} method is not invoked at all).
-     * The default implementation always returns {@code true}.
-     *
-     * @param  parameters The parameters supplied by the user to the {@code doOperation} method.
-     * @return {@code true} if this operation should be applied on geophysics values.
-     *
-     * @see GridCoverage2D#geophysics
-     *
-     * @since 2.4
-     */
-    protected boolean computeOnGeophysicsValues(final ParameterValueGroup parameters) {
-        return true;
     }
 
     /**

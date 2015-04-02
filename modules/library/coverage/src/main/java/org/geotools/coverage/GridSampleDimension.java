@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2001-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2001-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 
 import javax.measure.unit.Unit;
 
-import org.geotools.referencing.operation.transform.LinearTransform1D;
 import org.geotools.resources.ClassChanger;
 import org.geotools.resources.Classes;
 import org.geotools.resources.XArray;
@@ -47,7 +46,6 @@ import org.opengis.coverage.ColorInterpretation;
 import org.opengis.coverage.PaletteInterpretation;
 import org.opengis.coverage.SampleDimension;
 import org.opengis.coverage.SampleDimensionType;
-import org.opengis.referencing.operation.MathTransform1D;
 import org.opengis.util.InternationalString;
 
 
@@ -110,10 +108,6 @@ public class GridSampleDimension implements SampleDimension, Serializable {
      * {@code true} if this sample dimension has at least one quantitative category.
      * An arbitrary number of quantitative categories is allowed, providing their sample
      * value ranges do not overlap.
-     * <p>
-     * If {@code sampleToGeophysics} is non-null, then {@code hasQuantitative}
-     * <strong>must</strong> be true.  However, the opposite do not hold in all cases: a
-     * {@code true} value doesn't means that {@code sampleToGeophysics} should be non-null.
      */
     private final boolean hasQuantitative;
 
@@ -496,9 +490,7 @@ public class GridSampleDimension implements SampleDimension, Serializable {
     /**
      * Constructs a sample dimension with an arbitrary set of categories, which may be both
      * quantitative and qualitative. It is possible to specify more than one quantitative
-     * categories, providing that their sample value ranges do not overlap. Quantitative
-     * categories can map sample values to geophysics values using arbitrary relation
-     * (not necessarly linear).
+     * categories, providing that their sample value ranges do not overlap. 
      *
      * @param description
      *            The sample dimension title or description, or {@code null} for the default
@@ -508,8 +500,7 @@ public class GridSampleDimension implements SampleDimension, Serializable {
      *            The list of categories.
      * @param units
      *            The unit information for this sample dimension. May be {@code null} if
-     *            no category has units. This unit apply to values obtained after the
-     *            {@link #getSampleToGeophysics sampleToGeophysics} transformation.
+     *            no category has units. 
      * @throws IllegalArgumentException
      *             if {@code categories} contains incompatible categories. If
      *             may be the case for example if two or more categories have

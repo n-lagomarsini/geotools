@@ -615,11 +615,6 @@ final class Resampler2D extends GridCoverage2D {
         if (allSteps.isIdentity() || (allSteps instanceof AffineTransform &&
                 XAffineTransform.isIdentity((AffineTransform) allSteps, EPS)))
         {
-            /*
-             * Since there is no interpolation to perform, use the native view (which may be
-             * packed or geophysics - it is just the view which is closest to original data).
-             */
-            
             sourceImage = PlanarImage.wrapRenderedImage(sourceCoverage.getRenderedImage());
             w.setImage(sourceImage);
             if (targetBB.equals(sourceBB)) {

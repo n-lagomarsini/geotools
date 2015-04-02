@@ -19,7 +19,6 @@ package org.geotools.coverage.processing;
 import it.geosolutions.jaiext.JAIExt;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
-import it.geosolutions.jaiext.range.RangeFactory;
 
 import java.awt.RenderingHints;
 import java.awt.image.ColorModel;
@@ -256,13 +255,6 @@ public class OperationJAI extends Operation2D {
      * The default implementation performs the following steps:
      *
      * <ol>
-     *   <li>Converts source grid coverages to their <cite>geophysics</cite> view using
-     *       <code>{@linkplain GridCoverage2D#geophysics GridCoverage2D.geophysics}(true)</code>.
-     *       This allow to performs all computation on geophysics values instead of encoded
-     *       samples. <strong>Note:</strong> this step is disabled if
-     *       {@link #computeOnGeophysicsValues computeOnGeophysicsValues} returns
-     *       {@code false}.</li>
-     *
      *   <li>Ensures that every sources {@code GridCoverage2D}s use the same coordinate reference
      *       system (at least for the two-dimensional part) with the same
      *       {@link GridGeometry2D#getGridToCRS2D gridToCRS} relationship.</li>

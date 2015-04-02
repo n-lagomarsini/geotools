@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2001-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2001-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -94,10 +94,8 @@ class CategoryList extends AbstractList<Category>
 
     /**
      * The "nodata" category (never {@code null}). The "nodata" category is a
-     * category mapping the geophysics {@link Double#NaN} value.  If none has been
-     * found, a default "nodata" category is used. This category is used to transform
-     * geophysics values to sample values into rasters when no suitable category has
-     * been found for a given geophysics value.
+     * category mapping the {@link Double#NaN} value.  If none has been
+     * found, a default "nodata" category is used. 
      */
     final Category nodata;
 
@@ -133,6 +131,12 @@ class CategoryList extends AbstractList<Category>
      */
     private transient InternationalString name;
 
+    /** 
+     * The unit information for all quantitative categories. It may be {@code null}
+     * if no category has units.
+     */
+    private Unit<?> unit;
+
     /**
      * Constructs a category list using the specified array of categories.
      *
@@ -144,7 +148,7 @@ class CategoryList extends AbstractList<Category>
     public CategoryList(final Category[] categories, final Unit<?> units)
             throws IllegalArgumentException
     {
-        this(categories, units, false, null);
+        this(categories, units, false);
     }
 
     /**
@@ -152,20 +156,16 @@ class CategoryList extends AbstractList<Category>
      *
      *         <STRONG>This constructor is for internal use only</STRONG>
      *
-     * It is not private only because {@link GeophysicsCategoryList} needs this constructor.
      *
      * @param  categories The list of categories.
      * @param  units The geophysics unit, or {@code null} if none.
      * @param  searchNearest The policy when {@link #getCategory} doesn't find an exact match
      *         for a sample value. {@code true} means that it should search for the nearest
      *         category, while {@code false} means that it should returns {@code null}.
-     * @param  inverse The inverse transform, or {@code null} to build it automatically.
-     *         <STRONG>This argument can be non-null only if invoked from
-     *         {@link GeophysicsCategoryList} constructor</STRONG>.
      * @throws IllegalArgumentException if two or more categories have overlapping sample value
      *         range.
      */
-    CategoryList(Category[] categories, Unit<?> units, boolean searchNearest, CategoryList inverse)
+    CategoryList(Category[] categories, Unit<?> units, boolean searchNearest)
             throws IllegalArgumentException
     {
         this.categories = categories = categories.clone();
@@ -264,6 +264,7 @@ class CategoryList extends AbstractList<Category>
             }
         }
         this.overflowFallback = overflowFallback;
+        this.unit = units;
     }
 
     /**
@@ -407,14 +408,9 @@ class CategoryList extends AbstractList<Category>
      * Returns the unit information for quantitative categories in this list. May returns
      * {@code null} if there is no quantitative categories in this list, or if there is no
      * unit information.
-     * <p>
-     * This method is to be overridden by {@link GeophysicsCategoryList}. The default implementation
-     * returns {@code null} since sample values are not geophysics values as long as they have not
-     * been transformed. The {@link GridSampleDimension} class will invoke
-     * {@code geophysics(true).getUnits()} in order to get a non-null unit.
      */
     public Unit<?> getUnits() {
-        return null;
+        return unit;
     }
 
     /**
@@ -428,8 +424,6 @@ class CategoryList extends AbstractList<Category>
      *         quantitative category.
      *
      * @see Category#getRange
-     *
-     * @todo Returns an instance of {@link MeasurementRange} if we are a geophysics category list.
      */
     public final NumberRange<?> getRange() {
         if (range == null) {
@@ -474,10 +468,7 @@ class CategoryList extends AbstractList<Category>
     }
 
     /**
-     * Format the specified value using the specified locale convention. This method is to be
-     * overridden by {@link GeophysicsCategoryList}. The default implementation do not format
-     * the value very properly, since most invocation will be done on
-     * {@code geophysics(true).format(...)} anyway.
+     * Format the specified value using the specified locale convention. 
      *
      * @param  value The value to format.
      * @param  writeUnit {@code true} if unit symbol should be formatted after the number.

@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2006-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2006-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -70,13 +70,7 @@ public final class SubsampleAverageTest extends GridProcessingTestBase {
 
         // On this one the Subsample average should do an RGB expansion preserving alpha.
         subsampleAverage(indexedCoverageWithTransparency);
-
-        // On this one the subsample average should go back to the geophysics
-        // view before being applied.
         subsampleAverage(originallyIndexedCoverage);
-
-        // On this one the subsample average should NOT go back to the
-        // geophysics view before being applied.
         subsampleAverage(floatCoverage);
 
         // Play with a rotated coverage.

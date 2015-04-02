@@ -81,16 +81,6 @@ public class ZonalStatistics extends BaseStatisticsOperationJAI {
             .getLogger("org.geotools.coverage.processing.operation");
 
     /**
-     * This operation MUST be performed on the geophysics data for this {@link GridCoverage2D}.
-     * 
-     * @param parameters {@link ParameterValueGroup} that describes this operation
-     * @return always true.
-     */
-    protected boolean computeOnGeophysicsValues(ParameterValueGroup parameters) {
-        return true;
-    }
-
-    /**
      * Constructs a default {@code "ZonalStatistics"} operation.
      */
     public ZonalStatistics() throws OperationNotFoundException {

@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2011, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2011-2015, Open Source Geospatial Foundation (OSGeo)
  *    (C) 2001-2007 TOPP - www.openplans.org.
  *
  *    This library is free software; you can redistribute it and/or
@@ -16,8 +16,6 @@
  *    Lesser General Public License for more details.
  */
 package org.geotools.process.raster;
-
-//import it.geosolutions.jaiext.rlookup.RangeLookupTable;
 
 import it.geosolutions.jaiext.JAIExt;
 import it.geosolutions.jaiext.range.NoDataContainer;

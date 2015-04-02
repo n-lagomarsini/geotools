@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2001-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2001-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -833,8 +833,7 @@ public class GridCoverage2D extends AbstractGridCoverage {
      * <p>
      * <ul>
      *   <li>{@code force} is {@code true}, <strong>or</strong></li>
-     *   <li>The underlying {@linkplain #image} has no {@linkplain PlanarImage#getSinks sinks}
-     *       other than the views (geophysics, display, <cite>etc.</cite>).</li>
+     *   <li>The underlying {@linkplain #image} has no {@linkplain PlanarImage#getSinks sinks}.</li>
      * </ul>
      * <p>
      * This safety check helps to prevent the disposal of an {@linkplain #image} that still

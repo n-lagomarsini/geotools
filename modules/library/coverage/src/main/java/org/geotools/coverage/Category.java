@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2001-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2001-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,6 @@ package org.geotools.coverage;
 import java.awt.Color;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 import org.geotools.referencing.operation.transform.LinearTransform1D;
 import org.geotools.resources.Classes;
@@ -30,13 +29,12 @@ import org.geotools.resources.i18n.VocabularyKeys;
 import org.geotools.util.NumberRange;
 import org.geotools.util.SimpleInternationalString;
 import org.geotools.util.Utilities;
-import org.geotools.util.logging.Logging;
 import org.opengis.referencing.operation.MathTransform1D;
 import org.opengis.util.InternationalString;
 
 
 /**
- * A category delimited by a range of sample values. A categogy may be either
+ * A category delimited by a range of values. A category may be either
  * <em>qualitative</em> or <em>quantitative</em>.   For example, a classified
  * image may have a qualitative category defining sample value {@code 0}
  * as water. An other qualitative category may defines sample value {@code 1}
@@ -72,11 +70,6 @@ public class Category implements Serializable {
      * Serial number for interoperability with different versions.
      */
     private static final long serialVersionUID = 6215962897884256696L;
-
-    /**
-     * The logger for category.
-     */
-    public static final Logger LOGGER = Logging.getLogger("org.geotools.coverage");
 
     /**
      * The 0 value as a byte. Used for {@link #FALSE} categories.
@@ -134,20 +127,12 @@ public class Category implements Serializable {
     /**
      * The minimal sample value (inclusive). This category is made of all values
      * in the range {@code minimum} to {@code maximum} inclusive.
-     *
-     * If this category is an instance of {@code GeophysicsCategory},
-     * then this field is the minimal geophysics value in this category.
-     * For qualitative categories, the geophysics value is one of {@code NaN} values.
      */
     final double minimum;
 
     /**
      * The maximal sample value (inclusive). This category is made of all values
      * in the range {@code minimum} to {@code maximum} inclusive.
-     *
-     * If this category is an instance of {@code GeophysicsCategory},
-     * then this field is the maximal geophysics value in this category.
-     * For qualitative categories, the geophysics value is one of {@code NaN} values.
      */
     final double maximum;
 
@@ -486,8 +471,7 @@ public class Category implements Serializable {
     }
 
     /**
-     * Returns the range of sample values occurring in this category. Sample values can be
-     * transformed into geophysics values using the {@link #getSampleToGeophysics} transform.
+     * Returns the range of sample values occurring in this category. 
      *
      * @return The range of sample values.
      *
@@ -502,8 +486,7 @@ public class Category implements Serializable {
     }
 
     /**
-     * Returns {@code true} if this category is quantitative. A quantitative category
-     * has a non-null {@link #getSampleToGeophysics() sampleToGeophysics} transform.
+     * Returns {@code true} if this category is quantitative. 
      *
      * @return {@code true} if this category is quantitative, or
      *         {@code false} if this category is qualitative.
@@ -530,8 +513,6 @@ public class Category implements Serializable {
         if (Arrays.equals(ARGB, newARGB)) {
             return this;
         }
-        // The range can be null only for GeophysicsCategory cases. Because
-        // the later override this method, the case below should never occurs.
         assert range != null : this;
         final Category newCategory = new Category(name, newARGB, range, isQuantitative);
         return newCategory;
@@ -565,8 +546,6 @@ public class Category implements Serializable {
                 Utilities.equals(this.name,      that.name ) &&
                           Arrays.equals(this.ARGB,      that.ARGB ))
             {
-                // Special test for 'range', since 'GeophysicsCategory'
-                // computes it only when first needed.
                 if (this.range!=null && that.range!=null) {
                     if (!Utilities.equals(this.range, that.range)) {
                         return false;

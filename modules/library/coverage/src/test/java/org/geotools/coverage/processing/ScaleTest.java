@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2006-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2006-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,6 @@ import javax.media.jai.PlanarImage;
 
 import org.opengis.parameter.ParameterValueGroup;
 
-import org.geotools.factory.Hints;
 import org.geotools.coverage.grid.Viewer;
 import org.geotools.coverage.grid.GridCoverage2D;
 

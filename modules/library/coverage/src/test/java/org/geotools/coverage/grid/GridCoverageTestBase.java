@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2002-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2002-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -23,10 +23,8 @@ import static javax.measure.unit.SI.GRAM;
 import static javax.measure.unit.SI.MILLI;
 import static org.geotools.util.NumberRange.create;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 import java.awt.Color;
 import java.awt.geom.Point2D;
@@ -56,13 +54,9 @@ import org.geotools.factory.Hints;
 import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.geotools.referencing.operation.transform.ConcatenatedTransform;
-import org.geotools.referencing.operation.transform.ExponentialTransform1D;
-import org.geotools.referencing.operation.transform.LinearTransform1D;
 import org.geotools.test.TestData;
 import org.opengis.coverage.grid.GridCoverage;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.MathTransform1D;
 
 
 /**
@@ -101,8 +95,6 @@ public class GridCoverageTestBase extends CoverageTestBase {
         /*
          * Some constants used for the construction and tests of the grid coverage.
          */
-        final double      SCALE = 0.1; // Scale factor for pixel transcoding.
-        final double     OFFSET = 5.0; // Offset factor for pixel transcoding.
         final double PIXEL_SIZE = .25; // Pixel size (in degrees). Used in transformations.
         final int   BEGIN_VALID = 3;   // The minimal valid index for quantitative category.
         /*
@@ -142,9 +134,7 @@ public class GridCoverageTestBase extends CoverageTestBase {
         coverage = factory.create("Test", image, envelope, new GridSampleDimension[] {band}, null, null);
         assertEquals("raw", coverage.tileEncoding);
         /*
-         * Grid coverage construction finished.  Now test it.  First we test the creation of a
-         * "geophysics" view. This test make sure that the 'view(type)' method does not create
-         * more grid coverages than needed.
+         * Grid coverage construction finished.  Now test it.  
          */
         assertSame(coverage.getRenderedImage(), coverage.getRenderableImage(0,1).createDefaultRendering());
         assertSame(image.getTile(0,0), coverage.getRenderedImage().getTile(0,0));

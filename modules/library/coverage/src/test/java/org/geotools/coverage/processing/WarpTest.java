@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2012, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2012-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -73,7 +73,7 @@ public class WarpTest extends GridProcessingTestBase {
 
         ///////////////////////////////////////////////////////////////////////
         //
-        // Nearest neighbor interpolation and non-geophysics view.
+        // Nearest neighbor interpolation
         //
         ///////////////////////////////////////////////////////////////////////
         Interpolation interp = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
@@ -96,8 +96,6 @@ public class WarpTest extends GridProcessingTestBase {
         // Bilinear interpolation  for a float coverage
         //
         ///////////////////////////////////////////////////////////////////////
-        // on this one the subsample average should NOT go back to the
-        // geophysiscs view before being applied
         warp(floatCoverage, interp);
 
         ///////////////////////////////////////////////////////////////////////
@@ -105,8 +103,6 @@ public class WarpTest extends GridProcessingTestBase {
         // Nearest neighbor  interpolation  for a float coverage
         //
         ///////////////////////////////////////////////////////////////////////
-        // on this one the subsample average should NOT go back to the
-        // geophysiscs view before being applied
         interp = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
         warp(floatCoverage, interp);
 

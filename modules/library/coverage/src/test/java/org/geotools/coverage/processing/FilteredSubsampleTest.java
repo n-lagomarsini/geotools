@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2006-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2006-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -77,9 +77,6 @@ public final class FilteredSubsampleTest extends GridProcessingTestBase {
 
         // On this one the Subsample average should do an RGB expansion preserving alpha.
         filteredSubsample(indexedCoverageWithTransparency, interp, filter);
-
-        // On this one the subsample average should go back to the geophysic
-        // view before being applied.
         filteredSubsample(originallyIndexedCoverage, interp, filter);
 
         // On this one the Subsample average should do an RGB expansion.
@@ -88,9 +85,6 @@ public final class FilteredSubsampleTest extends GridProcessingTestBase {
 
         // On this one the Subsample average should do an RGB expansion preserving alpha.
         filteredSubsample(indexedCoverageWithTransparency, interp, filter);
-
-        // On this one the subsample average should go back to the geophysics
-        // view before being applied.
         filteredSubsample(originallyIndexedCoverage, interp, filter);
 
         // On this one the Subsample average should do an RGB expansion.
@@ -102,9 +96,6 @@ public final class FilteredSubsampleTest extends GridProcessingTestBase {
         // On this one the Subsample average should do an RGB expansion
         // preserving alpha.
         filteredSubsample(indexedCoverageWithTransparency, interp, filter);
-
-        // On this one the subsample average should go back to the geophysiscs
-        // view before being applied.
         filteredSubsample(originallyIndexedCoverage, interp, filter);
 
         // On this one the Subsample average should do an RGB expansion.
