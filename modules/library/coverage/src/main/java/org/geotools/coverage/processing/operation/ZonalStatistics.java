@@ -2,8 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2011, Open Source Geospatial Foundation (OSGeo)
- *    (C) 2001-2007 TOPP - www.openplans.org.
+ *    (C) 2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -17,7 +16,6 @@
  */
 package org.geotools.coverage.processing.operation;
 
-import it.geosolutions.jaiext.stats.Statistics;
 import it.geosolutions.jaiext.zonal.ZonalStatsDescriptor;
 import it.geosolutions.jaiext.zonal.ZoneGeometry;
 
@@ -64,15 +62,12 @@ import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.util.AffineTransformation;
 import com.vividsolutions.jts.simplify.DouglasPeuckerSimplifier;
 
-
-
-
 /**
- * This operation is similar to the {@link ZonalStats} operation but implements a new version of the "ZonalStats" operation. The main difference
- * between the two operations is that inside this version multiple geometries are handled, instead of the old version which supports only one geometry
- * per time.
+ * This operation is similar to the {@link ZonalStats} operation but implements a new version of the "ZonalStats" operation. 
+ * The main difference between the two operations is that inside this version multiple geometries 
+ * are handled, instead of the old version which supports only one geometry per time.
  * 
- * @author geosolutions
+ * @author Nicola Lagomarsini, GeoSolutions SAS
  * 
  */
 

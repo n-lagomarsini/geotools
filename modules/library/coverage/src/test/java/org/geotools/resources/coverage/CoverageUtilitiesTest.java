@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2002-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2002-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,8 @@
  */
 package org.geotools.resources.coverage;
 
+import static org.junit.Assert.*;
+
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.image.DataBuffer;
@@ -25,9 +27,6 @@ import java.util.Random;
 import javax.imageio.ImageReadParam;
 import javax.measure.unit.Unit;
 import javax.media.jai.ImageFunction;
-import javax.media.jai.operator.ImageFunctionDescriptor;
-
-import junit.framework.Assert;
 
 import org.geotools.coverage.Category;
 import org.geotools.coverage.CoverageFactoryFinder;
@@ -44,8 +43,12 @@ import org.junit.Test;
  *
  * @source $URL$
  */
-public final class CoverageUtilitiesTest extends Assert {
-	
+public final class CoverageUtilitiesTest{
+
+    private final static double NO_DATA = -9999.0;
+
+    private final static double DELTA = 1E-6;
+
 	private final static class MyImageFunction implements ImageFunction{
 
 		private final Random rand= new Random();
@@ -90,24 +93,24 @@ public final class CoverageUtilitiesTest extends Assert {
         final ImageReadParam params = new ImageReadParam();
         Rectangle sourceRegion = new Rectangle(300, 300, 700, 700);
         params.setSourceRegion(sourceRegion);
-        Assert.assertEquals(sourceRegion.x, 300);
-        Assert.assertEquals(sourceRegion.y, 300);
-        Assert.assertEquals(sourceRegion.height, 700);
-        Assert.assertEquals(sourceRegion.width, 700);
+        assertEquals(sourceRegion.x, 300);
+        assertEquals(sourceRegion.y, 300);
+        assertEquals(sourceRegion.height, 700);
+        assertEquals(sourceRegion.width, 700);
         
         final Rectangle intersecting = new Rectangle(400, 400, 900, 900);
         boolean isEmpty = CoverageUtilities.checkEmptySourceRegion(params, intersecting);
         
-        Assert.assertFalse(isEmpty);
+        assertFalse(isEmpty);
         final Rectangle intersection = params.getSourceRegion();
-        Assert.assertEquals(intersection.x, 400);
-        Assert.assertEquals(intersection.y, 400);
-        Assert.assertEquals(intersection.height, 600);
-        Assert.assertEquals(intersection.width, 600);
+        assertEquals(intersection.x, 400);
+        assertEquals(intersection.y, 400);
+        assertEquals(intersection.height, 600);
+        assertEquals(intersection.width, 600);
        
         final Rectangle intersecting2 = new Rectangle(0, 0, 300, 300);
         isEmpty = CoverageUtilities.checkEmptySourceRegion(params, intersecting2);
-        Assert.assertTrue(isEmpty);
+        assertTrue(isEmpty);
     }
 
     /**
@@ -134,7 +137,7 @@ public final class CoverageUtilitiesTest extends Assert {
     	
     	double[] bkg=CoverageUtilities.getBackgroundValues(gc);
     	assertEquals(1, bkg.length);
-    	assertEquals(Double.valueOf(-9999.0), bkg[0]);
+    	assertEquals(NO_DATA, bkg[0], DELTA);
     	
     	// test grid sampledimension no data property
     	final Category noDataCategory= new Category(CoverageUtilities.NODATA,new Color[]{Color.black},NumberRange.create(Double.valueOf(-9999.0),Double.valueOf(-9999.0)),false);
@@ -143,7 +146,6 @@ public final class CoverageUtilitiesTest extends Assert {
     	create(
     			"test", 
     			new ImageWorker().function(new MyImageFunction(), Integer.valueOf(800), Integer.valueOf(600), Float.valueOf(1.0f),  Float.valueOf(1.0f),  Float.valueOf(0.0f),  Float.valueOf(0.0f)).getRenderedImage(),
-    			//ImageFunctionDescriptor.create(new MyImageFunction(), Integer.valueOf(800), Integer.valueOf(600), Float.valueOf(1.0f),  Float.valueOf(1.0f),  Float.valueOf(0.0f),  Float.valueOf(0.0f), null), 
     			gg2D, 
     			new GridSampleDimension[]{gsd}, 
     			null, 
@@ -151,14 +153,13 @@ public final class CoverageUtilitiesTest extends Assert {
     	
     	bkg=CoverageUtilities.getBackgroundValues(gc);
     	assertEquals(1, bkg.length);
-    	assertEquals(Double.valueOf(-9999.0), bkg[0]);
+    	assertEquals(NO_DATA, bkg[0], DELTA);
     	
     	// test getting NaN in case we do not have any no data
     	gc= CoverageFactoryFinder.getGridCoverageFactory(null).
     	create(
     			"test", 
     			new ImageWorker().function(new MyImageFunction(), Integer.valueOf(800), Integer.valueOf(600), Float.valueOf(1.0f),  Float.valueOf(1.0f),  Float.valueOf(0.0f),  Float.valueOf(0.0f)).getRenderedImage(),
-    			//ImageFunctionDescriptor.create(new MyImageFunction(), Integer.valueOf(800), Integer.valueOf(600), Float.valueOf(1.0f),  Float.valueOf(1.0f),  Float.valueOf(0.0f),  Float.valueOf(0.0f), null), 
     			gg2D, 
     			null, 
     			null, 

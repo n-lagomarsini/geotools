@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2002-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2002-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,6 @@ package org.geotools.coverage.processing.operation;
 
 import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
-import it.geosolutions.rendered.viewer.RenderedImageBrowser;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -103,6 +102,7 @@ import org.opengis.referencing.operation.TransformException;
  * @author Martin Desruisseaux (IRD)
  * @author Simone Giannecchini, GeoSolutions SAS
  * @author Daniele Romagnoli, GeoSolutions SAS
+ * @author Nicola Lagomarsini, GeoSolutions SAS
  */
 final class Resampler2D extends GridCoverage2D {
     /**
@@ -601,7 +601,7 @@ final class Resampler2D extends GridCoverage2D {
          * delegates the work to a "Crop" operation.
          */
         final String operation;
-        //final ParameterBlock paramBlk = new ParameterBlock().addSource(sourceImage);
+
         // Using ImageWorker instead
         ImageWorker w = new ImageWorker(sourceImage);
         w.setROI(roi);
@@ -622,8 +622,6 @@ final class Resampler2D extends GridCoverage2D {
             
             sourceImage = PlanarImage.wrapRenderedImage(sourceCoverage.getRenderedImage());
             w.setImage(sourceImage);
-            ///paramBlk.removeSources();
-            //paramBlk.addSource(sourceImage);
             if (targetBB.equals(sourceBB)) {
                 /*
                  * Optimization in case we have nothing to do, not even a crop. Reverts to the
@@ -646,10 +644,6 @@ final class Resampler2D extends GridCoverage2D {
                 CoverageUtilities.setROIProperty(sourceProps, newROI);
                 CoverageUtilities.setNoDataProperty(sourceProps, newNoData);
                 operation = "Crop";
-//                paramBlk.add(Float.valueOf(targetBB.x))
-//                        .add(Float.valueOf(targetBB.y))
-//                        .add(Float.valueOf(targetBB.width))
-//                        .add(Float.valueOf(targetBB.height));
             } else {
                 w.setnoData(null);
                 w.mosaic(new RenderedImage[]{sourceImage}, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, new ROI[]{roi}, null, nodata != null ? new Range[]{nodata} : null);
@@ -658,8 +652,6 @@ final class Resampler2D extends GridCoverage2D {
                 CoverageUtilities.setROIProperty(sourceProps, newROI);
                 CoverageUtilities.setNoDataProperty(sourceProps, newNoData);
                 operation = "Mosaic";
-//                paramBlk.add(MosaicDescriptor.MOSAIC_TYPE_OVERLAY)
-//                        .add(null).add(null).add(null).add(background);
             }
         } else {
             /*
@@ -702,7 +694,6 @@ final class Resampler2D extends GridCoverage2D {
                 newNoData = w.getNoData();
                 CoverageUtilities.setROIProperty(sourceProps, newROI);
                 CoverageUtilities.setNoDataProperty(sourceProps, newNoData);
-//                paramBlk.add(affine).add(interpolation).add(background);
             } else {
                 /*
                  * General case: constructs the warp transform.
@@ -749,7 +740,6 @@ final class Resampler2D extends GridCoverage2D {
                 // it with affine transforms down the chain
                 imageProperties.put("MathTransform", transform);
                 imageProperties.put("SourceBoundingBox", sourceBB);
-                //paramBlk.add(warp).add(interpolation).add(background);
                 w.warp(warp, interpolation);
                 newROI = w.getROI();
                 newNoData = w.getNoData();
@@ -833,7 +823,7 @@ final class Resampler2D extends GridCoverage2D {
         Object nodataProp = CoverageUtilities.getNoDataProperty(coverage);
         boolean hasROI = (roiProp != null);
         boolean hasNoData = (nodataProp != null);
-        if(hasROI || hasNoData){
+        if (hasROI || hasNoData) {
             return null;
         }
         while (!equivalent(coverage.getGridGeometry(), targetGG) ||

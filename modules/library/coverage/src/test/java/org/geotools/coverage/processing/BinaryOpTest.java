@@ -69,8 +69,7 @@ public class BinaryOpTest extends GridProcessingTestBase {
         final GridCoverage2D result = doOp("Add", shortCoverage, floatCoverage);
         final RenderedImage image = result.getRenderedImage();
         ImageWorker w = new ImageWorker(image);
-        //final RenderedImage extrema = ExtremaDescriptor.create(image, null, 1, 1, false, 1, null);
-        double[] min = (double[]) w.getMinimums();//extrema.getProperty("Extrema");
+        double[] min = (double[]) w.getMinimums();
         double[] max = (double[]) w.getMaximums();
         assertEquals(min[0], 1.0, DELTA);
         assertEquals(max[0], 66401.0, DELTA);

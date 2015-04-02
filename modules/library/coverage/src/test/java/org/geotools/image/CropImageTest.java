@@ -1,3 +1,19 @@
+/*
+ *    GeoTools - The Open Source Java GIS Toolkit
+ *    http://geotools.org
+ *
+ *    (C) 2012-2015, Open Source Geospatial Foundation (OSGeo)
+ *
+ *    This library is free software; you can redistribute it and/or
+ *    modify it under the terms of the GNU Lesser General Public
+ *    License as published by the Free Software Foundation;
+ *    version 2.1 of the License.
+ *
+ *    This library is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *    Lesser General Public License for more details.
+ */
 package org.geotools.image;
 
 import static org.junit.Assert.assertEquals;
@@ -28,7 +44,7 @@ public class CropImageTest {
         
         ParameterBlock pb = buildParameterBlock(source);
         
-        RenderedOp gtCropped = new ImageWorker(source).crop(10f, 50f, 20f, 20f).getRenderedOperation();//JAI.create("crop", pb);
+        RenderedOp gtCropped = new ImageWorker(source).crop(10f, 50f, 20f, 20f).getRenderedOperation();
         RenderedOp cropped = JAI.create("crop", pb);
         assertImageEquals(cropped, gtCropped);
     }
@@ -39,10 +55,9 @@ public class CropImageTest {
         RenderingHints hints = new RenderingHints(JAI.KEY_TILE_CACHE, tc);
         
         BufferedImage source = buildSource();
-        //ParameterBlock pb = buildParameterBlock(source);
         
         RenderedOp gtCropped = new ImageWorker(source).setRenderingHints(hints)
-                .crop(10f, 50f, 20f, 20f).getRenderedOperation();// JAI.create("GTCrop", pb, hints);
+                .crop(10f, 50f, 20f, 20f).getRenderedOperation();
         gtCropped.getColorModel(); // force to compute the image
         assertSame(tc,  gtCropped.getRenderingHint(JAI.KEY_TILE_CACHE));
     }
@@ -52,10 +67,9 @@ public class CropImageTest {
         RenderingHints hints = new RenderingHints(JAI.KEY_TILE_CACHE, null);
         
         BufferedImage source = buildSource();
-        //ParameterBlock pb = buildParameterBlock(source);
         
         RenderedOp gtCropped = new ImageWorker(source).setRenderingHints(hints)
-                .crop(10f, 50f, 20f, 20f).getRenderedOperation();//JAI.create("GTCrop", pb, hints);
+                .crop(10f, 50f, 20f, 20f).getRenderedOperation();
         gtCropped.getColorModel(); // force to compute the image
         assertNull(gtCropped.getRenderingHint(JAI.KEY_TILE_CACHE));
     }
@@ -66,7 +80,6 @@ public class CropImageTest {
         
         BufferedImage source = buildSource();
         
-        //RenderedOp gtCropped = GTCropDescriptor.create(source, 10f, 10f, 20f, 20f, hints);
         ImageWorker w = new ImageWorker(source);
         RenderedOp gtCropped = w.setRenderingHints(hints).crop(10f, 10f, 20f, 20f)
                 .getRenderedOperation();
@@ -83,12 +96,10 @@ public class CropImageTest {
     }
 
     private void assertImageEquals(RenderedOp first, RenderedOp second) {
-        //RenderedOp difference = SubtractDescriptor.create(first, second, null);
-        //RenderedOp stats = ExtremaDescriptor.create(difference, null, 1, 1, false, 1, null);
         ImageWorker w = new ImageWorker(first);
         w.subtract(second).setnoData(null);
-        double[] minimum = (double[]) w.getMinimums();//stats.getProperty("minimum");
-        double[] maximum = (double[]) w.getMaximums();//stats.getProperty("maximum");
+        double[] minimum = (double[]) w.getMinimums();
+        double[] maximum = (double[]) w.getMaximums();
         assertEquals(minimum[0], maximum[0], 0.0);
         assertEquals(minimum[1], maximum[1], 0.0);
         assertEquals(minimum[2], maximum[2], 0.0);

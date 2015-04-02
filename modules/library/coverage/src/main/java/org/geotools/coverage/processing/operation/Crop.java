@@ -45,7 +45,6 @@ import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.processing.CannotCropException;
 import org.geotools.coverage.processing.Operation2D;
-import org.geotools.coverage.processing.OperationJAI;
 import org.geotools.factory.GeoTools;
 import org.geotools.factory.Hints;
 import org.geotools.geometry.Envelope2D;
@@ -87,7 +86,6 @@ import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
-//import org.geotools.image.crop.GTCropDescriptor;
 
 /**
  * The crop operation is responsible for selecting geographic subarea of the

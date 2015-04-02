@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2005-2013, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -37,10 +37,6 @@ import org.junit.Test;
 
 public class QuantizerTest {
 
-//    static {
-//        ColorIndexerDescriptor.register();
-//    }
-
     @Test
     public void testThreeColors() {
         BufferedImage bi = new BufferedImage(4, 4, BufferedImage.TYPE_3BYTE_BGR);
@@ -61,7 +57,6 @@ public class QuantizerTest {
 
         // quantize and check
         RenderedImage indexed = new ImageWorker(bi).colorIndex(indexer).getRenderedImage();
-        //ColorIndexerDescriptor.create(bi, indexer, null);
         IndexColorModel icm2 = (IndexColorModel) indexed.getColorModel();
         assertEquals(icm, icm2);
 
@@ -86,7 +81,6 @@ public class QuantizerTest {
 
         // quantize and check
         RenderedImage indexed = new ImageWorker(bi).colorIndex(indexer).getRenderedImage();
-                //ColorIndexerDescriptor.create(bi, indexer, null);
         IndexColorModel icm2 = (IndexColorModel) indexed.getColorModel();
         assertEquals(icm, icm2);
         assertImagesSimilar(bi, indexed, 0);
@@ -110,7 +104,6 @@ public class QuantizerTest {
 
         // quantize and check
         RenderedImage indexed = new ImageWorker(bi).colorIndex(indexer).getRenderedImage();
-                //ColorIndexerDescriptor.create(bi, indexer, null);
         IndexColorModel icm2 = (IndexColorModel) indexed.getColorModel();
         assertEquals(icm, icm2);
         assertImagesSimilar(bi, indexed, 2); // allow a very small color difference
@@ -143,7 +136,6 @@ public class QuantizerTest {
 
         // quantize and check
         RenderedImage indexed = new ImageWorker(bi).colorIndex(indexer).getRenderedImage();
-                //ColorIndexerDescriptor.create(bi, indexer, null);
         IndexColorModel icm2 = (IndexColorModel) indexed.getColorModel();
         assertEquals(icm, icm2);
 
@@ -182,7 +174,6 @@ public class QuantizerTest {
 
         // quantize and check
         RenderedImage indexed = new ImageWorker(bi).colorIndex(indexer).getRenderedImage();
-                //ColorIndexerDescriptor.create(bi, indexer, null);
         IndexColorModel icm2 = (IndexColorModel) indexed.getColorModel();
         assertEquals(icm, icm2);
 

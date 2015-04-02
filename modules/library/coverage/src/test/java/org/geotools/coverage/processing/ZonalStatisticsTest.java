@@ -2,8 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2011, Open Source Geospatial Foundation (OSGeo)
- *    (C) 2001-2007 TOPP - www.openplans.org.
+ *    (C) 2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -62,13 +61,13 @@ import org.opengis.referencing.operation.TransformException;
 import junit.framework.TestCase;
 
 /**
- * This test-class evaluates the functionalities of the "ZonalStats2" {@link OperationJAI}. The test is executed with and without the calculations of
- * the statistics for each range. The utility class {@link StatisticsTool} is used for storing the statistic results.
+ * This test-class evaluates the functionalities of the "ZonalStatistics" {@link OperationJAI}. 
+ * The test is executed with and without the calculations of the statistics for each range. 
+ * The utility class {@link StatisticsTool} is used for storing the statistic results.
  * 
- * @author geosolutions
+ * @author Nicola Lagomarsini, GeoSolutions
  * 
  */
-
 public class ZonalStatisticsTest extends TestCase {
 
     /** {@link Logger} used */

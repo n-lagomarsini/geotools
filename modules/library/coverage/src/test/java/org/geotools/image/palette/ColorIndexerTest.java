@@ -62,7 +62,6 @@ public class ColorIndexerTest {
     private RenderedImage quantize(RenderedImage image) {
         Quantizer q = new Quantizer(256);
         ColorIndexer indexer = q.buildColorIndexer(image);
-        //RenderedImage indexed = ColorIndexerDescriptor.create(image, indexer, null);
         RenderedImage indexed = new ImageWorker(image).colorIndex(indexer).getRenderedImage();
         return indexed;
     }

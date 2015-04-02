@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2006-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2006-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -16,10 +16,6 @@
  */
 package org.geotools.coverage.processing.operation;
 
-import it.geosolutions.jaiext.JAIExt;
-import it.geosolutions.jaiext.affine.AffineDescriptor;
-import it.geosolutions.jaiext.range.Range;
-import it.geosolutions.jaiext.range.RangeFactory;
 import it.geosolutions.jaiext.scale.ScaleDescriptor;
 import it.geosolutions.jaiext.translate.TranslateDescriptor;
 
@@ -132,50 +128,49 @@ public class Scale extends BaseScaleOperationJAI {
 
 		return image;
 	}
-	
-        protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
-            GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
-            handleROINoDataInternal(parameters, source, "Scale", 5, 7);
+
+    protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
+        GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
+        handleROINoDataInternal(parameters, source, "Scale", 5, 7);
+    }
+
+    protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,
+            InternationalString name, MathTransform gridToCRS, GridCoverage2D[] sources,
+            Parameters parameters) {
+        Map props = sources[PRIMARY_SOURCE_INDEX].getProperties();
+
+        Map properties = new HashMap<>();
+        if (props != null) {
+            properties.putAll(props);
         }
 
-	protected Map<String, ?> getProperties(RenderedImage data,
-			CoordinateReferenceSystem crs, InternationalString name,
-			MathTransform gridToCRS, GridCoverage2D[] sources,
-			Parameters parameters) {
-		Map props = sources[PRIMARY_SOURCE_INDEX].getProperties();
-		
-		Map properties = new HashMap<>();
-		if(props != null){
-			properties.putAll(props);
-		}
-		
-		// Setting NoData property if needed
-		Object bkgProp = parameters.parameters.getObjectParameter(8);
-                if (parameters.parameters.getNumParameters() > 5
-                        && parameters.parameters.getObjectParameter(8) != null) {
-                    if (bkgProp != null && bkgProp instanceof double[]) {
-                        double[] background = (double[]) bkgProp;
-                        CoverageUtilities.setNoDataProperty(properties, background);
-                    }
+        // Setting NoData property if needed
+        Object bkgProp = parameters.parameters.getObjectParameter(8);
+        if (parameters.parameters.getNumParameters() > 5
+                && parameters.parameters.getObjectParameter(8) != null) {
+            if (bkgProp != null && bkgProp instanceof double[]) {
+                double[] background = (double[]) bkgProp;
+                CoverageUtilities.setNoDataProperty(properties, background);
+            }
+        }
+
+        // Setting ROI if present
+        if (data instanceof RenderedOp) {
+            String operationName = ((RenderedOp) data).getOperationName();
+            PropertyGenerator propertyGenerator = null;
+            if (operationName.equalsIgnoreCase("Scale")) {
+                propertyGenerator = new ScaleDescriptor().getPropertyGenerators()[0];
+            } else if (operationName.equalsIgnoreCase("Translate")) {
+                propertyGenerator = new TranslateDescriptor().getPropertyGenerators()[0];
+            }
+            if (propertyGenerator != null) {
+                Object roiProp = propertyGenerator.getProperty("roi", data);
+                if (roiProp != null && roiProp instanceof ROI) {
+                    CoverageUtilities.setROIProperty(properties, (ROI) roiProp);
                 }
-		
-                // Setting ROI if present
-                if (data instanceof RenderedOp) {
-                    String operationName = ((RenderedOp) data).getOperationName();
-                    PropertyGenerator propertyGenerator = null;
-                    if (operationName.equalsIgnoreCase("Scale")) {
-                        propertyGenerator = new ScaleDescriptor().getPropertyGenerators()[0];
-                    } else if (operationName.equalsIgnoreCase("Translate")) {
-                        propertyGenerator = new TranslateDescriptor().getPropertyGenerators()[0];
-                    }
-                    if (propertyGenerator != null) {
-                        Object roiProp = propertyGenerator.getProperty("roi", data);
-                        if (roiProp != null && roiProp instanceof ROI) {
-                            CoverageUtilities.setROIProperty(properties, (ROI) roiProp);
-                        }
-                    }
-                }
-		
-		return properties;
-	}
+            }
+        }
+
+        return properties;
+    }
 }
