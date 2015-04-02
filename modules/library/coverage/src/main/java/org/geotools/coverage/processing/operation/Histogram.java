@@ -85,7 +85,11 @@ import org.opengis.util.InternationalString;
  */
 public class Histogram extends BaseStatisticsOperationJAI {
 
-	/**
+	private static final String STATS = "Stats";
+
+    private static final String HISTOGRAM = "Histogram";
+
+    /**
 	 * Serial number for interoperability with different versions.
 	 */
 	private static final long serialVersionUID = -4256576399698278701L;
@@ -102,11 +106,11 @@ public class Histogram extends BaseStatisticsOperationJAI {
 	 * @throws OperationNotFoundException
 	 */
 	public Histogram() throws OperationNotFoundException {
-		super("Histogram", getOperationDescriptor(JAIExt.getOperationName("Histogram")));
+		super(HISTOGRAM, getOperationDescriptor(JAIExt.getOperationName(HISTOGRAM)));
 	}
 
     public String getName() {
-        return "Histogram";
+        return HISTOGRAM;
     }
 
 	/**
@@ -137,7 +141,7 @@ public class Histogram extends BaseStatisticsOperationJAI {
 			
                         final Map<String, Object> synthProp = new HashMap<String, Object>();
 
-            if (JAIExt.isJAIExtOperation("Stats")) {
+            if (JAIExt.isJAIExtOperation(STATS)) {
                 // get the properties
                 Statistics[][] results = ((Statistics[][]) result
                         .getProperty(Statistics.STATS_PROPERTY));
@@ -187,17 +191,17 @@ public class Histogram extends BaseStatisticsOperationJAI {
         block.setParameter("lowValue", parameters.parameter("lowValue").getValue());
         block.setParameter("highValue", parameters.parameter("highValue").getValue());
         block.setParameter("numBins", parameters.parameter("numBins").getValue());
-        if (JAIExt.isJAIExtOperation("Stats")) {
+        if (JAIExt.isJAIExtOperation(STATS)) {
             handleJAIEXTParams(block, parameters);
         }
         return block;
     }
 
     protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
-        if (JAIExt.isJAIExtOperation("Stats")) {
+        if (JAIExt.isJAIExtOperation(STATS)) {
             GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
             // Handle ROI and NoData
-            handleROINoDataInternal(parameters, source, "Stats", 2, 3);
+            handleROINoDataInternal(parameters, source, STATS, 2, 3);
             // Setting the Statistic operation
             parameters.set(new StatsType[] { StatsType.HISTOGRAM }, 6);
             // Check on the band numnber

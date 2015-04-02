@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2011, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2011-2015, Open Source Geospatial Foundation (OSGeo)
  *    (C) 2001-2007 TOPP - www.openplans.org.
  *
  *    This library is free software; you can redistribute it and/or
@@ -21,12 +21,11 @@ import java.io.IOException;
 
 import javax.media.jai.Interpolation;
 
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.process.factory.DescribeParameter;
 import org.geotools.process.factory.DescribeProcess;
 import org.geotools.process.factory.DescribeResult;
-import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.processing.CoverageProcessor;
-import org.opengis.coverage.processing.Operation;
 import org.opengis.parameter.ParameterValueGroup;
 
 /**
@@ -41,7 +40,6 @@ import org.opengis.parameter.ParameterValueGroup;
 public class ScaleCoverage implements RasterProcess {
 
     private static final CoverageProcessor PROCESSOR = CoverageProcessor.getInstance();
-    //private static final Operation SCALE = PROCESSOR.getOperation("Scale");
 
     @DescribeResult(name = "result", description = "Scaled raster")
     public GridCoverage2D execute(

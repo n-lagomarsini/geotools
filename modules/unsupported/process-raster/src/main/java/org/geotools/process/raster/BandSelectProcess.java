@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2014, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2014-2015, Open Source Geospatial Foundation (OSGeo)
  *    (C) 2014 TOPP - www.openplans.org.
  *
  *    This library is free software; you can redistribute it and/or
@@ -25,7 +25,6 @@ import org.geotools.process.factory.DescribeParameter;
 import org.geotools.process.factory.DescribeProcess;
 import org.geotools.process.factory.DescribeResult;
 import org.opengis.coverage.SampleDimension;
-import org.opengis.coverage.processing.Operation;
 import org.opengis.parameter.ParameterValueGroup;
 
 /**
@@ -47,9 +46,6 @@ import org.opengis.parameter.ParameterValueGroup;
 public class BandSelectProcess implements RasterProcess {
     /** Processor to use for executing the {@link SelectSampleDimension} operation */
     private static final CoverageProcessor PROCESSOR = CoverageProcessor.getInstance();
-
-    /** The {@link SelectSampleDimension} operation to execute */
-    //private static final Operation BANDSELECT = PROCESSOR.getOperation("SelectSampleDimension");
 
     @DescribeResult(name = "result", description = "A selection on the input rasters")
     public GridCoverage2D execute(

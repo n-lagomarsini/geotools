@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2014, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2014-2015, Open Source Geospatial Foundation (OSGeo)
  *    (C) 2014 TOPP - www.openplans.org.
  *
  *    This library is free software; you can redistribute it and/or
@@ -270,10 +270,7 @@ public class BandProcessTest {
         ROI roi = new ROIGeometry(JTS.transform(geo, tr));
         // This ROI is a Rectangle so we can get its bounds
         Rectangle roiBounds = roi.getBounds();
-        // Crop the source image with the ROI Bounds
-        //RenderedImage cropSrc = CropDescriptor.create(srcImg1, (float)roiBounds.x, 
-        		//(float)roiBounds.y, (float)roiBounds.width, (float)roiBounds.height, null);
-        
+        // Crop the source image with the ROI Bounds      
         ImageWorker w = new ImageWorker(srcImg1);
         RenderedImage cropSrc = w.crop((float) roiBounds.x, (float) roiBounds.y,
                 (float) roiBounds.width, (float) roiBounds.height).getRenderedImage();
@@ -361,8 +358,6 @@ public class BandProcessTest {
         // compare the initial image with them.
 
         // First image requires only cropping since it is on the right position
-        //RenderedOp crop1 = CropDescriptor.create(sel1, 0f, 0f, (float) srcImg.getWidth(),
-                //(float) srcImg.getHeight(), null);
         ImageWorker w1 = new ImageWorker(sel1);
         RenderedOp crop1 = w1.crop(0f, 0f, (float) srcImg.getWidth(), (float) srcImg.getHeight())
                 .getRenderedOperation();
@@ -374,9 +369,6 @@ public class BandProcessTest {
         RenderedOp crop2 = w2
                 .crop(minX, minY, (float) srcImg.getWidth(), (float) srcImg.getHeight())
                 .translate(-minX, -minY, null).getRenderedOperation();
-        //RenderedOp crop2 = CropDescriptor.create(sel2, minX, minY, (float) srcImg.getWidth(),
-                //(float) srcImg.getHeight(), null);
-        //crop2 = TranslateDescriptor.create(crop2, -minX, -minY, null, null);
 
         // Final check on the images
         ensureEqualImages(srcImg, crop1);
@@ -428,13 +420,10 @@ public class BandProcessTest {
     private void ensureEqualImages(RenderedImage source0, RenderedImage source1) {
         ImageWorker  w = new ImageWorker(source0);
         // Subtraction between the two images
-        //RenderedOp sub = SubtractDescriptor.create(source0, source1, null);
         w.subtract(source1);
         // Calculation of the mean value of the subtraction operation
-        //RenderedOp stats = MeanDescriptor.create(sub, null, 1, 1, null);
         // Get the mean
         double mean = w.getMean()[0];
-        //((double[]) stats.getProperty("mean"))[0];
         // Check that the mean value is 0
         assertEquals(0, mean, TOLERANCE);
     }

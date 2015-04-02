@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 20011, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2011-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -185,26 +185,6 @@ class Utils {
     		        Float.valueOf(0.0f),
     		        interpolation);
     		return w.getRenderedOperation();
-    		//return ScaleDescriptor.create(src, 
-    		        //Float.valueOf(1.0f/downsampleStep), 
-    		        //Float.valueOf(1.0f/downsampleStep), 
-    		        //Float.valueOf(0.0f), 
-    		        //Float.valueOf(0.0f), 
-    		        //interpolation, 
-    		        //newHints);
-    		
-    //		// using filtered subsample operator to do a subsampling
-    //		final ParameterBlockJAI pb = new ParameterBlockJAI("filteredsubsample");
-    //		pb.addSource(src);
-    //		pb.setParameter("scaleX", Integer.valueOf(downsampleStep));
-    //		pb.setParameter("scaleY", Integer.valueOf(downsampleStep));
-    //		pb.setParameter("qsFilterArray", new float[] { 1.0f });
-    //		pb.setParameter("Interpolation", interpolation);
-    //		// remember to add the hint to avoid replacement of the original
-    //		// IndexColorModel
-    //		// in future versions we might want to make this parametrix XXX TODO
-    //		// @task
-    //		return JAI.create("filteredsubsample", pb, newHints);
     	}
 
 }

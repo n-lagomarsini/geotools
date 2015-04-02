@@ -711,7 +711,7 @@ public final class ImageWorkerTest extends GridProcessingTestBase {
     	ImageWorker testmultibandI=new ImageWorker(multiband);
     	final double[] maximums5a = testmultibandI.getMaximums();
     	final double[] minimums5a = testmultibandI.getMinimums();    
-    	testmultibandI.rescaleToBytes().setnoData(null);
+    	testmultibandI.rescaleToBytes().setNoData(null);
     	final double[] maximums5b = testmultibandI.getMaximums();
     	final double[] minimums5b = testmultibandI.getMinimums();
     	Assert.assertEquals(maximums5a[0],maximums5b[0],1E-10);
@@ -1033,7 +1033,7 @@ public final class ImageWorkerTest extends GridProcessingTestBase {
     public void testOpacityGrayNoData() {
         assertTrue("Assertions should be enabled.", ImageWorker.class.desiredAssertionStatus());
         ImageWorker worker = new ImageWorker(gray);
-        worker.setnoData(RangeFactory.convert(RangeFactory.create(255, 255), gray.getSampleModel().getDataType()));
+        worker.setNoData(RangeFactory.convert(RangeFactory.create(255, 255), gray.getSampleModel().getDataType()));
         worker.applyOpacity(0.5f);
         
         RenderedImage image = worker.getRenderedImage();

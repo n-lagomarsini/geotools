@@ -24,9 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.media.jai.JAI;
 import javax.media.jai.OperationDescriptor;
-import javax.media.jai.StatisticsOpImage;
 import javax.media.jai.registry.RenderedRegistryMode;
 
 import org.geotools.coverage.grid.GridCoverage2D;

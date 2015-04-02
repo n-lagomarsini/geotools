@@ -97,7 +97,7 @@ public class CropImageTest {
 
     private void assertImageEquals(RenderedOp first, RenderedOp second) {
         ImageWorker w = new ImageWorker(first);
-        w.subtract(second).setnoData(null);
+        w.subtract(second).setNoData(null);
         double[] minimum = (double[]) w.getMinimums();
         double[] maximum = (double[]) w.getMaximums();
         assertEquals(minimum[0], maximum[0], 0.0);

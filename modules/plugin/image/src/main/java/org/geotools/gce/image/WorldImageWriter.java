@@ -338,7 +338,7 @@ public final class WorldImageWriter extends AbstractGridCoverageWriter
 		// Setting NoData and ROI if present
 		worker.setROI(CoverageUtilities.getROIProperty(sourceCoverage));
 		NoDataContainer noDataProperty = CoverageUtilities.getNoDataProperty(sourceCoverage);
-                worker.setnoData(noDataProperty != null ? noDataProperty.getAsRange() : null);
+                worker.setNoData(noDataProperty != null ? noDataProperty.getAsRange() : null);
 
 		// /////////////////////////////////////////////////////////////////////
 		//

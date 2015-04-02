@@ -605,8 +605,8 @@ final class Resampler2D extends GridCoverage2D {
         // Using ImageWorker instead
         ImageWorker w = new ImageWorker(sourceImage);
         w.setROI(roi);
-        w.setDestinationNoData(background);
-        w.setnoData(nodata);
+        w.setBackground(background);
+        w.setNoData(nodata);
         w.setRenderingHints(targetHints);
         ROI newROI = null;
         Range newNoData = null;
@@ -640,7 +640,7 @@ final class Resampler2D extends GridCoverage2D {
                 CoverageUtilities.setNoDataProperty(sourceProps, newNoData);
                 operation = "Crop";
             } else {
-                w.setnoData(null);
+                w.setNoData(null);
                 w.mosaic(new RenderedImage[]{sourceImage}, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, new ROI[]{roi}, null, nodata != null ? new Range[]{nodata} : null);
                 newROI = w.getROI();
                 newNoData = w.getNoData();

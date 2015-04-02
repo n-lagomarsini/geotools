@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2007-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2007-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -401,7 +401,6 @@ class Granule {
 				ImageWorker worker = new ImageWorker(raster).setRenderingHints(localHints);
 				worker.affine(finalRaster2Model, nearest, null);
 				return worker.getRenderedImage();
-				//return AffineDescriptor.create(raster, finalRaster2Model, nearest, null, localHints);
 			}
 		
 		} catch (IllegalStateException e) {

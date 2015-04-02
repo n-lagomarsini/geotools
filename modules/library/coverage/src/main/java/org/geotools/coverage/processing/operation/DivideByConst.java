@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -83,6 +83,8 @@ import org.opengis.util.InternationalString;
  *       See <A HREF="http://jira.codehaus.org/browse/GEOT-610">GEOT-610</A>.
  */
 public class DivideByConst extends OperationJAI {
+    private static final String OPERATION_CONST = "operationConst";
+    private static final String DIVIDE_BY_CONST = "DivideByConst";
     /**
      * Serial number for interoperability with different versions.
      */
@@ -92,11 +94,11 @@ public class DivideByConst extends OperationJAI {
      * Constructs a default {@code "DivideByConst"} operation.
      */
     public DivideByConst() {
-    	super("DivideByConst", getOperationDescriptor(JAIExt.getOperationName("DivideByConst")));
+    	super(DIVIDE_BY_CONST, getOperationDescriptor(JAIExt.getOperationName(DIVIDE_BY_CONST)));
     }
     
     public String getName() {
-        return "DivideByConst";
+        return DIVIDE_BY_CONST;
     }
 
     /**
@@ -116,15 +118,15 @@ public class DivideByConst extends OperationJAI {
     
     protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
         GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
-        if(JAIExt.isJAIExtOperation("operationConst")){
+        if(JAIExt.isJAIExtOperation(OPERATION_CONST)){
             parameters.set(Operator.DIVIDE, 1);
         }
-        handleROINoDataInternal(parameters, source, "operationConst", 2, 3);
+        handleROINoDataInternal(parameters, source, OPERATION_CONST, 2, 3);
     }
     
     protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,
             InternationalString name, MathTransform gridToCRS, GridCoverage2D[] sources,
             Parameters parameters) {
-        return handleROINoDataProperties(null, parameters.parameters, sources[0], "operationConst", 2, 3, 4);
+        return handleROINoDataProperties(null, parameters.parameters, sources[0], OPERATION_CONST, 2, 3, 4);
     }
 }

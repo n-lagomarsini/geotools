@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2013, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2013-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -64,7 +64,6 @@ public enum FootprintBehavior {
                 RenderedImage alpha = imageWorker.retainLastBand().getRenderedImage();
                 RenderedImage maskedAlpha = new ImageWorker(hints).
                         mosaic(
-//                        MosaicDescriptor.create(
                         new RenderedImage[] {alpha}, 
                         MosaicDescriptor.MOSAIC_TYPE_OVERLAY, 
                         null, 

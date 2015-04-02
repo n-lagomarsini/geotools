@@ -2,8 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2011, Open Source Geospatial Foundation (OSGeo)
- *    (C) 2001-2007 TOPP - www.openplans.org.
+ *    (C) 2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -21,11 +20,14 @@ import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.stats.Statistics.StatsType;
 import it.geosolutions.jaiext.zonal.ZonalStatsDescriptor;
 import it.geosolutions.jaiext.zonal.ZoneGeometry;
+
 import java.awt.RenderingHints;
 import java.awt.image.RenderedImage;
 import java.util.List;
+
 import javax.media.jai.JAI;
 import javax.media.jai.operator.NullDescriptor;
+
 import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.CoverageProcessor;
@@ -33,9 +35,9 @@ import org.geotools.coverage.processing.operation.GridCoverage2DRIA;
 import org.geotools.process.factory.DescribeParameter;
 import org.geotools.process.factory.DescribeProcess;
 import org.geotools.process.factory.DescribeResult;
-import org.opengis.coverage.processing.Operation;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.parameter.ParameterValueGroup;
+
 import com.sun.media.jai.util.SunTileCache;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Polygon;
@@ -60,11 +62,6 @@ public class RasterZonalStatistics2 implements RasterProcess {
      * Default processor used for executing the operations.
      */
     private final static CoverageProcessor PROCESSOR = CoverageProcessor.getInstance();
-
-    /**
-     * {@link Operation} associated with the "ZonalStats" operation.
-     */
-    //private static final Operation ZONAL = PROCESSOR.getOperation("Zonal");
 
     /**
      * Default statistics to calculate.

@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -71,6 +71,8 @@ import org.opengis.util.InternationalString;
  * @see ExpDescriptor
  */
 public class Exp extends BaseMathOperationJAI {
+    private static final String ALGEBRIC = "algebric";
+    private static final String EXP = "Exp";
     /**
      * Serial number for interoperability with different versions.
      */
@@ -80,11 +82,11 @@ public class Exp extends BaseMathOperationJAI {
      * Constructs a default {@code "Exp"} operation.
      */
     public Exp() {
-    	super("Exp", getOperationDescriptor(JAIExt.getOperationName("Exp")));
+    	super(EXP, getOperationDescriptor(JAIExt.getOperationName(EXP)));
     }
     
     public String getName() {
-        return "Exp";
+        return EXP;
     }
 
     /**
@@ -98,11 +100,11 @@ public class Exp extends BaseMathOperationJAI {
     }
     
     protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
-        if(JAIExt.isJAIExtOperation("algebric")){
+        if(JAIExt.isJAIExtOperation(ALGEBRIC)){
             parameters.set(Operator.EXP, 0);
             Collection<GridCoverage2D> sources = (Collection<GridCoverage2D>) parameters2.parameter("sources").getValue();
             for(GridCoverage2D source : sources){
-                handleROINoDataInternal(parameters, source, "algebric", 1, 2);
+                handleROINoDataInternal(parameters, source, ALGEBRIC, 1, 2);
             }
         }
     }
@@ -110,6 +112,6 @@ public class Exp extends BaseMathOperationJAI {
     protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,
             InternationalString name, MathTransform gridToCRS, GridCoverage2D[] sources,
             Parameters parameters) {
-        return handleROINoDataProperties(null, parameters.parameters, sources[0], "algebric", 1, 2, 3);
+        return handleROINoDataProperties(null, parameters.parameters, sources[0], ALGEBRIC, 1, 2, 3);
     }
 }

@@ -143,6 +143,10 @@ import com.sun.media.jai.util.ImageUtil;
  * @author Martin Desruisseaux
  */
 public class ImageWorker {
+    private static final String OPERATION_CONST_OP_NAME = "operationConst";
+
+    private static final String ALGEBRIC_OP_NAME = "algebric";
+
     /**
      * The logger to use for this class.
      */
@@ -373,7 +377,7 @@ public class ImageWorker {
     /**
      * Array of values used for indicating the background values
      */
-    private double[] destNoData;
+    private double[] background;
 
     /**
      * The rendering hints to provides to all image operators. Additional hints may be set (in a separated {@link RenderingHints} object) for
@@ -405,6 +409,7 @@ public class ImageWorker {
      * @see #mosaic(RenderedImage[], MosaicType, PlanarImage[], ROI[], double[][], Range[])
      */
     public ImageWorker(RenderingHints hints) {
+        this();
         setRenderingHints(hints);
     }
 
@@ -425,8 +430,7 @@ public class ImageWorker {
      * @param image The source image.
      */
     public ImageWorker(final RenderedImage image) {
-        inheritanceStopPoint = this.image = image;
-        setnoData(extractNoDataProperty(image));
+        setImage(image);
     }
 
     private Range extractNoDataProperty(final RenderedImage image) {
@@ -449,7 +453,7 @@ public class ImageWorker {
      */
     public final ImageWorker setImage(final RenderedImage image) {
         inheritanceStopPoint = this.image = image;
-        setnoData(extractNoDataProperty(image));
+        setNoData(extractNoDataProperty(image));
         return this;
     }
 
@@ -617,7 +621,7 @@ public class ImageWorker {
      * @return The current NoData Range.
      */
     public final double[] getDestinationNoData() {
-        return destNoData;
+        return background;
     }
 
     /**
@@ -650,7 +654,7 @@ public class ImageWorker {
      * @return This ImageWorker
      * 
      */
-    public final ImageWorker setnoData(final Range nodata) {
+    public final ImageWorker setNoData(final Range nodata) {
         this.nodata = nodata;
         if(nodata != null && image != null){
             PlanarImage img = getPlanarImage();
@@ -669,14 +673,14 @@ public class ImageWorker {
     }
 
     /**
-     * Set the <cite>NoData Range</cite> for checking NoData during computation.
+     * Set the image background value, if input NoData are present, the first value will e used as NoData.
      * 
-     * @param nodata The new NoData Range.
+     * @param background The image background.
      * @return This ImageWorker
      * 
      */
-    public final ImageWorker setDestinationNoData(final double[] destNoData) {
-        this.destNoData = destNoData;
+    public final ImageWorker setBackground(final double[] background) {
+        this.background = background;
         invalidateStatistics();
         return this;
     }
@@ -1298,10 +1302,10 @@ public class ImageWorker {
             pb.set(roi, 2); // ROI
             pb.set(nodata, 3); // NoData range
             if (isNoDataNeeded()) {
-                if (destNoData != null && destNoData.length > 0) {
-                    pb.set(destNoData[0], 5); // destination No Data value
+                if (background != null && background.length > 0) {
+                    pb.set(background[0], 5); // destination No Data value
                     // We must set the new NoData value
-                    setnoData(RangeFactory.create((byte) destNoData[0], (byte) destNoData[0]));
+                    setNoData(RangeFactory.create((byte) background[0], (byte) background[0]));
                 }
             }
 
@@ -1312,7 +1316,7 @@ public class ImageWorker {
             pb.set(DataBuffer.TYPE_BYTE, 0); // The destination image data type (BYTE)
 
             image = JAI.create("Format", pb, hints);
-            setnoData(RangeFactory.convert(nodata, DataBuffer.TYPE_BYTE));
+            setNoData(RangeFactory.convert(nodata, DataBuffer.TYPE_BYTE));
         }
         invalidateStatistics(); // Extremas are no longer valid.
 
@@ -1364,11 +1368,11 @@ public class ImageWorker {
             pb.set(roi, 2);
             pb.set(nodata, 3);
             if (isNoDataNeeded()) {
-                if (destNoData != null && destNoData.length > 0) {
-                    int dest = (int) destNoData[0];
+                if (background != null && background.length > 0) {
+                    int dest = (int) background[0];
                     pb.set(dest, 4);
                     // We must set the new NoData value
-                    setnoData(RangeFactory.create(dest, dest));
+                    setNoData(RangeFactory.create(dest, dest));
                 }
             }
 
@@ -1388,11 +1392,11 @@ public class ImageWorker {
             pb.set(roi, 2);
             pb.set(nodata, 3);
             if (isNoDataNeeded()) {
-                if (destNoData != null && destNoData.length > 0) {
-                    int dest = (int) destNoData[0];
+                if (background != null && background.length > 0) {
+                    int dest = (int) background[0];
                     pb.set(dest, 4);
                     // We must set the new NoData value
-                    setnoData(RangeFactory.create(dest, dest));
+                    setNoData(RangeFactory.create(dest, dest));
                 }
             }
 
@@ -1516,10 +1520,10 @@ public class ImageWorker {
             pb.set(roi, 2);
             pb.set(nodata, 3);
             if (isNoDataNeeded()) {
-                if (destNoData != null && destNoData.length > 0) {
-                    pb.set(destNoData[0], 1);
+                if (background != null && background.length > 0) {
+                    pb.set(background[0], 1);
                     // We must set the new NoData value
-                    setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                    setNoData(RangeFactory.create(background[0], background[0]));
                 }
             }
 
@@ -1531,7 +1535,7 @@ public class ImageWorker {
             pb.set(dataType, 0);
             image = JAI.create("Format", pb, hints);
             // Converting NoData Range
-            setnoData(RangeFactory.convert(nodata, dataType));
+            setNoData(RangeFactory.convert(nodata, dataType));
         } else {
             // force component color model first
             forceComponentColorModel(true);
@@ -1749,10 +1753,10 @@ public class ImageWorker {
             pb.set(roi, 2);
             pb.set(nodata, 3);
             if (isNoDataNeeded()) {
-                if (destNoData != null && destNoData.length > 0) {
-                    pb.set(destNoData[0], 1);
+                if (background != null && background.length > 0) {
+                    pb.set(background[0], 1);
                     // We must set the new NoData value
-                    setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                    setNoData(RangeFactory.create(background[0], background[0]));
                 }
             }
 
@@ -1768,7 +1772,7 @@ public class ImageWorker {
             pb.set(type, 0);
 
             image = JAI.create("Format", pb, hints);
-            setnoData(RangeFactory.convert(nodata, type));
+            setNoData(RangeFactory.convert(nodata, type));
         }
         invalidateStatistics();
 
@@ -1889,22 +1893,22 @@ public class ImageWorker {
         pb.set(roi, 1);
         pb.set(nodata, 2);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
+            if (background != null && background.length > 0) {
                 // Elaborating the final NoData value
-                if (destNoData.length != cm.getNumColorComponents()) {
+                if (background.length != cm.getNumColorComponents()) {
                     throw new IllegalArgumentException("Wrong DestinationNoData value defined");
                 }
-                pb.set(destNoData, 3);
+                pb.set(background, 3);
                 ColorSpace in = image.getColorModel().getColorSpace();
                 ColorSpace out = cm.getColorSpace();
-                float[] output = new float[destNoData.length];
-                for (int i = 0; i < destNoData.length; i++) {
-                    output[i] = (float) destNoData[i];
+                float[] output = new float[background.length];
+                for (int i = 0; i < background.length; i++) {
+                    output[i] = (float) background[i];
                 }
                 float[] toXYZ = in.toCIEXYZ(output);
                 float[] fromXYZ = out.fromCIEXYZ(toXYZ);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(fromXYZ[0], fromXYZ[0]));
+                setNoData(RangeFactory.create(fromXYZ[0], fromXYZ[0]));
             }
         }
 
@@ -1945,11 +1949,11 @@ public class ImageWorker {
             pb.addSource(firstBand);
             pb.set(new Range[] { nodata }, 0);
             if (isNoDataNeeded()) {
-                if (destNoData != null && destNoData.length > 0) {
+                if (background != null && background.length > 0) {
                     // Elaborating the final NoData value
-                    pb.set(destNoData[0], 1);
+                    pb.set(background[0], 1);
                     // We must set the new NoData value
-                    setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                    setNoData(RangeFactory.create(background[0], background[0]));
                 }
             }
             pb.set(roi, 3);
@@ -2001,11 +2005,11 @@ public class ImageWorker {
         }
         pb.set(new Range[] { nodata, nodata2 }, 0);
         if (isNoDataNeeded() || nodata2 != null) {
-            if (destNoData != null && destNoData.length > 0) {
-                double dest = destNoData[0];
+            if (background != null && background.length > 0) {
+                double dest = background[0];
                 pb.set(dest, 1);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(dest, dest));
+                setNoData(RangeFactory.create(dest, dest));
             }
         }
         pb.set(roi, 3);
@@ -2054,11 +2058,11 @@ public class ImageWorker {
         }
         pb.set(newRange, 0);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                double dest = destNoData[0];
+            if (background != null && background.length > 0) {
+                double dest = background[0];
                 pb.set(dest, 1);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(dest, dest));
+                setNoData(RangeFactory.create(dest, dest));
             }
         }
         pb.set(transformationList, 3);
@@ -2150,10 +2154,10 @@ public class ImageWorker {
         pb.set(roi, 1);
         pb.set(nodata, 2);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 3);
+            if (background != null && background.length > 0) {
+                pb.set(background[0], 3);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
 
@@ -2271,7 +2275,7 @@ public class ImageWorker {
         pb.set(dataType, 0);
 
         image = JAI.create("Format", pb, getRenderingHints());
-        setnoData(RangeFactory.convert(nodata, dataType));
+        setNoData(RangeFactory.convert(nodata, dataType));
 
         // All post conditions for this method contract.
         assert image.getSampleModel().getDataType() == dataType;
@@ -2330,7 +2334,7 @@ public class ImageWorker {
 
             image = JAI.create("Binarize", pb, hints);
 
-            setnoData(null);
+            setNoData(null);
             invalidateStatistics();
         }
         // All post conditions for this method contract.
@@ -2377,10 +2381,10 @@ public class ImageWorker {
         pb.set(roi, 2);
         pb.set(nodata, 3);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 1);
+            if (background != null && background.length > 0) {
+                pb.set(background[0], 1);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
 
@@ -2506,7 +2510,7 @@ public class ImageWorker {
         pb.set(image.getSampleModel().getDataType(), 0);
 
         image = JAI.create("Format", pb, hints);
-        setnoData(RangeFactory.convert(nodata, image.getSampleModel().getDataType()));
+        setNoData(RangeFactory.convert(nodata, image.getSampleModel().getDataType()));
         invalidateStatistics();
         return this;
     }
@@ -2611,10 +2615,10 @@ public class ImageWorker {
         pb.set(roi, 2);
         pb.set(nodata, 3);
         if(isNoDataNeeded()){
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 1);
+            if (background != null && background.length > 0) {
+                pb.set(background[0], 1);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
 
@@ -2641,8 +2645,8 @@ public class ImageWorker {
             pb.set(matrix, 0);
             pb.set(roi, 1);
             pb.set(nodata, 2);
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 3);
+            if (background != null && background.length > 0) {
+                pb.set(background[0], 3);
             }
 
             luImage = JAI.create("BandCombine", pb, getRenderingHints());
@@ -2653,11 +2657,11 @@ public class ImageWorker {
         pb.setSource(luImage, 1);
         pb.set(new Range[] { nodata }, 0);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                double dest = destNoData[0];
+            if (background != null && background.length > 0) {
+                double dest = background[0];
                 pb.set(dest, 1);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(dest, dest));
+                setNoData(RangeFactory.create(dest, dest));
             }
         }
         pb.set(roi, 3);
@@ -2678,19 +2682,19 @@ public class ImageWorker {
         // ParameterBlock creation
         ParameterBlock pb = new ParameterBlock();
         pb.setSource(image, 0);
-        if (JAIExt.isJAIExtOperation("algebric")) {
+        if (JAIExt.isJAIExtOperation(ALGEBRIC_OP_NAME)) {
             pb.set(AlgebraDescriptor.Operator.INVERT, 0);
             pb.set(roi, 1);
             pb.set(nodata, 2);
             if (isNoDataNeeded()) {
-                if (destNoData != null && destNoData.length > 0) {
-                    double dest = destNoData[0];
+                if (background != null && background.length > 0) {
+                    double dest = background[0];
                     pb.set(dest, 3);
                     // We must set the new NoData value
-                    setnoData(RangeFactory.create(dest, dest));
+                    setNoData(RangeFactory.create(dest, dest));
                 }
             }
-            image = JAI.create("algebric", pb, getRenderingHints());
+            image = JAI.create(ALGEBRIC_OP_NAME, pb, getRenderingHints());
         } else {
             image = JAI.create("Invert", pb, getRenderingHints());
         }
@@ -2742,8 +2746,8 @@ public class ImageWorker {
             ParameterBlock pb = new ParameterBlock();
             pb.setSource(mask, 0);
             pb.set(lut, 0);
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 1);
+            if (background != null && background.length > 0) {
+                pb.set(background[0], 1);
             }
             pb.set(roi, 2);
 
@@ -2757,9 +2761,9 @@ public class ImageWorker {
             pb = new ParameterBlock();
             pb.setSource(image, 0);
             pb.setSource(mask, 1);
-            if (JAIExt.isJAIExtOperation("algebric")) {
+            if (JAIExt.isJAIExtOperation(ALGEBRIC_OP_NAME)) {
                 prepareAlgebricOperation(Operator.SUM, pb, roi, nodata, true);
-                image = JAI.create("algebric", pb, getRenderingHints());
+                image = JAI.create(ALGEBRIC_OP_NAME, pb, getRenderingHints());
             } else {
                 image = JAI.create("Add", pb, getRenderingHints());
             }
@@ -2775,8 +2779,8 @@ public class ImageWorker {
                 binarize();
 
             // Split between JAI and JAI-EXT operations
-            boolean algebricJAIExt = JAIExt.isJAIExtOperation("algebric");
-            boolean opConstJAIExt = JAIExt.isJAIExtOperation("operationConst");
+            boolean algebricJAIExt = JAIExt.isJAIExtOperation(ALGEBRIC_OP_NAME);
+            boolean opConstJAIExt = JAIExt.isJAIExtOperation(OPERATION_CONST_OP_NAME);
 
             ParameterBlock pb;
             // now if we mask with 1 we have to invert the mask
@@ -2787,7 +2791,7 @@ public class ImageWorker {
                 pb.setSource(mask, 0);
                 if (algebricJAIExt) {
                     prepareAlgebricOperation(Operator.NOT, pb, roi, null, false);
-                    mask = JAI.create("algebric", pb, renderingHints);
+                    mask = JAI.create(ALGEBRIC_OP_NAME, pb, renderingHints);
                 } else {
                     mask = JAI.create("Not", pb, renderingHints);
                 }
@@ -2799,7 +2803,7 @@ public class ImageWorker {
             pb.setSource(image, 1);
             if (algebricJAIExt) {
                 prepareAlgebricOperation(Operator.AND, pb, roi, nodata, true);
-                image = JAI.create("algebric", pb, getRenderingHints());
+                image = JAI.create(ALGEBRIC_OP_NAME, pb, getRenderingHints());
             } else {
                 image = JAI.create("And", pb, getRenderingHints());
             }
@@ -2811,7 +2815,7 @@ public class ImageWorker {
             if (opConstJAIExt) {
                 prepareOpConstOperation(Operator.SUM, new double[] { newValue }, pb, roi, null,
                         false);
-                image = JAI.create("operationConst", pb, renderingHints);
+                image = JAI.create(OPERATION_CONST_OP_NAME, pb, renderingHints);
             } else {
                 image = JAI.create("AddConst", pb, renderingHints);
             }
@@ -2823,7 +2827,7 @@ public class ImageWorker {
             pb.setSource(image, 1);
             if (algebricJAIExt) {
                 prepareAlgebricOperation(Operator.SUM, pb, roi, nodata, true);
-                image = JAI.create("algebric", pb, getRenderingHints());
+                image = JAI.create(ALGEBRIC_OP_NAME, pb, getRenderingHints());
             } else {
                 image = JAI.create("Add", pb, getRenderingHints());
             }
@@ -2839,11 +2843,11 @@ public class ImageWorker {
         pb.set(op, 0);
         pb.set(roi, 1);
         pb.set(nodata, 2);
-        if (destNoData != null && destNoData.length > 0) {
-            pb.set(destNoData[0], 3);
+        if (background != null && background.length > 0) {
+            pb.set(background[0], 3);
             // We must set the new NoData value
             if (setDestNoData && roi != null && nodata != null) {
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
     }
@@ -2854,11 +2858,11 @@ public class ImageWorker {
         pb.set(values, 0);
         pb.set(roi, 2);
         pb.set(nodata, 3);
-        if (destNoData != null && destNoData.length > 0) {
-            pb.set(destNoData[0], 4);
+        if (background != null && background.length > 0) {
+            pb.set(background[0], 4);
             // We must set the new NoData value
             if (setDestNoData && roi != null && nodata != null) {
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
     }
@@ -2876,9 +2880,9 @@ public class ImageWorker {
         ParameterBlock pb = new ParameterBlock();
         pb.setSource(image, 0);
         pb.setSource(renderedImage, 1);
-        if (JAIExt.isJAIExtOperation("algebric")) {
+        if (JAIExt.isJAIExtOperation(ALGEBRIC_OP_NAME)) {
             prepareAlgebricOperation(Operator.SUM, pb, roi, nodata, true);
-            image = JAI.create("algebric", pb, getRenderingHints());
+            image = JAI.create(ALGEBRIC_OP_NAME, pb, getRenderingHints());
         } else {
             image = JAI.create("Add", pb, getRenderingHints());
         }
@@ -2899,9 +2903,9 @@ public class ImageWorker {
     public final ImageWorker multiplyConst(double[] inValues) {
         ParameterBlock pb = new ParameterBlock();
         pb.setSource(image, 0);
-        if (JAIExt.isJAIExtOperation("operationConst")) {
+        if (JAIExt.isJAIExtOperation(OPERATION_CONST_OP_NAME)) {
             prepareOpConstOperation(Operator.MULTIPLY, inValues, pb, roi, nodata, true);
-            image = JAI.create("operationConst", pb, getRenderingHints());
+            image = JAI.create(OPERATION_CONST_OP_NAME, pb, getRenderingHints());
         } else {
             image = JAI.create("MultiplyConst", pb, getRenderingHints());
         }
@@ -2919,13 +2923,13 @@ public class ImageWorker {
     public final ImageWorker xorConst(int[] values) {
         ParameterBlock pb = new ParameterBlock();
         pb.setSource(image, 0);
-        if (JAIExt.isJAIExtOperation("operationConst")) {
+        if (JAIExt.isJAIExtOperation(OPERATION_CONST_OP_NAME)) {
             double[] valuesD = new double[values.length];
             for (int i = 0; i < values.length; i++) {
                 valuesD[i] = values[i];
             }
             prepareOpConstOperation(Operator.XOR, valuesD, pb, roi, nodata, true);
-            image = JAI.create("operationConst", pb, getRenderingHints());
+            image = JAI.create(OPERATION_CONST_OP_NAME, pb, getRenderingHints());
         } else {
             image = JAI.create("XorConst", pb, getRenderingHints());
         }
@@ -2947,9 +2951,9 @@ public class ImageWorker {
         ParameterBlock pb = new ParameterBlock();
         pb.setSource(image, 0);
         pb.setSource(renderedImage, 1);
-        if (JAIExt.isJAIExtOperation("algebric")) {
+        if (JAIExt.isJAIExtOperation(ALGEBRIC_OP_NAME)) {
             prepareAlgebricOperation(Operator.SUBTRACT, pb, roi, nodata, true);
-            image = JAI.create("algebric", pb, getRenderingHints());
+            image = JAI.create(ALGEBRIC_OP_NAME, pb, getRenderingHints());
         } else {
             image = JAI.create("Subtract", pb, getRenderingHints());
         }
@@ -2970,9 +2974,9 @@ public class ImageWorker {
         ParameterBlock pb = new ParameterBlock();
         pb.setSource(image, 0);
         pb.setSource(renderedImage, 1);
-        if (JAIExt.isJAIExtOperation("algebric")) {
+        if (JAIExt.isJAIExtOperation(ALGEBRIC_OP_NAME)) {
             prepareAlgebricOperation(Operator.OR, pb, roi, nodata, true);
-            image = JAI.create("algebric", pb, getRenderingHints());
+            image = JAI.create(ALGEBRIC_OP_NAME, pb, getRenderingHints());
         } else {
             image = JAI.create("Or", pb, getRenderingHints());
         }
@@ -2984,15 +2988,15 @@ public class ImageWorker {
         ParameterBlock pb = new ParameterBlock();
         pb.setSource(image, 0);
         pb.set(roi, 0);
-        pb.set(destNoData, 1);
+        pb.set(background, 1);
         pb.set(threshold, 2);
         pb.set(filterSize, 3);
         pb.set(nodata, 4);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                double dest = destNoData[0];
+            if (background != null && background.length > 0) {
+                double dest = background[0];
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(dest, dest));
+                setNoData(RangeFactory.create(dest, dest));
             }
         }
         invalidateStatistics();
@@ -3109,7 +3113,7 @@ public class ImageWorker {
             pb.set(type, 0);
 
             image = JAI.create("Format", pb, hints);
-            setnoData(RangeFactory.convert(nodata, type));
+            setNoData(RangeFactory.convert(nodata, type));
         }
         return this;
     }
@@ -3164,10 +3168,10 @@ public class ImageWorker {
             pb.set(roi, 2);
             pb.set(nodata, 3);
             if (isNoDataNeeded()) {
-                if (destNoData != null && destNoData.length > 0) {
-                    pb.set(destNoData[0], 1);
+                if (background != null && background.length > 0) {
+                    pb.set(background[0], 1);
                     // We must set the new NoData value
-                    setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                    setNoData(RangeFactory.create(background[0], background[0]));
                 }
             }
 
@@ -3200,11 +3204,11 @@ public class ImageWorker {
                 pb.set(new Range[] { nodata,
                         nodata == null ? null : RangeFactory.create(alpha - 1, alpha - 1) }, 0);
                 if (isNoDataNeeded()) {
-                    if (destNoData != null && destNoData.length > 0) {
-                        double dest = destNoData[0];
+                    if (background != null && background.length > 0) {
+                        double dest = background[0];
                         pb.set(dest, 1);
                         // We must set the new NoData value
-                        setnoData(RangeFactory.create(dest, dest));
+                        setNoData(RangeFactory.create(dest, dest));
                     }
                 }
                 pb.set(roi, 3);
@@ -3224,10 +3228,10 @@ public class ImageWorker {
                 pb.set(roi, 2);
                 pb.set(nodata, 3);
                 if (isNoDataNeeded()) {
-                    if (destNoData != null && destNoData.length > 0) {
-                        pb.set(destNoData[0], 1);
+                    if (background != null && background.length > 0) {
+                        pb.set(background[0], 1);
                         // We must set the new NoData value
-                        setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                        setNoData(RangeFactory.create(background[0], background[0]));
                     }
                 }
 
@@ -3768,14 +3772,14 @@ public class ImageWorker {
             interpolation = (Interpolation) pld.getParamDefaultValue("interpolation");
         }
         if (bgValues == null) {
-            if (destNoData == null || destNoData.length <= 0) {
+            if (background == null || background.length <= 0) {
                 bgValues = (double[]) pld.getParamDefaultValue("backgroundValues");
             } else {
-                bgValues = destNoData;
+                bgValues = background;
             }
         }
         // Setting the new backgroung values
-        destNoData = bgValues;
+        background = bgValues;
 
         // affine over affine/scale?
         RenderedImage source = image;
@@ -3824,7 +3828,7 @@ public class ImageWorker {
                     pb.set(true, 5);
                     pb.set(nodata, 6);
                     if(isNoDataNeeded() && bgValues != null && bgValues.length > 0){
-                        setnoData(RangeFactory.create(bgValues[0], bgValues[0]));
+                        setNoData(RangeFactory.create(bgValues[0], bgValues[0]));
                     }
                     RenderedOp at = JAI.create("Affine", pb, commonHints);
 
@@ -3859,7 +3863,7 @@ public class ImageWorker {
                             paramBlk.add(warp).add(interpolation).add(bgValues);
                             paramBlk.set(nodata, 4);
                             if(isNoDataNeeded() && bgValues != null && bgValues.length > 0){
-                                setnoData(RangeFactory.create(bgValues[0], bgValues[0]));
+                                setNoData(RangeFactory.create(bgValues[0], bgValues[0]));
                             }
                         } else {
                             // Intersect ROIs
@@ -3873,7 +3877,7 @@ public class ImageWorker {
                             paramBlk.add(warp).add(interpolation).add(bgValues).add(newROI)
                                     .add(nodata);
                             if((isNoDataNeeded() || newROI != null) && bgValues != null && bgValues.length > 0){
-                                setnoData(RangeFactory.create(bgValues[0], bgValues[0]));
+                                setNoData(RangeFactory.create(bgValues[0], bgValues[0]));
                             }
                         }
 
@@ -4041,10 +4045,10 @@ public class ImageWorker {
                 pb.set(roi, 5);
                 pb.set(nodata, 7);
                 if (isNoDataNeeded()) {
-                    if (destNoData != null && destNoData.length > 0) {
-                        pb.set(destNoData, 8);
+                    if (background != null && background.length > 0) {
+                        pb.set(background, 8);
                         // We must set the new NoData value
-                        setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                        setNoData(RangeFactory.create(background[0], background[0]));
                     }
                 }
                 image = JAI.create("Scale", pb, localHints);
@@ -4067,10 +4071,10 @@ public class ImageWorker {
                 pb.set(roi, 5);
                 pb.set(nodata, 7);
                 if (isNoDataNeeded()) {
-                    if (destNoData != null && destNoData.length > 0) {
-                        pb.set(destNoData, 8);
+                    if (background != null && background.length > 0) {
+                        pb.set(background, 8);
                         // We must set the new NoData value
-                        setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                        setNoData(RangeFactory.create(background[0], background[0]));
                     }
                 }
                 image = JAI.create("Scale", pb, commonHints);
@@ -4093,7 +4097,7 @@ public class ImageWorker {
             if (isNoDataNeeded()) {
                 if (bgValues != null && bgValues.length > 0) {
                     // We must set the new NoData value
-                    setnoData(RangeFactory.create(bgValues[0], bgValues[0]));
+                    setNoData(RangeFactory.create(bgValues[0], bgValues[0]));
                 }
             }
             image = JAI.create("Affine", pb, commonHints);
@@ -4159,10 +4163,10 @@ public class ImageWorker {
         pb.set(roi, 4);
         pb.set(nodata, 5);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData, 6);
+            if (background != null && background.length > 0) {
+                pb.set(background, 6);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
         
@@ -4185,10 +4189,10 @@ public class ImageWorker {
         pb.add(function).add(w).add(h).add(xScale).add(yScale).add(xTrans).add(yTrans).add(roi)
                 .add(nodata);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.add((float)destNoData[0]);
+            if (background != null && background.length > 0) {
+                pb.add((float)background[0]);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create((float)destNoData[0], (float)destNoData[0]));
+                setNoData(RangeFactory.create((float)background[0], (float)background[0]));
             }
         }
         
@@ -4247,12 +4251,12 @@ public class ImageWorker {
         pb.add(alphasNew);
         pb.add(roisNew);
         pb.add(thresholds);
-        pb.add(destNoData);
+        pb.add(background);
         pb.add(nodataNew);
         Range nod = null;
-        if (destNoData != null && destNoData.length > 0) {
+        if (background != null && background.length > 0) {
             // We must set the new NoData value
-            nod = (RangeFactory.create(destNoData[0], destNoData[0]));
+            nod = (RangeFactory.create(background[0], background[0]));
         }
         // Setting the final ROI as union of the older ROIs
         if(roisNew != null){
@@ -4280,7 +4284,7 @@ public class ImageWorker {
         }
         image = JAI.create("Mosaic", pb, getRenderingHints());
         if(nodata != null || (!noInternalNoData && nodataNew != null)){
-            setnoData(nod);
+            setNoData(nod);
         }
         
         return this;
@@ -4320,10 +4324,10 @@ public class ImageWorker {
         pb.add(ext);
         pb.add(nodata);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.add(destNoData);
+            if (background != null && background.length > 0) {
+                pb.add(background);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
         image = JAI.create("Border", pb, getRenderingHints());
@@ -4350,11 +4354,11 @@ public class ImageWorker {
         pb.set(interp, 1);
         pb.set(roi, 3);
         pb.set(nodata, 4);
-        pb.set(destNoData, 2);
+        pb.set(background, 2);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
+            if (background != null && background.length > 0) {
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
         image = JAI.create("Warp", pb, getRenderingHints());
@@ -4384,10 +4388,10 @@ public class ImageWorker {
         pb.set(false, 6);
         pb.set(nodata, 7);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData, 8);
+            if (background != null && background.length > 0) {
+                pb.set(background, 8);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
         image = JAI.create("Scale", pb, getRenderingHints());
@@ -4415,10 +4419,10 @@ public class ImageWorker {
         }
         pb.set(nodata, 3);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 1);
+            if (background != null && background.length > 0) {
+                pb.set(background[0], 1);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
 
@@ -4436,10 +4440,10 @@ public class ImageWorker {
         pb.set(roi, 1);
         pb.set(nodata, 2);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData, 3);
+            if (background != null && background.length > 0) {
+                pb.set(background, 3);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
         image = JAI.create("ColorIndexer", pb, getRenderingHints());
@@ -4459,7 +4463,7 @@ public class ImageWorker {
         if (isNoDataNeeded()) {
             if (domain1D.hasGaps()) {
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(domain1D.getDefaultValue(),
+                setNoData(RangeFactory.create(domain1D.getDefaultValue(),
                         domain1D.getDefaultValue()));
             }
         }
@@ -4481,7 +4485,7 @@ public class ImageWorker {
         if (isNoDataNeeded()) {
             if (transform.hasGaps()) {
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(transform.getDefaultValue(),
+                setNoData(RangeFactory.create(transform.getDefaultValue(),
                         transform.getDefaultValue()));
             }
         }
@@ -4501,10 +4505,10 @@ public class ImageWorker {
         pb.set(roi, 2); // ROI
         pb.set(nodata, 3); // NoData range
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 5); // destination No Data value
+            if (background != null && background.length > 0) {
+                pb.set(background[0], 5); // destination No Data value
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
 
@@ -4523,10 +4527,10 @@ public class ImageWorker {
         pb.set(roi, 1);
         pb.set(nodata, 2);
         if (isNoDataNeeded()) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 3);
+            if (background != null && background.length > 0) {
+                pb.set(background[0], 3);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
 
@@ -4545,10 +4549,10 @@ public class ImageWorker {
         pb.set(rangeLookup, 0);
         pb.set(roi, 2);
         if (roi != null) {
-            if (destNoData != null && destNoData.length > 0) {
-                pb.set(destNoData[0], 1);
+            if (background != null && background.length > 0) {
+                pb.set(background[0], 1);
                 // We must set the new NoData value
-                setnoData(RangeFactory.create(destNoData[0], destNoData[0]));
+                setNoData(RangeFactory.create(background[0], background[0]));
             }
         }
         if(JAIExt.isJAIExtOperation("RLookup")){

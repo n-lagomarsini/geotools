@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2014, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2014-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -239,15 +239,9 @@ public final class MarchingSquaresVectorizer {
                 RenderingHints localHints) throws Exception {
             if (geometriesList.size() == 0) {
                 // Must be a fully "invalid-Pixels" image, or an error occurred
-                //ParameterBlock pb = new ParameterBlock();
-                //pb.addSource(inputRI); // The source image
-                //pb.add(null); // The region of the image to scan (null means all of it)
-                //pb.add(null); // The horizontal sampling rate (null means 1)
-                //pb.add(null); // The vertical sampling rate (null means 1)
                 ImageWorker w = new ImageWorker(inputRI);
-                //RenderedOp op = JAI.create("extrema", pb, localHints);
 
-                final double[] extrema = w.getMinimums();//(double[]) op.getProperty("minimum");
+                final double[] extrema = w.getMinimums();
 
                 if (!areEqual(extrema[0], INVALID_PIXEL_D)) {
                     Exception ex = new Exception("Unknown MarchingSquares processing error");
@@ -577,8 +571,6 @@ public final class MarchingSquaresVectorizer {
         if (numBands != 1) {
             ImageWorker worker = new ImageWorker(inputRI).setRenderingHints(localHints);
             if (numBands == 3) {
-                //inputRI = BandCombineDescriptor.create(inputRI,
-                        //ImageUtilities.RGB_TO_GRAY_MATRIX, localHints);
                 worker.bandCombine(ImageUtilities.RGB_TO_GRAY_MATRIX);
             } else {
                 // do we have transparency combination matrix
@@ -590,9 +582,7 @@ public final class MarchingSquaresVectorizer {
                     matrix[0][i] = fillValue;
                 }
                 worker.bandCombine(matrix);
-                //inputRI = BandCombineDescriptor.create(inputRI, matrix, localHints);
             }
-            //imagesStack.push(inputRI);
             inputRI = worker.getRenderedImage();
             imagesStack.push(worker.getRenderedImage());
             numBands = inputRI.getSampleModel().getNumBands();
@@ -897,17 +887,11 @@ public final class MarchingSquaresVectorizer {
 
             switch (dataType) {
             case DataBuffer.TYPE_USHORT:
-                //inputRI = LookupDescriptor.create(inputRI, createLookupTableUShort(exclusionLuminanceRanges),
-                        //localHints);
                 inputRI = worker.looukp(createLookupTableUShort(exclusionLuminanceRanges, dataType)).getRenderedImage();
                 break;
             case DataBuffer.TYPE_SHORT:
                 scale = MAX_8BIT_VALUE / Short.MAX_VALUE;
                 offset = MAX_8BIT_VALUE * Short.MIN_VALUE / (Short.MIN_VALUE - Short.MAX_VALUE);
-                //inputRI = RescaleDescriptor.create(inputRI, new double[] { scale },
-                        //new double[] { offset }, localHints);
-                //imagesStack.push(inputRI);
-                //inputRI = LookupDescriptor.create(inputRI, createLookupTableByte(exclusionLuminanceRanges), localHints);
                 worker.rescale(new double[] { scale }, new double[] { offset });
                 imagesStack.push(worker.getRenderedImage());
                 inputRI = worker.looukp(createLookupTableByte(exclusionLuminanceRanges, dataType)).getRenderedImage();
@@ -915,10 +899,6 @@ public final class MarchingSquaresVectorizer {
             case DataBuffer.TYPE_INT:
                 scale = MAX_8BIT_VALUE / Integer.MAX_VALUE;
                 offset = MAX_8BIT_VALUE * Integer.MIN_VALUE / (Integer.MIN_VALUE - Integer.MAX_VALUE);
-                //inputRI = RescaleDescriptor.create(inputRI, new double[] { scale },
-                        //new double[] { offset }, localHints);
-                //imagesStack.push(inputRI);
-                //inputRI = LookupDescriptor.create(inputRI, createLookupTableByte(exclusionLuminanceRanges), localHints);
                 worker.rescale(new double[] { scale }, new double[] { offset });
                 imagesStack.push(worker.getRenderedImage());
                 inputRI = worker.looukp(createLookupTableByte(exclusionLuminanceRanges, dataType)).getRenderedImage();
@@ -930,7 +910,6 @@ public final class MarchingSquaresVectorizer {
 
             assert inputRI.getSampleModel().getDataType() == DataBuffer.TYPE_BYTE;
         } else {
-            //inputRI = LookupDescriptor.create(inputRI, createLookupTableByte(exclusionLuminanceRanges), localHints);
             inputRI = worker.looukp(createLookupTableByte(exclusionLuminanceRanges, dataType)).getRenderedImage();
         }
         return inputRI;
@@ -1171,10 +1150,6 @@ public final class MarchingSquaresVectorizer {
         }
 
         coordinateList.add(startCoordinate);
-        // double polygonArea = GeometryUtilities.getPolygonArea(coordinateList);
-        // if (polygonArea < thresholdArea) {
-        // return null;
-        // }
 
         Coordinate[] coordinateArray = (Coordinate[]) coordinateList
                 .toArray(new Coordinate[coordinateList.size()]);
@@ -1380,7 +1355,6 @@ public final class MarchingSquaresVectorizer {
         }
 
         return LookupTableFactory.create(b, dataType);
-        //return new LookupTableJAI(b);
     }
 
     private LookupTable createLookupTableUShort(List<Range<Integer>> exclusionValues, int dataType) {
@@ -1394,7 +1368,6 @@ public final class MarchingSquaresVectorizer {
             }
         }
         return LookupTableFactory.create(bUShort, dataType);
-        //return new LookupTableJAI(bUShort);
     }
 
 }

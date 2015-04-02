@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2002-2011, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2002-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -105,15 +105,6 @@ public enum MergeBehavior {
                                     union.y+union.height-currentExtent.y-currentExtent.height, 
                                     borderExtenderConstant);
                             sources[i] = worker.getRenderedImage();
-                            
-                            //sources[i]=BorderDescriptor.create(
-                                    //sources[i], 
-                                    //union.x-currentExtent.x, 
-                                    //union.x+union.width-currentExtent.x-currentExtent.width, 
-                                    //union.y-currentExtent.y, 
-                                    //union.y+union.height-currentExtent.y-currentExtent.height,
-                                    //borderExtenderConstant, 
-                                    //hints);
                         }                        
                     } else {
                         // use msoaic in case we have source ROIs
@@ -127,7 +118,7 @@ public enum MergeBehavior {
                             localHints=new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
                         }
                         return new ImageWorker(localHints)
-                                .setDestinationNoData(backgroundValues)
+                                .setBackground(backgroundValues)
                                 .mosaic(sources, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, sourceAlpha, 
                                         sourceROI, inputThreshold, null).getRenderedImage();
                     }
@@ -156,18 +147,9 @@ public enum MergeBehavior {
                 MosaicType mosaicType, 
                 RenderingHints localHints) {
             return new ImageWorker(localHints)
-            .setDestinationNoData(backgroundValues)
+            .setBackground(backgroundValues)
             .mosaic(sources, mosaicType, sourceAlpha, 
                     sourceROI, inputThreshold, null).getRenderedImage();
-
-            //return MosaicDescriptor.create(
-                  //sources, 
-                  //mosaicType, 
-                  //sourceAlpha, 
-                  //sourceROI, 
-                  //inputThreshold, 
-                  //backgroundValues, 
-                  //localHints);
         }
     };
     

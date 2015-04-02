@@ -159,7 +159,7 @@ public class GridCoverage2DRIA extends GeometricOpImage {
         
         Utilities.ensureNonNull("dst", dst);
         
-     // === Create destination Layout, retaining source tiling to minimize quirks
+        // === Create destination Layout, retaining source tiling to minimize quirks
         // TODO allow to override tiling
         final GridEnvelope2D destinationRasterDimension = dst.getGridRange2D();
         final ImageLayout imageLayout = new ImageLayout();

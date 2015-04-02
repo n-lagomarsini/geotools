@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2003-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2003-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -25,13 +25,10 @@ import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.RenderedImage;
 import java.util.Map;
-//import java.awt.image.renderable.ParameterBlock;
 
 import javax.media.jai.ImageLayout;
 import javax.media.jai.JAI;
 import javax.media.jai.PlanarImage;
-//import javax.media.jai.operator.FormatDescriptor;
-//import javax.media.jai.operator.NullDescriptor;
 
 import org.opengis.parameter.ParameterValueGroup;
 
@@ -39,7 +36,6 @@ import org.geotools.factory.Hints;
 import org.geotools.image.ImageWorker;
 import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.processing.OperationJAI;
 import org.geotools.resources.coverage.CoverageUtilities;
 import org.geotools.resources.image.ColorUtilities;
 

@@ -550,7 +550,7 @@ public class Crop extends Operation2D {
 
 			// //
 			//
-            // finalRasterArea will hold the smallest rectangular integer raster area that contains the floating point raster
+                        // finalRasterArea will hold the smallest rectangular integer raster area that contains the floating point raster
 			// area which we obtain when applying the world-to-grid transform to the cropEnvelope. Note that we need to intersect
 			// such an area with the area covered by the source coverage in order to be sure we do not try to crop outside the
 			// bounds of the source raster.
@@ -651,7 +651,7 @@ public class Crop extends Operation2D {
                     } catch (FactoryException ex) {
 						throw new CannotCropException(Errors.format(ErrorKeys.CANT_CROP), ex);
                     }
-                                        worker.setDestinationNoData(background);
+                                        worker.setBackground(background);
                                         
                                         
  					

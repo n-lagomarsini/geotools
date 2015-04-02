@@ -938,6 +938,7 @@ public class GranuleDescriptor {
 				if(iw.getNoData() != null){
 				    PlanarImage t = PlanarImage.wrapRenderedImage(renderedImage);
 				    t.setProperty(NoDataContainer.GC_NODATA, new NoDataContainer(iw.getNoData()));
+				    renderedImage = t;
 				}
 				return new GranuleLoadingResult(renderedImage, null, granuleUrl, doFiltering, pamDataset);
 			}

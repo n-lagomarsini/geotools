@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2014, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2014-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -16,9 +16,9 @@
  */
 package org.geotools.process.raster;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import it.geosolutions.jaiext.iterators.RandomIterFactory;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
@@ -67,9 +67,6 @@ public class ScaleProcessTest {
 
     /** Bicubic Interpolation */
     private static InterpolationBicubic bicubic;
-
-    /** No Data Values used for the Affine transformation */
-    private static double[] background;
 
     /** Scale X parameter */
     private static double scaleX;
@@ -125,9 +122,6 @@ public class ScaleProcessTest {
         nearest = new InterpolationNearest();
         bilinear = new InterpolationBilinear();
         bicubic = new InterpolationBicubic(8);
-
-        // Definition of the background values
-        background = new double[] { 0 };
 
         // Definition of the transformation. (The final image should be doubled and translated)
         scaleX = 2d;
@@ -238,7 +232,7 @@ public class ScaleProcessTest {
         
         // Check if all the values are equal to 0
         ImageWorker w = new ImageWorker(result.getRenderedImage());
-        w.setnoData(null);
+        w.setNoData(null);
         int max = (int) w.getMaximums()[0];
         int min = (int) w.getMinimums()[0];
         

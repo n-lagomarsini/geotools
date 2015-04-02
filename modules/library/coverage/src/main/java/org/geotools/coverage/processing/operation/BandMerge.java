@@ -166,9 +166,6 @@ public class BandMerge extends OperationJAI {
         replacedDescriptors.add(TRANSFORM_CHOICE_PARAM);
         replacedDescriptors.add(GEOMETRY_PARAM);
         REPLACED_DESCRIPTORS = Collections.unmodifiableSet(replacedDescriptors);
-    
-        // Static registration of the BandMerge operation
-        //Registry.registerRIF(JAI.getDefaultInstance(), new BandMergeDescriptor(), new BandMergeCRIF(), "org.geotools");
     }
 
     /**

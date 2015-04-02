@@ -102,6 +102,14 @@ import org.opengis.util.InternationalString;
  */
 public class Mosaic extends OperationJAI {
 
+    private static final int NODATA_RANGE_PARAM = 5;
+
+    private static final int MOSAIC_TYPE_PARAM = 0;
+
+    private static final int ALPHA_PARAM = 1;
+
+    private static final int ROI_PARAM = 2;
+
     /** Name for the COVERAGE_INDEX parameter */
     public static final String POLICY = "policy";
 
@@ -645,10 +653,10 @@ public class Mosaic extends OperationJAI {
                 rois[i] = new ROIShape(PlanarImage.wrapRenderedImage(rasters[i]).getBounds());
             }
         }
-        block.set(rois, 2);
+        block.set(rois, ROI_PARAM);
         // If at least one image contains Alpha channel, it is used for the mosaic
         if (rr.getAlphas() != null) {
-            block.set(rr.getAlphas(), 1);
+            block.set(rr.getAlphas(), ALPHA_PARAM);
         }
 
         // Setting of the Threshold to use
@@ -658,7 +666,7 @@ public class Mosaic extends OperationJAI {
         block.set(new double[][] { { threshold } }, 3);
 
         // Setting of the Mosaic type as Overlay
-        block.set(MosaicDescriptor.MOSAIC_TYPE_OVERLAY, 0);
+        block.set(MosaicDescriptor.MOSAIC_TYPE_OVERLAY, MOSAIC_TYPE_PARAM);
 
         // Check if it is a JAI-Ext operation
         if(JAIExt.isJAIExtOperation("Mosaic")){
@@ -670,7 +678,7 @@ public class Mosaic extends OperationJAI {
                     double value = nodatas[i];
                     ranges[i] = RangeFactory.create(value, value);
                 }
-                block.set(ranges, 5);
+                block.set(ranges, NODATA_RANGE_PARAM);
             }
 
         }
@@ -766,8 +774,7 @@ public class Mosaic extends OperationJAI {
                 sources, // The source grid coverages.
                 properties); // Properties
     }
-    
-    //TODO fixme
+
     protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,
             InternationalString name, MathTransform gridToCRS, GridCoverage2D[] sources,
             Params parameters) {

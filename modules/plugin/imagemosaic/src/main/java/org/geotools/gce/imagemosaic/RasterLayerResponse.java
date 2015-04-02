@@ -621,7 +621,7 @@ class RasterLayerResponse{
                         LOGGER.log(Level.FINE, "Filtering granules artifacts");
                     }
                     ImageWorker w = new ImageWorker(granule).setRenderingHints(hints).setROI(imageROI);
-                    w.setDestinationNoData(new double[]{0});
+                    w.setBackground(new double[]{0});
                     w.artifactsFilter(artifactThreshold, 3);
                     granule = w.getRenderedImage();
                     //granule = ArtifactsFilterDescriptor.create(granule, imageROI, new double[]{0}, artifactThreshold, 3, hints);
@@ -747,7 +747,13 @@ class RasterLayerResponse{
                                 iw.setRenderingHints(localHints);
                                 iw.crop(imageBounds.x, imageBounds.y, imageBounds.width, imageBounds.height);
                                 mosaic = iw.getRenderedImage();
-                                imageBounds = PlanarImage.wrapRenderedImage(mosaic).getBounds();
+                                // Propagate NoData
+                                PlanarImage t = PlanarImage.wrapRenderedImage(mosaic);
+                                if(iw.getNoData() != null){
+                                    t.setProperty(NoDataContainer.GC_NODATA, new NoDataContainer(iw.getNoData()));
+                                    mosaic = t;
+                                }
+                                imageBounds = t.getBounds();
                             }
     
                             // and, do we need to add a BORDER around the image?
@@ -855,7 +861,7 @@ class RasterLayerResponse{
 
                 ROI[] roisArray = (ROI[]) rois.toArray(new ROI[rois.size()]);
                 RenderedImage overallROI = new ImageWorker(hints)
-                        .setDestinationNoData(new double[] { 0.0 })
+                        .setBackground(new double[] { 0.0 })
                         .mosaic(images, MosaicDescriptor.MOSAIC_TYPE_OVERLAY, null, roisArray,
                                 new double[][] { { 1.0 } }, null).getRenderedImage();
                 return new ROI(overallROI);
@@ -1656,7 +1662,7 @@ class RasterLayerResponse{
             Assert.isTrue(il.isValid(ImageLayout.WIDTH_MASK | ImageLayout.HEIGHT_MASK
                     | ImageLayout.SAMPLE_MODEL_MASK));
             ImageWorker w = new ImageWorker(renderingHints);
-            w.setDestinationNoData(bkgValues);
+            w.setBackground(bkgValues);
             w.mosaic(new RenderedImage[0], MosaicDescriptor.MOSAIC_TYPE_OVERLAY, 
                     null, null, 
                     new double[][] { { CoverageUtilities.

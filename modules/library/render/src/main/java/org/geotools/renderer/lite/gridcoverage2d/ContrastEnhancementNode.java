@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -20,12 +20,10 @@ import it.geosolutions.jaiext.lookup.LookupTable;
 import it.geosolutions.jaiext.lookup.LookupTableFactory;
 import it.geosolutions.jaiext.piecewise.DefaultPiecewiseTransform1D;
 import it.geosolutions.jaiext.piecewise.DefaultPiecewiseTransform1DElement;
-import it.geosolutions.jaiext.piecewise.GenericPiecewiseOpImage;
 import it.geosolutions.jaiext.piecewise.PiecewiseTransform1D;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 import it.geosolutions.jaiext.range.RangeFactory;
-import it.geosolutions.rendered.viewer.RenderedImageBrowser;
 
 import java.awt.RenderingHints;
 import java.awt.Transparency;
@@ -43,7 +41,6 @@ import java.util.Set;
 import javax.media.jai.Histogram;
 import javax.media.jai.ImageLayout;
 import javax.media.jai.JAI;
-import javax.media.jai.ParameterBlockJAI;
 import javax.media.jai.ROI;
 
 import org.geotools.coverage.GridSampleDimension;
@@ -115,15 +112,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 		heAlg.add("LOGARITHMIC");
 		heAlg.add("EXPONENTIAL");
 		SUPPORTED_HE_ALGORITHMS = Collections.unmodifiableSet(heAlg);
-		
-		//load, if it is needed the GenericPiecewise tranformation
-		try{
-			new ParameterBlockJAI(GenericPiecewiseOpImage.OPERATION_NAME);
-			
-		}catch (final Exception e) {
-			//GenericPiecewise.register(JAI.getDefaultInstance());
-		}
-
 	}
 
 	/** Histogram Enhancement algorithm to use. */
@@ -273,26 +261,22 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
                                 ImageWorker worker;
 				if(type!=null&&type.equalsIgnoreCase("HISTOGRAM"))
 				{
-					//initialImage = 
 				        worker = 
 						new ImageWorker(sourceImage)
-					                .setROI(roi).setnoData(nodata)
+					                .setROI(roi).setNoData(nodata)
 							.setRenderingHints(hints)
 							.forceComponentColorModel()
 							.rescaleToBytes();
-							//.getRenderedImage();
 				}
 				else
 				{
-                                        //initialImage = 
                                         worker =  
 						new ImageWorker(sourceImage)
-					                .setROI(roi).setnoData(nodata)
+					                .setROI(roi).setNoData(nodata)
 							.setRenderingHints(hints)
 							.forceComponentColorModel();
-							//.getRenderedImage();
 				}
-				final int numbands = worker.getNumBands();//initialImage.getSampleModel().getNumBands();
+				final int numbands = worker.getNumBands();
 
 
 				// //
@@ -305,14 +289,12 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				RenderedImage alphaBand = null;
 				if (numbands % 2 == 0) {
 					// get the alpha band
-					alphaBand = new ImageWorker(worker.getRenderedImage())//new ImageWorker(initialImage)
+					alphaBand = new ImageWorker(worker.getRenderedImage())
 							.setRenderingHints(hints).retainLastBand()
 							.getRenderedImage();
 					// strip the alpha band from the original image
-					//initialImage = new ImageWorker(initialImage)
 					        worker
 							.setRenderingHints(hints).retainBands(numbands - 1);
-							//.getRenderedImage();
 				}
 
 				// //
@@ -321,7 +303,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				// intensity for RGB(A) or the GRAY channel for Gray(A)
 				//
 				// //
-				//RenderedImage intensityImage = null;
 				ImageWorker intensityWorker;
 				RenderedImage hChannel = null;
 				RenderedImage sChannel = null;
@@ -330,13 +311,11 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				if (numbands > 1) {
 					// convert the prepared image to IHS colorspace to work
 					// on I band
-					IHS = worker//new ImageWorker(initialImage)
+					IHS = worker
 							.setRenderingHints(hints).forceColorSpaceIHS()
 							.getRenderedImage();
 
 					// get the various singular bands
-					//intensityImage = new ImageWorker(IHS).setRenderingHints(
-							//hints).retainFirstBand().getRenderedImage();
 					intensityWorker = worker.setRenderingHints(hints).retainFirstBand();
 					sChannel = new ImageWorker(IHS).setRenderingHints(hints)
 							.retainLastBand().getRenderedImage();
@@ -349,7 +328,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 					// we have only one band we don't need to go to IHS
 					//
 					// //
-					//intensityImage = initialImage;
 				        intensityWorker = worker;
 				        intensity = false;
 				}
@@ -361,7 +339,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				// 
 				//
 				// /////////////////////////////////////////////////////////////////////
-				//final RenderedImage heImage = performContrastEnhancement(intensityImage, hints);
 				performContrastEnhancement(intensityWorker, hints);	
 
 				// /////////////////////////////////////////////////////////////////////
@@ -372,7 +349,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				// correction function's values.
 				//
 				// /////////////////////////////////////////////////////////////////////
-				//RenderedImage finalImage = performGammaCorrection(heImage,hints);
 				performGammaCorrection(intensityWorker,hints);
 
 				// /////////////////////////////////////////////////////////////////////
@@ -405,12 +381,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 					rendHints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT,imageLayout));
 					
 					// merge and go to rgb again
-					//final ParameterBlock pb = new ParameterBlock();
-					//pb.addSource(finalImage);
-					//pb.addSource(hChannel);
-					//pb.addSource(sChannel);
-					//finalImage = JAI.create("bandmerge", pb, rendHints);
-					//finalImage = new ImageWorker(finalImage).setRenderingHints(hints).forceColorSpaceRGB().getRenderedImage();
 					intensityWorker.setRenderingHints(rendHints).addBands(new RenderedImage[]{hChannel, sChannel}, false, null);
 					intensityWorker.setRenderingHints(hints).forceColorSpaceRGB();
 				}
@@ -434,15 +404,11 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 					final ImageLayout imageLayout = new ImageLayout();
 					imageLayout.setColorModel(cm);
 					imageLayout.setSampleModel(cm.createCompatibleSampleModel(intensityWorker.getRenderedImage().getWidth(), intensityWorker.getRenderedImage().getHeight()));
-                                        //imageLayout.setSampleModel(cm.createCompatibleSampleModel(finalImage.getWidth(), finalImage.getHeight()));					
 					// merge and go to rgb
-					//finalImage = 
-						//new ImageWorker(finalImage)
 					intensityWorker
 							.setRenderingHints(hints)
 							.setRenderingHint(JAI.KEY_IMAGE_LAYOUT,imageLayout)
 							.addBand(alphaBand, false, true, null);
-							//.getRenderedOperation();
 
 				}
 
@@ -540,11 +506,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 			        inputWorker.removeRenderingHints();
 			        extrema[0] = inputWorker.getMinimums();
 			        extrema[1] = inputWorker.getMaximums();
-				//final RenderedOp image = ExtremaDescriptor.create(inputImage,
-						//null, Integer.valueOf(1), Integer.valueOf(1), null,
-						//Integer.valueOf(1), null);
-				//final double[][] extrema = (double[][]) image
-						//.getProperty("extrema");
 				final int numBands = extrema[0].length;
 				assert numBands == 1:inputWorker.getRenderedOperation();
 				
@@ -574,11 +535,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 					LookupTable table = LookupTableFactory.create(lut, dataType);
 					inputWorker.setRenderingHints(hints);
 					inputWorker.looukp(table);
-					//final LookupTableJAI lookup = new LookupTableJAI(lut);
-					//final ParameterBlock pb = new ParameterBlock();
-					//pb.addSource(inputImage);
-					//pb.add(lookup);
-					//return JAI.create("lookup", pb, hints);
 					return inputWorker.getRenderedImage();
 				}
 				
@@ -598,11 +554,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				final double offset =  minimum - scale * extrema[0][0];
 
 				//do the actual rescale
-				//final ParameterBlock pb = new ParameterBlock();
-				//pb.addSource(inputImage);
-				//pb.add(new double []{scale});
-				//pb.add(new double []{offset});
-				//return JAI.create("rescale", pb, hints);
 				inputWorker.setRenderingHints(hints);
 				inputWorker.rescale(new double []{scale}, new double []{offset});
 				return inputWorker.getRenderedImage();
@@ -634,8 +585,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
                                         LookupTable table = LookupTableFactory.create(lut, dataType);
                                         inputWorker.looukp(table);
                                         return inputWorker.getRenderedImage();
-					//return LookupDescriptor.create(inputImage,
-							//new LookupTableJAI(lut), hints);
 				}
 				////
 				//
@@ -647,11 +596,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				//
 				////
 				//step 1 do the extrema to get the statistics for this image
-				//final RenderedOp statistics = ExtremaDescriptor.create(inputImage,
-						//null, Integer.valueOf(1), Integer.valueOf(1), null,
-						//Integer.valueOf(1), null);
-	                        //final double[] minimum=(double[]) statistics.getProperty("minimum");
-	                        //final double[] maximum=(double[]) statistics.getProperty("maximum");
 				inputWorker.removeRenderingHints();
 				final double[] minimum=inputWorker.getMinimums();
 				final double[] maximum=inputWorker.getMaximums();
@@ -695,13 +639,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 						new DefaultPiecewiseTransform1DElement[] {mainElement},0);
 
 				inputWorker.piecewise(transform, Integer.valueOf(0));
-					//final ParameterBlockJAI pbj = new ParameterBlockJAI(
-							//GenericPiecewiseOpImage.OPERATION_NAME);
-					//pbj.addSource(inputImage);
-					//pbj.setParameter("Domain1D", transform);
-					//pbj.setParameter("bandIndex", Integer.valueOf(0));
-					//return JAI.create(
-					        //GenericPiecewiseOpImage.OPERATION_NAME, pbj);
 				return inputWorker.getRenderedImage();
 			}			
 			if (type.equalsIgnoreCase("LOGARITHMIC")) {
@@ -726,9 +663,7 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 	                                //do the actual lookup
                                         LookupTable table = LookupTableFactory.create(lut, dataType);
                                         inputWorker.looukp(table);
-                                        return inputWorker.getRenderedImage();
-					//return LookupDescriptor.create(inputImage,
-							//new LookupTableJAI(lut), hints);				
+                                        return inputWorker.getRenderedImage();				
 				}
 				////
 				//
@@ -743,11 +678,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				//
 				////
 				//step 1 do the extrema to get the statistics for this image
-				//final RenderedOp statistics = ExtremaDescriptor.create(inputImage,
-						//null, Integer.valueOf(1), Integer.valueOf(1), null,
-						//Integer.valueOf(1), null);
-				//final double[] minimum=(double[]) statistics.getProperty("minimum");
-				//final double[] maximum=(double[]) statistics.getProperty("maximum");
 				inputWorker.removeRenderingHints();
 				final double[] minimum=inputWorker.getMinimums();
                                 final double[] maximum=inputWorker.getMaximums();
@@ -792,13 +722,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 
 				inputWorker.piecewise(transform, Integer.valueOf(0));
 				return inputWorker.getRenderedImage();
-					//final ParameterBlockJAI pbj = new ParameterBlockJAI(
-					        //GenericPiecewiseOpImage.OPERATION_NAME);
-					//pbj.addSource(inputImage);
-					//pbj.setParameter("Domain1D", transform);
-					//pbj.setParameter("bandIndex", Integer.valueOf(0));
-					//return JAI.create(
-					        //GenericPiecewiseOpImage.OPERATION_NAME, pbj);
 			}			
 			if (type.equalsIgnoreCase("HISTOGRAM")) {
 				// /////////////////////////////////////////////////////////////////////
@@ -814,11 +737,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				inputWorker.rescaleToBytes();
 				
 				// compute the histogram
-				//final RenderedOp hist = HistogramDescriptor.create(inputImage,
-						//null, Integer.valueOf(1), Integer.valueOf(1),
-						//new int[] { 256 }, new double[] { 0 },
-						//new double[] { 256 }, null);
-				//final Histogram h = (Histogram) hist.getProperty("histogram");
 				final Histogram h = inputWorker.removeRenderingHints().getHistogram(null, null, null);
 				// now compute the PDF and the CDF for the original image
 				final byte[] cumulative = new byte[h.getNumBins(0)];
@@ -844,11 +762,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
                                 inputWorker.setRenderingHints(hints);
                                 inputWorker.looukp(table);
                                 return inputWorker.getRenderedImage();
-				//final LookupTableJAI lookup = new LookupTableJAI(cumulative);
-				//final ParameterBlock pb = new ParameterBlock();
-				//pb.addSource(hist);
-				//pb.add(lookup);
-				//return JAI.create("lookup", pb, hints);
 			}
 		}
 
@@ -863,13 +776,11 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 	 * @return a {@link RenderedImage} on which a gamma correction has been performed.
 	 */
 	private RenderedImage performGammaCorrection(
-			//final RenderedImage inputImage,
 			ImageWorker worker,
 	                final Hints hints) {
 	        worker.setRenderingHints(hints);
 		//note that we should work on a single band
 	        RenderedImage inputImage = worker.getRenderedOperation();
-	        //RenderedImageBrowser.showChain(inputImage, false, false);
 		assert inputImage.getSampleModel().getNumBands() == 1:inputImage;
 		
 		final int dataType=inputImage.getSampleModel().getDataType();
@@ -889,11 +800,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				// apply the operation now
 				LookupTable table = LookupTableFactory.create(lut, dataType);
                                 worker.looukp(table);
-				//final LookupTableJAI lookup = new LookupTableJAI(lut);
-				//final ParameterBlock pb = new ParameterBlock();
-				//pb.addSource(inputImage);
-				//pb.add(lookup);
-				//result = JAI.create("lookup", pb, hints);
 			}
 			else
 			{
@@ -907,11 +813,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				//
 				////
 				//step 1 do the extrema to get the statistics for this image
-				//final RenderedOp statistics = ExtremaDescriptor.create(inputImage,
-						//null, Integer.valueOf(1), Integer.valueOf(1), null,
-						//Integer.valueOf(1), null);
-				//final double[] minimum=(double[]) statistics.getProperty("minimum");
-				//final double[] maximum=(double[]) statistics.getProperty("maximum");
 			        final double[] minimum=worker.getMinimums();
                                 final double[] maximum=worker.getMaximums();
 			        final double scale  = (maximum[0]-minimum[0])/(MAX_VALUE-MIN_VALUE);
@@ -950,14 +851,6 @@ class ContrastEnhancementNode extends StyleVisitorCoverageProcessingNodeAdapter
 				
 				final PiecewiseTransform1D<DefaultPiecewiseTransform1DElement>  transform = new DefaultPiecewiseTransform1D<DefaultPiecewiseTransform1DElement> (
 						new DefaultPiecewiseTransform1DElement[] {mainElement},0);
-
-					//final ParameterBlockJAI pbj = new ParameterBlockJAI(
-					        //GenericPiecewiseOpImage.OPERATION_NAME);
-					//pbj.addSource(inputImage);
-					//pbj.setParameter("Domain1D", transform);
-					//pbj.setParameter("bandIndex", Integer.valueOf(0));
-					//result = JAI.create(
-					        //GenericPiecewiseOpImage.OPERATION_NAME, pbj);
 				worker.piecewise(transform, Integer.valueOf(0));
 			}
 		}

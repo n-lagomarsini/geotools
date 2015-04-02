@@ -632,7 +632,7 @@ public final class GridCoverageRenderer {
             ImageWorker iw = new ImageWorker(finalImage);
             iw.setRenderingHints(hints);
             iw.setROI(roi);
-            iw.setnoData(noData);
+            iw.setNoData(noData);
             iw.affine(finalRasterTransformation, interpolation, bkgValues);
             im = iw.getRenderedImage();
             roi = iw.getROI();

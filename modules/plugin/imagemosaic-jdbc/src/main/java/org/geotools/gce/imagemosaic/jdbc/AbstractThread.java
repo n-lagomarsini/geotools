@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2008-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -105,7 +105,6 @@ abstract class AbstractThread extends Thread {
                 0.0f, 
                 Interpolation.getInstance(interpolation));
         RenderedOp result = w.getRenderedOperation();
-        //RenderedOp result = ScaleDescriptor.create(planarImage, new Float(rescaleX), new Float(rescaleY), 0.0f, 0.0f, Interpolation.getInstance(interpolation), null);
         WritableRaster scaledImageRaster = (WritableRaster) result.getData();
 
         ColorModel colorModel = image.getColorModel();

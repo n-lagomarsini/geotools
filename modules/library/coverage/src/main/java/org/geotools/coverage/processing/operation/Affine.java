@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2014, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2014-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,7 @@ import org.opengis.util.InternationalString;
  */
 public class Affine extends BaseScaleOperationJAI {
 
+    private static final String AFFINE = "Affine";
     /** serialVersionUID */
     private static final long serialVersionUID = 1699623079343108288L;
 
@@ -63,7 +64,7 @@ public class Affine extends BaseScaleOperationJAI {
      * Default constructor.
      */
     public Affine() {
-        super("Affine");
+        super(AFFINE);
     }
 
     @Override
@@ -118,7 +119,7 @@ public class Affine extends BaseScaleOperationJAI {
         final ImageWorker worker= new ImageWorker(source);
         worker.setRenderingHints(hints);
         worker.setROI(roi);
-        worker.setnoData(nodata);
+        worker.setNoData(nodata);
         worker.affine(
                 (AffineTransform)parameters.getObjectParameter("transform") , 
                 interpolation, 
@@ -128,7 +129,7 @@ public class Affine extends BaseScaleOperationJAI {
     
     protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
         GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
-        handleROINoDataInternal(parameters, source, "Affine", 3, 6);
+        handleROINoDataInternal(parameters, source, AFFINE, 3, 6);
     }
 
     protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,
@@ -151,7 +152,7 @@ public class Affine extends BaseScaleOperationJAI {
         PropertyGenerator propertyGenerator = null;
         if(data instanceof RenderedOp){
             String operationName = ((RenderedOp)data).getOperationName();
-            if(operationName.equalsIgnoreCase("Affine")){
+            if(operationName.equalsIgnoreCase(AFFINE)){
                 propertyGenerator = new AffineDescriptor().getPropertyGenerators()[0];
             } else if(operationName.equalsIgnoreCase("Scale")){
                 propertyGenerator = new ScaleDescriptor().getPropertyGenerators()[0];

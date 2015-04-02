@@ -24,7 +24,6 @@ import java.awt.image.DataBuffer;
 import java.awt.image.RenderedImage;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Logger;
 import javax.media.jai.RenderedOp;
 
 import org.geotools.process.factory.DescribeParameter;
@@ -42,7 +41,6 @@ import org.geotools.process.ProcessException;
 import org.geotools.renderer.i18n.Errors;
 import org.geotools.resources.i18n.ErrorKeys;
 import org.geotools.resources.image.ColorUtilities;
-import org.geotools.util.logging.Logging;
 import org.jaitools.numeric.Range;
 import org.opengis.coverage.grid.GridCoverage;
 import org.opengis.util.ProgressListener;
@@ -62,12 +60,6 @@ import org.opengis.util.ProgressListener;
 public class RangeLookupProcess implements RasterProcess {
 	
     private final static double DEFAULT_NODATA = 0d;
-	
-	private final static Logger LOGGER = Logging.getLogger(RangeLookupProcess.class);
-	
-	//static {
-        //Registry.registerRIF(JAI.getDefaultInstance(), new RangeLookupDescriptor(), new RangeLookupRIF(), Registry.JAI_TOOLS_PRODUCT);
-    //}
 
     @DescribeResult(name = "reclassified", description = "The reclassified raster")
     public GridCoverage2D execute(
@@ -116,7 +108,6 @@ public class RangeLookupProcess implements RasterProcess {
             }
             
             if(band==0 && numbands>0 || band>0){
-            	//sourceImage=BandSelectDescriptor.create(sourceImage, new int []{band}, null);
                 worker.retainBands(new int []{band});
             }
         }
@@ -152,16 +143,9 @@ public class RangeLookupProcess implements RasterProcess {
             
         }
         worker.setROI(org.geotools.resources.coverage.CoverageUtilities.getROIProperty(coverage));
-        worker.setDestinationNoData(new double[]{nd});
+        worker.setBackground(new double[]{nd});
         final RenderedOp indexedClassification = worker.rangeLookup(lookupTable)
-                .getRenderedOperation();        
-        
-
-        // reclassify the source image
-        //ParameterBlockJAI pb = new ParameterBlockJAI("RangeLookup");
-        //pb.setSource("source0", sourceImage);
-        //pb.setParameter("table", lookupTable);
-        //final RenderedOp indexedClassification = JAI.create("RangeLookup", pb);
+                .getRenderedOperation();
 
         
         //

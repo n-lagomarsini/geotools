@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -88,7 +88,11 @@ import org.opengis.util.InternationalString;
  */
 public class Extrema extends BaseStatisticsOperationJAI {
 
-	/**
+	private static final String EXTREMA = "Extrema";
+
+    private static final String STATS = "Stats";
+
+    /**
 	 * Serial number for interoperability with different versions.
 	 */
 	private static final long serialVersionUID = 7731039381590398047L;
@@ -111,12 +115,12 @@ public class Extrema extends BaseStatisticsOperationJAI {
 	 * Constructs a default {@code "Extrema"} operation.
 	 */
 	public Extrema() throws OperationNotFoundException {
-		super("Extrema", getOperationDescriptor(JAIExt.getOperationName("Extrema")));
+		super(EXTREMA, getOperationDescriptor(JAIExt.getOperationName(EXTREMA)));
 	}
 	
-    public String getName() {
-        return "Extrema";
-    }
+        public String getName() {
+            return EXTREMA;
+        }
 
 
 	/**
@@ -145,7 +149,7 @@ public class Extrema extends BaseStatisticsOperationJAI {
 			final RenderedOp result = (RenderedOp) data;
 			final Map<String, Object> synthProp = new HashMap<String, Object>();			
 
-                        if (JAIExt.isJAIExtOperation("Stats")) {
+                        if (JAIExt.isJAIExtOperation(STATS)) {
                             // get the properties
                             Statistics[][] results = ((Statistics[][])result.getProperty(Statistics.STATS_PROPERTY));
                             // Extracting the bins
@@ -191,10 +195,10 @@ public class Extrema extends BaseStatisticsOperationJAI {
 	}
 	
         protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
-            if(JAIExt.isJAIExtOperation("Stats")){
+            if(JAIExt.isJAIExtOperation(STATS)){
                 GridCoverage2D source = (GridCoverage2D) parameters2.parameter("source0").getValue();
                 // Handle ROI and NoData
-                handleROINoDataInternal(parameters, source, "Stats", 2, 3);
+                handleROINoDataInternal(parameters, source, STATS, 2, 3);
                 // Setting the Statistic operation
                 parameters.set(new StatsType[]{StatsType.EXTREMA}, 6);
                 // Check on the band numnber

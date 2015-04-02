@@ -128,7 +128,7 @@ public class RasterSymbolizerHelper extends
 			//rescale to byte
 			    ImageWorker w = new ImageWorker(outputImage);
 			outputImage=
-				w.setROI(roiProp).setnoData(nodata).setRenderingHints(this.getHints()).rescaleToBytes().getRenderedImage();
+				w.setROI(roiProp).setNoData(nodata).setRenderingHints(this.getHints()).rescaleToBytes().getRenderedImage();
 			roiProp = w.getROI();
 			nodata = w.getNoData();
 		}
@@ -146,7 +146,7 @@ public class RasterSymbolizerHelper extends
 	        if(opacity < 1) {
 	            ImageWorker ow = new ImageWorker(outputImage);
 	            ow.setROI(roiProp);
-	            ow.setnoData(nodata);
+	            ow.setNoData(nodata);
 	            finalImage = ow.applyOpacity(opacity).getRenderedImage();
 	            
 	            numBands=finalImage.getSampleModel().getNumBands();

@@ -193,7 +193,7 @@ class BandMergeNode extends BaseCoverageProcessingNode implements
 					w.setImage(op);
 					w.setROI(CoverageUtilities.getROIProperty(currentSourceCoverage));
 					NoDataContainer container = CoverageUtilities.getNoDataProperty(currentSourceCoverage);
-					w.setnoData(container != null ? container.getAsRange() : null);
+					w.setNoData(container != null ? container.getAsRange() : null);
 				}
 				else {
 					w.setRenderingHints(hints);

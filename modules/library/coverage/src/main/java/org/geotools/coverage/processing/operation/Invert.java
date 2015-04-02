@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -76,6 +76,8 @@ import org.opengis.util.InternationalString;
  * @see InvertDescriptor
  */
 public class Invert extends BaseMathOperationJAI {
+    private static final String ALGEBRIC = "algebric";
+    private static final String INVERT = "Invert";
     /**
      * Serial number for interoperability with different versions.
      */
@@ -85,11 +87,11 @@ public class Invert extends BaseMathOperationJAI {
      * Constructs a default {@code "Invert"} operation.
      */
     public Invert() {
-    	super("Invert", getOperationDescriptor(JAIExt.getOperationName("Invert")));
+    	super(INVERT, getOperationDescriptor(JAIExt.getOperationName(INVERT)));
     }
     
     public String getName() {
-        return "Invert";
+        return INVERT;
     }
 
     /**
@@ -103,11 +105,11 @@ public class Invert extends BaseMathOperationJAI {
     }
     
     protected void handleJAIEXTParams(ParameterBlockJAI parameters, ParameterValueGroup parameters2) {
-        if(JAIExt.isJAIExtOperation("algebric")){
+        if(JAIExt.isJAIExtOperation(ALGEBRIC)){
             parameters.set(Operator.INVERT, 0);
             Collection<GridCoverage2D> sources = (Collection<GridCoverage2D>) parameters2.parameter("sources").getValue();
             for(GridCoverage2D source : sources){
-                handleROINoDataInternal(parameters, source, "algebric", 1, 2);
+                handleROINoDataInternal(parameters, source, ALGEBRIC, 1, 2);
             }
         }
     }
@@ -115,6 +117,6 @@ public class Invert extends BaseMathOperationJAI {
     protected Map<String, ?> getProperties(RenderedImage data, CoordinateReferenceSystem crs,
             InternationalString name, MathTransform gridToCRS, GridCoverage2D[] sources,
             Parameters parameters) {
-        return handleROINoDataProperties(null, parameters.parameters, sources[0], "algebric", 1, 2, 3);
+        return handleROINoDataProperties(null, parameters.parameters, sources[0], ALGEBRIC, 1, 2, 3);
     }
 }
