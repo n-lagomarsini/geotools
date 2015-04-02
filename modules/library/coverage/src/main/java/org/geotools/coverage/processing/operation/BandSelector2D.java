@@ -240,6 +240,7 @@ final class BandSelector2D extends GridCoverage2D {
         if (targetBands != sourceBands) {
             image = w.setRenderingHints(hints).retainBands(bandIndices).getPlanarImage();
         } else {
+            // Calling Null operation since we only apply RenderingHints to the input image
             image = w.setRenderingHints(hints).nullOp().getPlanarImage();
         }
         // do we have a color model available?

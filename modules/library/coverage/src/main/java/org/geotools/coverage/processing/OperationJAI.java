@@ -1118,21 +1118,25 @@ public class OperationJAI extends Operation2D {
      * @param noDataIndex
      * @param backgroundIndex
      * 
-     * @return
+     * @return A {@link Map} containing all the coverage properties and also {@link ROI} and NoData if present
      */
     protected static Map<String, Object> handleROINoDataProperties(Map<String, Object> properties,
             ParameterBlockJAI parameters, GridCoverage2D sourceCoverage, String operationName,
             int roiIndex, int noDataIndex, int backgroundIndex) {
+        // Creation of the property map
         Map<String, Object> prop = new HashMap<>();
         if (properties != null) {
             prop.putAll(properties);
         }
-        // Setting the internal properties
+        // Check if the operation has been executed as JAI-EXT
         if (JAIExt.isJAIExtOperation(operationName)) {
+            // Selection of the ROI from the input ParameterBlock
             ROI roiParam = (ROI) parameters.getObjectParameter(roiIndex);
+            // Setting of the ROI property
             CoverageUtilities.setROIProperty(properties, roiParam);
-
+            // Searching for the nodata Range
             Range noDataParam = (Range) parameters.getObjectParameter(noDataIndex);
+            // Setting of the NoData parameter only if Background is defined
             if (noDataParam != null || roiParam != null) {
                 // NoData must be set
                 // Background has been set?
@@ -1147,11 +1151,25 @@ public class OperationJAI extends Operation2D {
         return prop;
     }
 
+    /**
+     * This method can be used for merging input coverage properties (ROI and NoData) with the ones provided as input in the ParameterBlock instance.
+     * If a ROI instance is already present as a coverage property, it will be intersected with an eventual ROI object defined as a parameter inside
+     * the ParameterBlock. If no NoData Range is defined in the parameters but is defined as coverage property, it will be set in the input
+     * ParameterBlock
+     * 
+     * @param parameters
+     * @param sourceCoverage
+     * @param operationName
+     * @param roiIndex
+     * @param noDataIndex
+     */
     protected static void handleROINoDataInternal(ParameterBlockJAI parameters,
             GridCoverage2D sourceCoverage, String operationName, int roiIndex, int noDataIndex) {
         // Getting the internal ROI property
         ROI innerROI = CoverageUtilities.getROIProperty(sourceCoverage);
-        if (JAIExt.isJAIExtOperation(operationName)) {
+        // Checking if it canbe set as parameter
+        if (JAIExt.isJAIExtOperation(operationName) && roiIndex >= 0) {
+            // Definition of the nwe ROI
             ROI roiParam = (ROI) parameters.getObjectParameter(roiIndex);
             ROI newROI = null;
             if (innerROI == null) {
@@ -1159,12 +1177,15 @@ public class OperationJAI extends Operation2D {
             } else {
                 newROI = roiParam != null ? innerROI.intersect(roiParam) : innerROI;
             }
+            // Setting of the new ROI
             parameters.set(newROI, roiIndex);
         }
 
+        // Getting NoData propery
         NoDataContainer nodataProp = CoverageUtilities.getNoDataProperty(sourceCoverage);
         Range innerNodata = (Range) ((nodataProp != null) ? nodataProp.getAsRange() : null);
-        if (JAIExt.isJAIExtOperation(operationName)) {
+        // Setting the NoData Range parameter if not present
+        if (JAIExt.isJAIExtOperation(operationName) && noDataIndex >= 0) {
             Range noDataParam = (Range) parameters.getObjectParameter(noDataIndex);
             if (noDataParam == null) {
                 parameters.set(innerNodata, noDataIndex);
@@ -1188,6 +1209,7 @@ public class OperationJAI extends Operation2D {
         Utilities.ensureNonNull("parameters", parameters);
         Utilities.ensureNonNull("sources", sources);
         Utilities.ensureNonNull("sourceNames", sourceNames);
+
         GridCoverage2D[] sourceArray = new GridCoverage2D[sourceNames.length];
         extractSources(parameters, sourceNames, sourceArray);
         sources.addAll(Arrays.asList(sourceArray));

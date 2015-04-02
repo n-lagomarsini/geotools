@@ -562,6 +562,7 @@ public class ImageWorker {
 
     /**
      * Returns the {@linkplain #getRenderedImage rendered image} after null operation.
+     * This operation may be used for setting new ImageProperties or for applying new RenderingHints.
      * 
      * @return The rendered operation.
      * 

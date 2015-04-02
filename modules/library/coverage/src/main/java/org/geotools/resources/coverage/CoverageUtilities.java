@@ -201,46 +201,79 @@ public final class CoverageUtilities {
         // Following may thrown MismatchedDimensionException.
         return new Envelope2D(coverage.getEnvelope());
     }
-    
-    public static NoDataContainer getNoDataProperty(GridCoverage2D coverage){
+
+    /**
+     * Utility method for extracting NoData property from input {@link GridCoverage2D}.
+     * 
+     * @param coverage
+     * @return A {@link NoDataContainer} object containing input NoData definition
+     */
+    public static NoDataContainer getNoDataProperty(GridCoverage2D coverage) {
+        // Searching for NoData property
         final Object noData = coverage.getProperty(NoDataContainer.GC_NODATA);
-        if(noData != null){
-            if(noData instanceof NoDataContainer){
+        if (noData != null) {
+            // Returning a new instance of NoDataContainer
+            if (noData instanceof NoDataContainer) {
                 return (NoDataContainer) noData;
-            }else if(noData instanceof Double){
-                return new NoDataContainer((Double)noData);
+            } else if (noData instanceof Double) {
+                return new NoDataContainer((Double) noData);
             }
         }
         return null;
     }
-    
-    public static ROI getROIProperty(GridCoverage2D coverage){
+
+    /**
+     * Utility method for extracting ROI property from input {@link GridCoverage2D}.
+     * 
+     * @param coverage
+     * @return A {@link ROI} object
+     */
+    public static ROI getROIProperty(GridCoverage2D coverage) {
+        // Searching for the ROI
         final Object roi = coverage.getProperty("GC_ROI");
-        if(roi != null && roi instanceof ROI){
+        // Returning it if present
+        if (roi != null && roi instanceof ROI) {
             return (ROI) roi;
         }
         return null;
     }
-    
-    public static void setNoDataProperty(Map<String, Object> properties, Object noData){
-        if(noData == null || properties == null){
+
+    /**
+     * Utility method for setting NoData to the input {@link Map}
+     * 
+     * @param properties {@link Map} where the nodata will be set
+     * @param noData May be a {@link Range}, double[], double or {@link NoDataContainer}
+     */
+    public static void setNoDataProperty(Map<String, Object> properties, Object noData) {
+        // If no nodata or no properties are defined, nothing is done
+        if (noData == null || properties == null) {
             return;
         }
-        if(noData instanceof Range){
+        // Creation of a new NoDataContainer instance and setting it inside the properties
+        if (noData instanceof Range) {
             properties.put(NoDataContainer.GC_NODATA, new NoDataContainer((Range) noData));
-        }else if(noData instanceof Double){
+        } else if (noData instanceof Double) {
             properties.put(NoDataContainer.GC_NODATA, new NoDataContainer((Double) noData));
-        }else if(noData instanceof double[]){
+        } else if (noData instanceof double[]) {
             properties.put(NoDataContainer.GC_NODATA, new NoDataContainer((double[]) noData));
-        }else if(noData instanceof NoDataContainer){
-            properties.put(NoDataContainer.GC_NODATA, new NoDataContainer((NoDataContainer) noData));
+        } else if (noData instanceof NoDataContainer) {
+            properties
+                    .put(NoDataContainer.GC_NODATA, new NoDataContainer((NoDataContainer) noData));
         }
     }
-    
-    public static void setROIProperty(Map<String, Object> properties, ROI roi){
-        if(roi == null || properties == null){
+
+    /**
+     * Utility method for setting ROI to the input {@link Map}
+     * 
+     * @param properties {@link Map} where the ROI will be set
+     * @param roi {@link ROI} instance to set
+     */
+    public static void setROIProperty(Map<String, Object> properties, ROI roi) {
+        // If no ROI or no properties are defined, nothing is done
+        if (roi == null || properties == null) {
             return;
         }
+        // Otherwise ROI is set
         properties.put("GC_ROI", roi);
     }
 

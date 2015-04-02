@@ -688,16 +688,24 @@ public class NetCDFUtilities {
         return Collections.unmodifiableSet(UNSUPPORTED_DIMENSIONS);
     }
 
+    /**
+     * Utility method for getting NoData from an input {@link Variable}
+     * 
+     * @param var Variable instance
+     * @return a Number representing NoData
+     */
     public static Number getNodata(Variable var) {
         if (var != null) {
+            // Getting all the Variable attributes
             List<Attribute> attributes = var.getAttributes();
             String fullName;
-            for (Attribute attribute: attributes) {
+            // Searching for FILL_VALUE or MISSING_VALUE attributes
+            for (Attribute attribute : attributes) {
                 fullName = attribute.getFullName();
-                if (fullName.equalsIgnoreCase(FILL_VALUE) || 
-                        fullName.equalsIgnoreCase(MISSING_VALUE)) {
+                if (fullName.equalsIgnoreCase(FILL_VALUE)
+                        || fullName.equalsIgnoreCase(MISSING_VALUE)) {
                     return attribute.getNumericValue();
-                } 
+                }
             }
         }
         return null;

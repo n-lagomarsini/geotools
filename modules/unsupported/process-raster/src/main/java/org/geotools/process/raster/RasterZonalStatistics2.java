@@ -32,6 +32,7 @@ import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.coverage.processing.operation.GridCoverage2DRIA;
+import org.geotools.coverage.processing.operation.ZonalStatistics;
 import org.geotools.process.factory.DescribeParameter;
 import org.geotools.process.factory.DescribeProcess;
 import org.geotools.process.factory.DescribeResult;
@@ -49,6 +50,10 @@ import com.vividsolutions.jts.geom.Polygon;
  * already transformed by the {@link GridCoverage2DRIA} operation. By default the input band is set 0, and the statistics
  * to MEAN, MAX, MIN, EXTREMA, VARIANCE, STANDARD DEVIATION.
  * 
+ * The main difference between this class and {@link RasterZonalStatistics} is the fact that this operation will calculate
+ * the requested statistics for all the {@link SimpleFeature}s in a single step, without having to iterate on the features.
+ * 
+ * This Process is a simple wrapper of the {@link ZonalStatistics} operation
  * 
  * @author geosolutions
  *

@@ -26,26 +26,31 @@ import org.geotools.referencing.NamedIdentifier;
 import org.opengis.parameter.ParameterDescriptor;
 import org.opengis.referencing.ReferenceIdentifier;
 
-public class ExtendedImagingParameterDescriptors extends
-		ImagingParameterDescriptors {
+/**
+ * Extension of the {@link ImagingParameterDescriptors} class used for setting the right operation name
+ *for the operation associated to the input {@link RegistryElementDescriptor}.
+ * 
+ * @author Nicola Lagomarsini Geosolutions
+ * 
+ */
+public class ExtendedImagingParameterDescriptors extends ImagingParameterDescriptors {
 
-	private ReferenceIdentifier operationName;
+    private ReferenceIdentifier operationName;
 
-	public ExtendedImagingParameterDescriptors(String operationName,
-			RegistryElementDescriptor operation) {
-		this(operationName, operation, null);
-	}
-	
-	ExtendedImagingParameterDescriptors(String operationName,
-			RegistryElementDescriptor operation, Collection<ParameterDescriptor> extension){
-		
-		super(operation, extension);
-		this.operationName = new NamedIdentifier(Citations.JAI, operationName);
-	}
+    public ExtendedImagingParameterDescriptors(String operationName,
+            RegistryElementDescriptor operation) {
+        this(operationName, operation, null);
+    }
 
-	@Override
-	public ReferenceIdentifier getName() {
-		return operationName;
-	}
+    ExtendedImagingParameterDescriptors(String operationName, RegistryElementDescriptor operation,
+            Collection<ParameterDescriptor> extension) {
+        super(operation, extension);
+        this.operationName = new NamedIdentifier(Citations.JAI, operationName);
+    }
+
+    @Override
+    public ReferenceIdentifier getName() {
+        return operationName;
+    }
 
 }
