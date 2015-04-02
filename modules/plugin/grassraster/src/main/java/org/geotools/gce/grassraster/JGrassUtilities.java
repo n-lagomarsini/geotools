@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2006-2011, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2006-2015, Open Source Geospatial Foundation (OSGeo)
  *    (C) 2010, HydroloGIS S.r.l.
  *
  *    This library is free software; you can redistribute it and/or
@@ -516,21 +516,6 @@ public class JGrassUtilities {
                 0F,
                 interpolation);
         return worker.getRenderedOperation();
-        //ParameterBlock block = new ParameterBlock();
-        //block.addSource(translatedImage);
-        //block.add((float) requestedCols / (float) translatedImage.getWidth());
-        //block.add((float) requestedRows / (float) translatedImage.getHeight());
-        // this is the translation, we have set to 0, an alternative is to put
-        // the value
-        // of the
-        // above operation but the result is different because this operation
-        // use a
-        // special
-        // formula.
-        //block.add(0F);
-        //block.add(0F);
-        //block.add(interpolation);
-        //return JAI.create("scale", block);
     }
 
     /**

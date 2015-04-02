@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2003-2011, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2003-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,6 @@ package org.geotools.renderer.lite;
 import static java.awt.RenderingHints.*;
 import static org.junit.Assert.*;
 
-import it.geosolutions.jaiext.algebra.constant.OperationConstOpImage;
 
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -29,11 +28,6 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-
-//import javax.media.jai.operator.BandCombineDescriptor;
-//import javax.media.jai.operator.BinarizeDescriptor;
-//import javax.media.jai.operator.ExtremaDescriptor;
-//import javax.media.jai.operator.OrDescriptor;
 
 import org.geotools.data.FeatureSource;
 import org.geotools.data.FeatureWriter;

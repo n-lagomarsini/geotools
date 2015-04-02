@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -196,7 +196,6 @@ class BandMergeNode extends BaseCoverageProcessingNode implements
 					w.setnoData(container != null ? container.getAsRange() : null);
 				}
 				else {
-					//op = BandMergeDescriptor.create(op, currentSourceCoverage.getRenderedImage(), hints);
 					w.setRenderingHints(hints);
 					// ROI handling
 					ROI roi = w.getROI();
@@ -232,7 +231,6 @@ class BandMergeNode extends BaseCoverageProcessingNode implements
 			if (layout != null)
 				hints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout));
 			op = w.format(op.getSampleModel().getDataType()).getRenderedImage();
-			//op = FormatDescriptor.create(op, Integer.valueOf(op.getSampleModel().getDataType()), hints);
 			final GridSampleDimension [] sd= new GridSampleDimension[op.getSampleModel().getNumBands()];
 			for(int i=0;i<sd.length;i++)
 			    sd[i]= new GridSampleDimension(TypeMap.getColorInterpretation(op.getColorModel(), i).name());

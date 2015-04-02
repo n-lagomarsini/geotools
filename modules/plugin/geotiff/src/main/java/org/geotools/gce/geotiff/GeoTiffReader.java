@@ -704,8 +704,7 @@ public class GeoTiffReader extends AbstractGridCoverage2DReader implements GridC
         if (!Double.isNaN(noData)){
             noDataCategory = new Category(Vocabulary
                     .formatInternational(VocabularyKeys.NODATA), new Color[] { new Color(0, 0, 0, 0) }, NumberRange
-                    .create(noData, noData)/*, NumberRange
-                    .create(noData, noData)*/);
+                    .create(noData, noData));
             CoverageUtilities.setNoDataProperty(properties, new Double(noData));
         }
         

@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2002-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2002-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -35,7 +35,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageOutputStream;
 import javax.media.jai.Interpolation;
 
@@ -93,26 +92,6 @@ public final class ArcGridWriter extends AbstractGridCoverageWriter implements G
 	private final static CoverageProcessor processor = CoverageProcessor.getInstance(new Hints(
 				Hints.LENIENT_DATUM_SHIFT, Boolean.TRUE));
 
-	/** Default {@link ParameterValueGroup} for doing a bandselect. */
-	//private final static ParameterValueGroup bandSelectParams;
-
-	/** Default {@link ParameterValueGroup} for doing a reshape. */
-	//private final static ParameterValueGroup reShapeParams;
-
-	/** Caching a {@link Resample} operation. */
-	//private static final Resample resampleFactory = new Resample();
-
-	/** Caching a {@link SelectSampleDimension} operation. */
-	//private static final SelectSampleDimension bandSelectFactory = new SelectSampleDimension();
-//	static {
-//		CoverageProcessor processor = new CoverageProcessor(new Hints(
-//				Hints.LENIENT_DATUM_SHIFT, Boolean.TRUE));
-//		bandSelectParams = (ParameterValueGroup) processor.getOperation(
-//				"SelectSampleDimension").getParameters();
-//
-//		reShapeParams = (ParameterValueGroup) processor
-//				.getOperation("Resample").getParameters();
-//	}
 
 	/** Small number for comparisons of angles in this pugin. */
 	private static final double ROTATION_EPS = 1E-3;

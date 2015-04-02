@@ -514,22 +514,6 @@ public class GrassCoverageReader extends AbstractGridCoverage2DReader implements
         worker.border(Math.abs(xPaddingSx), Math.abs(0), Math.abs(yPaddingTop), Math.abs(0), new BorderExtenderConstant(new double[]{Double.NaN}));        
         worker.translate((float)-xPaddingSx, (float)-yPaddingTop, null);
         return worker.getRenderedImage();
-        
-        //ParameterBlock block = new ParameterBlock();
-        //block.addSource(image);
-        //block.add(Math.abs(xPaddingSx));
-        //block.add(Math.abs(0));
-        //block.add(Math.abs(yPaddingTop));
-        //block.add(Math.abs(0));
-        //block.add(new BorderExtenderConstant(new double[]{Double.NaN}));
-        //RenderedOp paddedImage = JAI.create("Border", block);
-
-        //block = new ParameterBlock();
-        //block.addSource(paddedImage);
-        //block.add((float) -xPaddingSx);
-        //block.add((float) -yPaddingTop);
-        //return JAI.create("translate", block);
-
     }
 
     private GridSampleDimension createGridSampleDimension( HashMap<String, String> metaDataTable, double[] range )

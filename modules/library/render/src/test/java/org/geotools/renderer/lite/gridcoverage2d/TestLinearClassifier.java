@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2002-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2002-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -74,92 +74,6 @@ public class TestLinearClassifier extends Assert {
 
 	private static final int TEST_NUM = 1;
 
-//	static {
-//		RasterClassifier.register(JAI.getDefaultInstance());
-//	}
-
-//
-//	public static TestSuite suite() {
-//		TestSuite suite = new TestSuite();
-////		suite.addTest(new TestLinearClassifier("testSWAN"));
-////		suite.addTest(new TestLinearClassifier("testSWANGAP"));
-////		suite.addTest(new TestLinearClassifier("testSynthetic_Double"));
-////		suite.addTest(new TestLinearClassifier("testSynthetic_Float"));
-//		suite.addTest(new TestLinearClassifier("testSpearfish"));
-////		suite.addTest(new TestLinearClassifier("testNoDataOnly"));
-//
-//		return suite;
-//	}
-
-
-//
-//	/**
-//	 * Testing Piecewise operation.
-//	 * 
-//	 * @throws IOException
-//	 * @throws TransformException
-//	 */
-//	public void testPiecewise() throws IOException, TransformException {
-//		// /////////////////////////////////////////////////////////////////////
-//		//
-//		// This test is quite standard since the NoData category specified
-//		// is for NoData values since the input file is a GRASS ascii file
-//		// where the missing values are represented by * which are substituted
-//		// with NaN during reads. The only strange thing that we try here is
-//		// that we map two different classes to the same color with the same
-//		// index.
-//		//
-//		// /////////////////////////////////////////////////////////////////////
-//		final RenderedImage image = getSpearfhisDemo();
-//
-//		// for (int i = 0; i < TEST_NUM; i++) {
-//		final LinearColorMapElement c0 = LinearColorMapElement
-//				.create("c0", Color.yellow, new NumberRange(
-//						Double.NEGATIVE_INFINITY, false, 1100, true), 5);
-//
-//		final LinearColorMapElement c1 = LinearColorMapElement
-//				.create("c2", Color.blue, new NumberRange(1100.0, false,
-//						1200.0, true), 1);
-//
-//		final LinearColorMapElement c3 = LinearColorMapElement
-//				.create("c3", Color.green, new NumberRange(1200.0, false,
-//						1400.0, true), 7);
-//
-//		final LinearColorMapElement c4 = LinearColorMapElement
-//				.create("c4", Color.blue, new NumberRange(1400.0, false, 1600,
-//						true), 1);
-//
-//		final LinearColorMapElement c5 = LinearColorMapElement
-//				.create("c4", Color.CYAN, new NumberRange(1600.0, false,
-//						Double.POSITIVE_INFINITY, true), 11);
-//
-//		final LinearColorMapElement c6 = LinearColorMapElement
-//				.create("nodata", new Color(0, 0, 0, 0), new NumberRange(
-//						Double.NaN, Double.NaN), 0);
-//
-//		final LinearColorMap list = new LinearColorMap(
-//				new LinearColorMapElement[] { c0, c1, c3, c4, c5 },
-//				new LinearColorMapElement[] { c6 });
-//
-//		// assertFalse(10f < 10f + 3 * Float.MIN_VALUE);
-//		// final int actualNumber = Float.floatToRawIntBits(10f);
-//		// final int comparisonNumber = Float.floatToRawIntBits(10f)
-//		// + Float.floatToRawIntBits(3 * Float.MIN_VALUE);
-//		// assertTrue(-actualNumber + comparisonNumber > 0);
-//
-//		final ParameterBlockJAI pbj = new ParameterBlockJAI("PieceWise");
-//		pbj.addSource(image);
-//		final float breakp[][][] = new float[1][2][];
-//		breakp[0][0] = new float[] { 0f, 10f, 10f + 3f * Float.MIN_VALUE, 20f,
-//				20f + 3f * Float.MIN_VALUE, 30f, 30f + 3f * Float.MIN_VALUE,
-//				40f, 256f };
-//		breakp[0][1] = new float[] { 0f, 0f, 1f, 1f, 2f, 2f, 3f, 3f, 4f };
-//		pbj.setParameter("breakPoints", breakp);
-//		final RenderedOp d = JAI.create("PieceWise", pbj);
-//		d.getTiles();
-//		d.dispose();
-//
-//	}
 
 	/**
 	 * Synthetic with Double Sample Model!
@@ -333,13 +247,7 @@ public class TestLinearClassifier extends Assert {
 					new LinearColorMapElement[] { c7 });
 
 			ImageWorker w = new ImageWorker(image);
-			//final ParameterBlockJAI pbj = new ParameterBlockJAI(
-			        //RasterClassifierOpImage.OPERATION_NAME);
-			//pbj.addSource(image);
-			//pbj.setParameter("Domain1D", list);
 			final RenderedOp finalimage = w.classify(list, null).getRenderedOperation();
-			//final RenderedOp finalimage = JAI.create(
-			        //RasterClassifierOpImage.OPERATION_NAME, pbj);
 
 			if (TestData.isInteractiveTest())
 			    ImageIOUtilities.visualize(finalimage, "synthetic");
@@ -422,12 +330,6 @@ public class TestLinearClassifier extends Assert {
 					new LinearColorMapElement[] { c6 });
 
 			ImageWorker w = new ImageWorker(image);
-			//final ParameterBlockJAI pbj = new ParameterBlockJAI(
-			        //RasterClassifierOpImage.OPERATION_NAME);
-			//pbj.addSource(image);
-			//pbj.setParameter("Domain1D", list);
-			//final RenderedOp finalimage = JAI.create(
-					//RasterClassifierOpImage.OPERATION_NAME, pbj);
 			final RenderedOp finalimage = w.classify(list, null).getRenderedOperation();
 
 			if (TestData.isInteractiveTest())
@@ -526,20 +428,13 @@ public class TestLinearClassifier extends Assert {
 			assertEquals(list.getName().toString(), "testSWAN");
 			assertNotNull(c0.toString());
 			
-			//final ParameterBlockJAI pbj = new ParameterBlockJAI(
-			        //RasterClassifierOpImage.OPERATION_NAME);
-			//pbj.addSource(image);
-			//pbj.setParameter("Domain1D", list);
 			ImageWorker w = new ImageWorker(image);
 			boolean exceptionThrown = false;
 			try {
 				// //
 				// forcing a bad band selection ...
 				// //
-				//pbj.setParameter("bandIndex", new Integer(2));
 				final RenderedOp d = w.classify(list, new Integer(2)).getRenderedOperation();
-				        //JAI.create(
-				        //RasterClassifierOpImage.OPERATION_NAME, pbj);
 				d.getTiles();
 				// we should not be here!
 				
@@ -619,21 +514,13 @@ public class TestLinearClassifier extends Assert {
 					new LinearColorMapElement[] { c0, c1, c3, c4 },
 					new LinearColorMapElement[] { nodata }, new Color(0,0,0,0));
 		
-
-			//final ParameterBlockJAI pbj = new ParameterBlockJAI(
-			        //RasterClassifierOpImage.OPERATION_NAME);
-			//pbj.addSource(image);
-			//pbj.setParameter("Domain1D", list);
 			ImageWorker w = new ImageWorker(image);
 			boolean exceptionThrown = false;
 			try {
 				// //
 				// forcing a bad band selection ...
 				// //
-				//pbj.setParameter("bandIndex", new Integer(2));
 				final RenderedOp d = w.classify(list, new Integer(2)).getRenderedOperation();
-				        //JAI.create(
-				        //RasterClassifierOpImage.OPERATION_NAME, pbj);
 				d.getTiles();
 				// we should not be here!
 				
@@ -645,10 +532,7 @@ public class TestLinearClassifier extends Assert {
 			}
 			assertTrue(exceptionThrown);
 
-			//pbj.setParameter("bandIndex", new Integer(0));
 			final RenderedOp finalImage = w.classify(list, new Integer(0)).getRenderedOperation();
-			        //JAI.create(
-			        //RasterClassifierOpImage.OPERATION_NAME, pbj);
 			final IndexColorModel icm=(IndexColorModel) finalImage.getColorModel();
 			assertEquals(icm.getRed(4),255);
 			assertEquals(icm.getRed(2),255);

@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  *
- *    (C) 2002-2011, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2002-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -65,16 +65,8 @@ final class GridCoverageRendererUtilities {
         //      
         // ///////////////////////////////////////////////////////////////////
         
-        //RESAMPLING_PARAMS = processor.getOperation("Resample").getParameters();
-        //CROP_PARAMS = processor.getOperation("CoverageCrop").getParameters();
-        //MOSAIC_PARAMS = processor.getOperation("Mosaic").getParameters();
     }
     
-    /** Cached factory for the {@link Crop} operation. */
-     //final static Crop CROP_FACTORY = new Crop();
-     
-    /** Cached factory for the {@link Crop} operation. */
-    //final static Mosaic MOSAIC_FACTORY = new Mosaic();
 
     // FORMULAE FOR FORWARD MAP are derived as follows
     //     Nearest
@@ -282,17 +274,6 @@ final class GridCoverageRendererUtilities {
     	return retValue;
     }
 
-    /** Parameters used to control the {@link Resample} operation. */
-    //final static ParameterValueGroup RESAMPLING_PARAMS;
-    
-    /** Parameters used to control the {@link Crop} operation. */
-    //static ParameterValueGroup CROP_PARAMS;
-    
-    /** Parameters used to control the {@link Mosaic} operation. */
-    //static ParameterValueGroup MOSAIC_PARAMS;
-
-    /** Parameters used to control the {@link Scale} operation. */
-    //static final Resample RESAMPLE_FACTORY = new Resample();
     /**
      * Reprojecting the input coverage using the provided parameters.
      * 

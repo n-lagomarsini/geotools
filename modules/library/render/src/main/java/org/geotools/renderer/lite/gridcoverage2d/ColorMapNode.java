@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2005-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2005-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -64,17 +64,6 @@ class ColorMapNode extends StyleVisitorCoverageProcessingNodeAdapter implements
 		return Vocabulary.formatInternational(VocabularyKeys.COLOR_MAP);
 	}
 
-//	/** {@link Logger} for this class. */
-//	private final static Logger LOGGER = Logging.getLogger(ColorMapNode.class.getName());
-//	static {
-//		try {
-//			if (JAI.getDefaultInstance().getOperationRegistry().getDescriptor(
-//					OperationDescriptor.class, RasterClassifier.OPERATION_NAME) == null)
-//				RasterClassifier.register(JAI.getDefaultInstance());
-//		} catch (Exception e) {
-//			LOGGER.log(Level.SEVERE, e.getLocalizedMessage(), e);
-//		}
-//	}
 
 	/**
 	 * Stores the type of {@link ColorMapTransform} we want to use for this node.
@@ -293,8 +282,6 @@ class ColorMapNode extends StyleVisitorCoverageProcessingNodeAdapter implements
 	        NoDataContainer noDataProperty = CoverageUtilities.getNoDataProperty(sourceCoverage);
                 w.setnoData(noDataProperty != null ? noDataProperty.getAsRange() : null);
 	        w.classify(colorMapTransform, null);
-	        //final ParameterBlock pbj = new ParameterBlock();
-	        //pbj.addSource(sourceImage).add(colorMapTransform);
 	        final RenderedOp classified = w.getRenderedOperation();//JAI.create(RasterClassifierOpImage.OPERATION_NAME,pbj);
 
 	        ////

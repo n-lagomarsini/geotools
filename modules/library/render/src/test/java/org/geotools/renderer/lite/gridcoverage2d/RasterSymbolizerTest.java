@@ -2,7 +2,7 @@
  *    GeoTools - The Open Source Java GIS Toolkit
  *    http://geotools.org
  * 
- *    (C) 2002-2008, Open Source Geospatial Foundation (OSGeo)
+ *    (C) 2002-2015, Open Source Geospatial Foundation (OSGeo)
  *
  *    This library is free software; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,6 @@
 package org.geotools.renderer.lite.gridcoverage2d;
 
 import it.geosolutions.imageio.utilities.ImageIOUtilities;
-import it.geosolutions.rendered.viewer.RenderedImageBrowser;
 
 import java.awt.Color;
 import java.awt.Rectangle;
@@ -59,7 +58,6 @@ import org.geotools.factory.FactoryRegistryException;
 import org.geotools.factory.GeoTools;
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.image.ImageWorker;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.referencing.operation.builder.GridToEnvelopeMapper;
 import org.geotools.resources.image.ComponentColorModelJAI;
@@ -604,102 +602,94 @@ public class RasterSymbolizerTest  extends org.junit.Assert{
 
 	}
 
-	        @Test
-	        public void bandsUInt16_SLDROI() throws IOException, TransformerException, FactoryRegistryException, IllegalArgumentException, URISyntaxException {
-	                // the GridCoverage
-	                final GridSampleDimension[] gsd={
-	                                new GridSampleDimension("test1BandByte_SLD1"),
-	                };
-	                GeneralEnvelope envelope = new GeneralEnvelope(new double[] { -180,-90 },new double[] { 180,90 });
-	                    envelope.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);                  
-	                RenderedOp image = JAI.create("ImageRead", new File(TestData.url(this, "test.tif").toURI()));
-	                
-	                Map properties = new HashMap();
-	                properties.put("GC_ROI", new ROIShape(new Rectangle(image.getMinX() + 1, image.getMinY() + 1, image.getWidth()/2, image.getHeight()/2)));
-	                
-	                GridCoverage2D gc = CoverageFactoryFinder.getGridCoverageFactory(null)
-	                                .create(
-	                                                "name",
-	                                                image,
-	                                                envelope,
-	                                                gsd,
-	                                                null,
-	                                                properties);
+    @Test
+    public void bandsUInt16_SLDROI() throws IOException, TransformerException,
+            FactoryRegistryException, IllegalArgumentException, URISyntaxException {
+        // the GridCoverage
+        final GridSampleDimension[] gsd = { new GridSampleDimension("test1BandByte_SLD1"), };
+        GeneralEnvelope envelope = new GeneralEnvelope(new double[] { -180, -90 }, new double[] {
+                180, 90 });
+        envelope.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+        RenderedOp image = JAI
+                .create("ImageRead", new File(TestData.url(this, "test.tif").toURI()));
 
-	                // ////////////////////////////////////////////////////////////////////
-	                //
-	                // Test #1: [SLD]
-	                //    - Opacity: 1.0
-	                //    - ChannelSelection: RGB
-	                //    - Contrast Enh: Histogram
-	                //
-	                // ////////////////////////////////////////////////////////////////////
-	                java.net.URL surl = TestData.url(this, "4bands_UInt16_test1.sld");
-	                SLDParser stylereader = new SLDParser(sf, surl);
-	                StyledLayerDescriptor sld = stylereader.parseSLD();
-	                // the RasterSymbolizer Helper
-	                SubchainStyleVisitorCoverageProcessingAdapter rsh = new RasterSymbolizerHelper(gc, null);
+        Map properties = new HashMap();
+        properties.put("GC_ROI", new ROIShape(new Rectangle(image.getMinX() + 1,
+                image.getMinY() + 1, image.getWidth() / 2, image.getHeight() / 2)));
 
-	                // build the RasterSymbolizer
-	                final RasterSymbolizer rs_1 = extractRasterSymbolizer(sld);
+        GridCoverage2D gc = CoverageFactoryFinder.getGridCoverageFactory(null).create("name",
+                image, envelope, gsd, null, properties);
 
-	                // visit the RasterSymbolizer
-	                rsh.visit(rs_1);
-	                testRasterSymbolizerHelper(rsh);
-	                
-	                
-	                // ////////////////////////////////////////////////////////////////////
-	                //
-	                // Test #1: [StyleBuilder]
-	                //    - Opacity: 1.0
-	                //    - ChannelSelection: RGB
-	                //        - Contrast Enh: Histogram
-	                //
-	                // ////////////////////////////////////////////////////////////////////
-	                RenderedOp image2 = JAI.create("ImageRead", new File(TestData.url(this, "small_4bands_UInt16.tif").toURI()));
-	                //ImageWorker w = new ImageWorker(image2);
-	                //image2 = w.format(DataBuffer.TYPE_BYTE).getRenderedOperation();
-	                properties = new HashMap();
-                        properties.put("GC_ROI", new ROIShape(new Rectangle(image2.getMinX() + 1, image2.getMinY() + 1, image2.getWidth()/2, image2.getHeight()/2)));
-	                gc = CoverageFactoryFinder.getGridCoverageFactory(null)
-	                .create(
-	                                "name",
-	                                image2,
-	                                new GeneralEnvelope(new double[] { -90, -180 },new double[] { 90, 180 }), null, null, properties);
-	                // the RasterSymbolizer Helper
-	                rsh = new RasterSymbolizerHelper(gc, null);
-	                // build the RasterSymbolizer
-	                StyleBuilder sldBuilder = new StyleBuilder();
-	                // the RasterSymbolizer Helper
-	                rsh = new RasterSymbolizerHelper(gc, null);
+        // ////////////////////////////////////////////////////////////////////
+        //
+        // Test #1: [SLD]
+        // - Opacity: 1.0
+        // - ChannelSelection: RGB
+        // - Contrast Enh: Histogram
+        //
+        // ////////////////////////////////////////////////////////////////////
+        java.net.URL surl = TestData.url(this, "4bands_UInt16_test1.sld");
+        SLDParser stylereader = new SLDParser(sf, surl);
+        StyledLayerDescriptor sld = stylereader.parseSLD();
+        // the RasterSymbolizer Helper
+        SubchainStyleVisitorCoverageProcessingAdapter rsh = new RasterSymbolizerHelper(gc, null);
 
-	                final RasterSymbolizer rsb_1 = sldBuilder.createRasterSymbolizer();
-	                final ChannelSelection chSel = new ChannelSelectionImpl();
-	                final SelectedChannelType chTypeRed     = new SelectedChannelTypeImpl();
-	                final SelectedChannelType chTypeBlue    = new SelectedChannelTypeImpl();
-	                final SelectedChannelType chTypeGreen   = new SelectedChannelTypeImpl();
-	                final ContrastEnhancement cntEnh = new ContrastEnhancementImpl();
+        // build the RasterSymbolizer
+        final RasterSymbolizer rs_1 = extractRasterSymbolizer(sld);
 
-	                cntEnh.setMethod(ContrastMethod.HISTOGRAM);;
-	                //cntEnh.setGammaValue(sldBuilder.literalExpression(0.50));
-	                
-	                chTypeRed.setChannelName("1");
-	                chTypeBlue.setChannelName("2");
-	                chTypeGreen.setChannelName("3");
-	                
-	                chSel.setRGBChannels(chTypeRed, chTypeBlue, chTypeGreen);
+        // visit the RasterSymbolizer
+        rsh.visit(rs_1);
+        testRasterSymbolizerHelper(rsh);
 
-	                rsb_1.setChannelSelection(chSel);
-	                rsb_1.setOpacity(sldBuilder.literalExpression(1.0));
-	                rsb_1.setContrastEnhancement(cntEnh);
-	                rsb_1.setOverlap(sldBuilder.literalExpression("AVERAGE"));
-	                
-	                // visit the RasterSymbolizer
-	                rsh.visit(rsb_1);
-	                
-	                testRasterSymbolizerHelper(rsh);
+        // ////////////////////////////////////////////////////////////////////
+        //
+        // Test #1: [StyleBuilder]
+        // - Opacity: 1.0
+        // - ChannelSelection: RGB
+        // - Contrast Enh: Histogram
+        //
+        // ////////////////////////////////////////////////////////////////////
+        RenderedOp image2 = JAI.create("ImageRead",
+                new File(TestData.url(this, "small_4bands_UInt16.tif").toURI()));
+        properties = new HashMap();
+        properties.put("GC_ROI", new ROIShape(new Rectangle(image2.getMinX() + 1,
+                image2.getMinY() + 1, image2.getWidth() / 2, image2.getHeight() / 2)));
+        gc = CoverageFactoryFinder.getGridCoverageFactory(null).create("name", image2,
+                new GeneralEnvelope(new double[] { -90, -180 }, new double[] { 90, 180 }), null,
+                null, properties);
+        // the RasterSymbolizer Helper
+        rsh = new RasterSymbolizerHelper(gc, null);
+        // build the RasterSymbolizer
+        StyleBuilder sldBuilder = new StyleBuilder();
+        // the RasterSymbolizer Helper
+        rsh = new RasterSymbolizerHelper(gc, null);
 
-	        }
+        final RasterSymbolizer rsb_1 = sldBuilder.createRasterSymbolizer();
+        final ChannelSelection chSel = new ChannelSelectionImpl();
+        final SelectedChannelType chTypeRed = new SelectedChannelTypeImpl();
+        final SelectedChannelType chTypeBlue = new SelectedChannelTypeImpl();
+        final SelectedChannelType chTypeGreen = new SelectedChannelTypeImpl();
+        final ContrastEnhancement cntEnh = new ContrastEnhancementImpl();
+
+        cntEnh.setMethod(ContrastMethod.HISTOGRAM);
+
+        chTypeRed.setChannelName("1");
+        chTypeBlue.setChannelName("2");
+        chTypeGreen.setChannelName("3");
+
+        chSel.setRGBChannels(chTypeRed, chTypeBlue, chTypeGreen);
+
+        rsb_1.setChannelSelection(chSel);
+        rsb_1.setOpacity(sldBuilder.literalExpression(1.0));
+        rsb_1.setContrastEnhancement(cntEnh);
+        rsb_1.setOverlap(sldBuilder.literalExpression("AVERAGE"));
+
+        // visit the RasterSymbolizer
+        rsh.visit(rsb_1);
+
+        testRasterSymbolizerHelper(rsh);
+
+    }
 	
 	private static RasterSymbolizer extractRasterSymbolizer(StyledLayerDescriptor sld) {
 		final UserLayer nl = (UserLayer) sld.getStyledLayers()[0];
