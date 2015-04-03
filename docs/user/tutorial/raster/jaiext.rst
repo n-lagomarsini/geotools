@@ -42,7 +42,7 @@ Such methods allows to replace the *OperationDescriptor* associated to an operat
 
 .. note:: *OperationDescriptor* is a class describing the parameters to set for executing a JAI/JAI-EXT operation.
 
-In order to avoid exceptions when replacing the *OperationDescriptor* associated to a JAI/JAI-EXT operation, users should take care om how to launch a JAI/JAI-EXT operation:
+In order to avoid exceptions when replacing the *OperationDescriptor* associated to a JAI/JAI-EXT operation, users should take care on how to launch a JAI/JAI-EXT operation:
 
 #. Using a *ParameterBlock* instance, which does not provide the same checks present in the *ParameterBlockJAI* class which may lead to unexpected exceptions. Here is an example
 

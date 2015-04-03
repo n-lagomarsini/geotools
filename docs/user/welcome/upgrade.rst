@@ -39,7 +39,7 @@ This integration provides also the removal of the following classes, since they 
 
 Users may now decide to choose between JAI and JAI-EXT operations by simply using the **JAIExt** class containing utility methods for handling JAI/JAI-EXT registration.
 
-A more detailed tutorial on how to use JAI-EXT may be found at the following `JAI-EXT Tutorial Page <http://docs.geotools.org/latest/userguide/tutorial/raster/jaiext.html>`_.
+A more detailed tutorial on how to use JAI-EXT may be found at the following :ref:`JAI-EXT Tutorial Page<jaiext>`.
 
 GeoTools 13.0
 -------------
