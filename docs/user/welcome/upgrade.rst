@@ -37,28 +37,9 @@ This integration provides also the removal of the following classes, since they 
 * **RasterClassifier** from *gt-render* module;
 * **ArtifactsFilter** from *gt-imagemosaic* module.
 
-Users may now decide to choose between JAI and JAI-EXT operations by simply using the **JAIExt** class containing utility methods for handling JAI/JAI-EXT registration. It should be pointed out that when changing the registered *OperationDescriptor* for an operation, users must take care of removing and the re-adding the related GeoTools operation in order to avoid to use an old *OperationDescriptor* instead the new registered one. Here users may find an example of JAI/JAI-EXT operation registration::
+Users may now decide to choose between JAI and JAI-EXT operations by simply using the **JAIExt** class containing utility methods for handling JAI/JAI-EXT registration.
 
-	JAIExt.registerJAIDescriptor("Warp") --> Replace the JAI-EXT "Warp" operation with the JAI one 
-	
-	JAIExt.registerJAIEXTDescriptor("Warp") --> Replace the JAI "Warp" operation with the JAI-EXT one
-
-Here users may simply update all the CoverageProcessors instance (created using *CoverageProcessor.getInstance()*), when a new *OperationDescriptor* has been registered::
-	
-	CoverageProcessor.removeOperationFromProcessors("Warp"); --> Removal of the operation from the processors
-	
-	CoverageProcessor.updateProcessors(); --> Update of all the processors with the new operation
-	
-It is also suggested to launch JAI/JAI-EXT operations from an **ImageWorker** instance, which already handles ROI and NoData internally, or directly calling **JAI.create()** methods in order to avoid any check introduced by an JAI operations when using ROI or NoData.
-
-.. note:: The main aim is to completely replace all the JAI framework. In this temporary phase users may notice a few error messages on startup similar to this one:
-	
-	.. code-block:: bash
-		
-		Error in registry file at line number #5
-		A descriptor is already registered against the name "OrderedDither" under registry mode "rendered"
-	
-	This errors are reported by JAI at low level and will be removed when JAI will be totally replaced.
+A more detailed tutorial on how to use JAI-EXT may be found at the following `JAI-EXT Tutorial Page <http://docs.geotools.org/latest/userguide/tutorial/raster/jaiext.html>`_.
 
 GeoTools 13.0
 -------------
