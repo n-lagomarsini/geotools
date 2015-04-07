@@ -94,6 +94,7 @@ import org.opengis.referencing.operation.MathTransform2D;
 import org.opengis.util.InternationalString;
 import org.opengis.util.ProgressListener;
 
+import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
 import ucar.nc2.Variable;
 import ucar.nc2.constants.AxisType;
@@ -637,7 +638,7 @@ public class VariableAdapter extends CoverageSourceDescriptor {
         // ////
         // Creating the CoordinateReferenceSystem
         // ////
-        coordinateReferenceSystem=NetCDFCRSUtilities.WGS84;
+        coordinateReferenceSystem = parseCoordinateReferenceSystem(variableDS);
 
         /*
          * Adds the axis in reverse order, because the NetCDF image reader put the last dimensions in the rendered image. Typical NetCDF convention is
@@ -668,6 +669,15 @@ public class VariableAdapter extends CoverageSourceDescriptor {
             
         }
         return otherAxes;
+    }
+
+    private CoordinateReferenceSystem parseCoordinateReferenceSystem(VariableDS variableDS) {
+        Attribute gridMappingAttribute = variableDS.findAttribute(NetCDFUtilities.GRID_MAPPING);
+        if (gridMappingAttribute != null) {
+            String mappingName = gridMappingAttribute.getStringValue();
+            // TODO: setup proper coordinateReferenceSystem
+        }
+        return NetCDFCRSUtilities.WGS84;
     }
 
     /**
