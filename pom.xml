@@ -1107,6 +1107,11 @@
         <version>${jaiext.version}</version>
       </dependency>
       <dependency>
+        <groupId>it.geosolutions.jaiext.bandcombine</groupId>
+        <artifactId>jt-bandcombine</artifactId>
+        <version>${jaiext.version}</version>
+      </dependency>
+      <dependency>
         <groupId>it.geosolutions.jaiext.border</groupId>
         <artifactId>jt-border</artifactId>
         <version>${jaiext.version}</version>
