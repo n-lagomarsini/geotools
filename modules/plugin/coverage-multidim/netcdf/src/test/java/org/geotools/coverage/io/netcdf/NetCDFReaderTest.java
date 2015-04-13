@@ -49,6 +49,7 @@ import org.geotools.geometry.DirectPosition2D;
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.geotools.referencing.operation.projection.TransverseMercator;
 import org.geotools.resources.coverage.CoverageUtilities;
 import org.geotools.resources.coverage.FeatureUtilities;
 import org.geotools.test.TestData;
@@ -66,6 +67,11 @@ import org.opengis.parameter.ParameterValue;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.crs.GeographicCRS;
+import org.opengis.referencing.crs.ProjectedCRS;
+import org.opengis.referencing.operation.MathTransform;
+import org.opengis.referencing.operation.Projection;
 
 public class NetCDFReaderTest extends Assert {
 
@@ -841,6 +847,32 @@ public class NetCDFReaderTest extends Assert {
         assertEquals(d, 0d, DELTA);
     }
 
+    @Test
+    public void testUTMProjection() throws Exception {
+        final File file = TestData.file(this, "utm.nc");
+        NetCDFReader reader = null;
+        try {
+            reader = new NetCDFReader(file, null);
+            String[] coverages = reader.getGridCoverageNames();
+            CoordinateReferenceSystem crs = reader.getCoordinateReferenceSystem(coverages[0]);
+            assertTrue(crs instanceof ProjectedCRS);
+            ProjectedCRS projectedCRS = ((ProjectedCRS) crs);
+            GeographicCRS baseCRS = projectedCRS.getBaseCRS();
+            assertTrue(CRS.equalsIgnoreMetadata(baseCRS, DefaultGeographicCRS.WGS84));
+            Projection projection = projectedCRS.getConversionFromBase();
+            MathTransform transform = projection.getMathTransform();
+            assertTrue(transform instanceof TransverseMercator);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.dispose();
+                } catch (Throwable t) {
+                    // Does nothing
+                }
+            }
+        }
+    }
+    
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Test
     @Ignore
