@@ -81,6 +81,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.Name;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.crs.GeographicCRS;
 
 import com.vividsolutions.jts.geom.Envelope;
 
@@ -663,7 +664,10 @@ public class NetCDFImageReader extends GeoSpatialImageReader implements FileSetM
         Hashtable<String, Object> properties = getNoDataProperties(wrapper);
         final BufferedImage image = new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), properties);
 
-        CoordinateAxis axis = wrapper.variableDS.getCoordinateSystems().get(0).getLatAxis();
+        CoordinateSystem cs = wrapper.variableDS.getCoordinateSystems().get(0);
+        CoordinateReferenceSystem crs = wrapper.getSpatialDomain().getCoordinateReferenceSystem2D();
+        boolean latLon = crs instanceof GeographicCRS;
+        CoordinateAxis axis = latLon ? cs.getLatAxis() : cs.getYaxis();
         boolean flipYAxis = false;
         try {
             Array yAxisStart = axis.read(new Section().appendRange(2));

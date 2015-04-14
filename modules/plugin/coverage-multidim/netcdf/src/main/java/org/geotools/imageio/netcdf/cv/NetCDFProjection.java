@@ -160,7 +160,7 @@ public class NetCDFProjection {
         lazeq_mapping.put(FALSE_EASTING, CF.FALSE_EASTING);
         lazeq_mapping.put(FALSE_NORTHING, CF.FALSE_NORTHING);
         LAMBERT_AZIMUTHAL_EQUAL_AREA = new NetCDFProjection(CF.LAMBERT_AZIMUTHAL_EQUAL_AREA, lazeq_mapping);
-        
+
         // Setting up Transverse Mercator
         Map<String, String> tm_mapping = new HashMap<String, String>();
         tm_mapping.put(SCALE_FACTOR, CF.SCALE_FACTOR_AT_CENTRAL_MERIDIAN);
@@ -190,8 +190,6 @@ public class NetCDFProjection {
         lcc_2sp_mapping.put(STANDARD_PARALLEL_2, CF.STANDARD_PARALLEL);
         LAMBERT_CONFORMAL_CONIC_2SP = new NetCDFProjection(CF.LAMBERT_CONFORMAL_CONIC + "_2SP", lcc_2sp_mapping);
 
-        
-        
         supportedProjections.put(TRANSVERSE_MERCATOR.name, TRANSVERSE_MERCATOR);
         supportedProjections.put(LAMBERT_CONFORMAL_CONIC_1SP.name, LAMBERT_CONFORMAL_CONIC_1SP);
         supportedProjections.put(LAMBERT_AZIMUTHAL_EQUAL_AREA.name, LAMBERT_AZIMUTHAL_EQUAL_AREA);
