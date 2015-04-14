@@ -20,6 +20,9 @@ import org.geotools.imageio.netcdf.utilities.NetCDFUtilities;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.referencing.operation.projection.LambertAzimuthalEqualArea;
 import org.geotools.referencing.operation.projection.LambertConformal1SP;
+import org.geotools.referencing.operation.projection.Orthographic;
+import org.geotools.referencing.operation.projection.PolarStereographic;
+import org.geotools.referencing.operation.projection.Stereographic;
 import org.geotools.referencing.operation.projection.TransverseMercator;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.crs.ProjectedCRS;
@@ -110,12 +113,48 @@ public enum NetCDFCoordinateReferenceSystemType {
         public NetCDFProjection getNetCDFProjection() {
             return NetCDFProjection.TRANSVERSE_MERCATOR;
         }
+    },
 
+    ORTHOGRAPHIC {
+        @Override
+        public NetCDFCoordinate[] getCoordinates() {
+            return NetCDFCoordinate.YX_COORDS;
+        }
+
+        @Override
+        public NetCDFProjection getNetCDFProjection() {
+            return NetCDFProjection.ORTHOGRAPHIC;
+        }
+    },
+
+    POLAR_STEREOGRAPHIC {
+        @Override
+        public NetCDFCoordinate[] getCoordinates() {
+            return NetCDFCoordinate.YX_COORDS;
+        }
+
+        @Override
+        public NetCDFProjection getNetCDFProjection() {
+            return NetCDFProjection.POLAR_STEREOGRAPHIC;
+        }
+    },
+
+    STEREOGRAPHIC {
+        @Override
+        public NetCDFCoordinate[] getCoordinates() {
+            return NetCDFCoordinate.YX_COORDS;
+        }
+
+        @Override
+        public NetCDFProjection getNetCDFProjection() {
+            return NetCDFProjection.STEREOGRAPHIC;
+        }
     }
 
+
     /*
-     * , ALBERS_EQUAL_AREA, AZIMUTHAL_EQUIDISTANT, LAMBERT_AZIMUTHAL_EQUAL_AREA, LAMBERT_CONFORMAL, LAMBERT_CYLINDRICAL_EQUAL_AREA, MERCATOR,
-     * ORTOGRAPHIC, POLAR_STEREOGRAPHIC, ROTATED_POLE, STEREOGRAPHIC,
+     * , ALBERS_EQUAL_AREA, AZIMUTHAL_EQUIDISTANT,  LAMBERT_CONFORMAL, LAMBERT_CYLINDRICAL_EQUAL_AREA, MERCATOR,
+     * , ROTATED_POLE, ,
      */;
 
     public static NetCDFCoordinateReferenceSystemType parseCRS(CoordinateReferenceSystem crs) {
@@ -133,6 +172,12 @@ public enum NetCDFCoordinateReferenceSystemType {
 //                return LAMBERT_CONFORMAL_CONIC_2SP;
             } else if (transform instanceof LambertAzimuthalEqualArea) {
                 return LAMBERT_AZIMUTHAL_EQUAL_AREA;
+            } else if (transform instanceof Orthographic) {
+                return ORTHOGRAPHIC;
+            } else if (transform instanceof PolarStereographic) {
+                return POLAR_STEREOGRAPHIC;
+            } else if (transform instanceof Stereographic) {
+                return STEREOGRAPHIC;
             }
         }
         return SPATIAL_REF;

@@ -98,11 +98,11 @@ public class NetCDFProjection {
      * objects.
      */
     private static final MathTransformFactory mtFactory;
-    
-    /** EPSG factories for various purposes. */
-    private static final AllAuthoritiesFactory allAuthoritiesFactory;
-
-    private static final DatumFactory datumObjFactory;
+//
+//    /** EPSG factories for various purposes. */
+//    private static final AllAuthoritiesFactory allAuthoritiesFactory;
+//
+//    private static final DatumFactory datumObjFactory;
 
     public NetCDFProjection(String projectionName, Map<String, String> parametersMapping) {
         this.name = projectionName;
@@ -134,23 +134,25 @@ public class NetCDFProjection {
      */
     public final static NetCDFProjection LAMBERT_AZIMUTHAL_EQUAL_AREA;
     public final static NetCDFProjection TRANSVERSE_MERCATOR;
+    public final static NetCDFProjection ORTHOGRAPHIC;
+    public final static NetCDFProjection POLAR_STEREOGRAPHIC;
+    public final static NetCDFProjection STEREOGRAPHIC;
     public final static NetCDFProjection LAMBERT_CONFORMAL_CONIC_1SP;
     public final static NetCDFProjection LAMBERT_CONFORMAL_CONIC_2SP;
 
+    /** The map of currently supported NetCDF CF Grid mappings */
     private final static Map<String, NetCDFProjection> supportedProjections = new HashMap<String, NetCDFProjection>();
 
-    private static final int METER_UNIT_CODE = 9001;
-    
     private static final String UNKNOWN = "unknown";
 
     static {
         Hints hints = GeoTools.getDefaultHints().clone();
 
-        // various authority related factories
-        allAuthoritiesFactory = new AllAuthoritiesFactory(hints);
-
-        // various factories
-        datumObjFactory = ReferencingFactoryFinder.getDatumFactory(hints);
+//        // various authority related factories
+//        allAuthoritiesFactory = new AllAuthoritiesFactory(hints);
+//
+//        // various factories
+//        datumObjFactory = ReferencingFactoryFinder.getDatumFactory(hints);
         mtFactory = ReferencingFactoryFinder.getMathTransformFactory(hints);
 
         // Setting up Lambert Azimuthal equal area
@@ -169,6 +171,32 @@ public class NetCDFProjection {
         tm_mapping.put(FALSE_EASTING, CF.FALSE_EASTING);
         tm_mapping.put(FALSE_NORTHING, CF.FALSE_NORTHING);
         TRANSVERSE_MERCATOR = new NetCDFProjection(CF.TRANSVERSE_MERCATOR, tm_mapping);
+
+        // Setting up Orthographic
+        Map<String, String> ortho_mapping = new HashMap<String, String>();
+        ortho_mapping.put(CENTRAL_MERIDIAN, CF.LONGITUDE_OF_PROJECTION_ORIGIN);
+        ortho_mapping.put(LATITUDE_OF_ORIGIN, CF.LATITUDE_OF_PROJECTION_ORIGIN);
+        ortho_mapping.put(FALSE_EASTING, CF.FALSE_EASTING);
+        ortho_mapping.put(FALSE_NORTHING, CF.FALSE_NORTHING);
+        ORTHOGRAPHIC = new NetCDFProjection(CF.ORTHOGRAPHIC, ortho_mapping);
+
+        // Setting up Polar Stereographic
+        Map<String, String> polarstereo_mapping = new HashMap<String, String>();
+        polarstereo_mapping.put(CENTRAL_MERIDIAN, CF.STRAIGHT_VERTICAL_LONGITUDE_FROM_POLE);
+        polarstereo_mapping.put(LATITUDE_OF_ORIGIN, CF.LATITUDE_OF_PROJECTION_ORIGIN);
+        polarstereo_mapping.put(SCALE_FACTOR, CF.SCALE_FACTOR_AT_PROJECTION_ORIGIN);
+        polarstereo_mapping.put(FALSE_EASTING, CF.FALSE_EASTING);
+        polarstereo_mapping.put(FALSE_NORTHING, CF.FALSE_NORTHING);
+        POLAR_STEREOGRAPHIC = new NetCDFProjection(CF.POLAR_STEREOGRAPHIC, polarstereo_mapping);
+
+        // Setting up Stereographic
+        Map<String, String> stereo_mapping = new HashMap<String, String>();
+        stereo_mapping.put(CENTRAL_MERIDIAN, CF.LONGITUDE_OF_PROJECTION_ORIGIN);
+        stereo_mapping.put(LATITUDE_OF_ORIGIN, CF.LATITUDE_OF_PROJECTION_ORIGIN);
+        stereo_mapping.put(SCALE_FACTOR, CF.SCALE_FACTOR_AT_PROJECTION_ORIGIN);
+        stereo_mapping.put(FALSE_EASTING, CF.FALSE_EASTING);
+        stereo_mapping.put(FALSE_NORTHING, CF.FALSE_NORTHING);
+        STEREOGRAPHIC = new NetCDFProjection(CF.STEREOGRAPHIC, stereo_mapping);
 
         Map<String, String> lcc_mapping = new HashMap<String, String>();
 
@@ -193,6 +221,13 @@ public class NetCDFProjection {
         supportedProjections.put(TRANSVERSE_MERCATOR.name, TRANSVERSE_MERCATOR);
         supportedProjections.put(LAMBERT_CONFORMAL_CONIC_1SP.name, LAMBERT_CONFORMAL_CONIC_1SP);
         supportedProjections.put(LAMBERT_AZIMUTHAL_EQUAL_AREA.name, LAMBERT_AZIMUTHAL_EQUAL_AREA);
+        supportedProjections.put(ORTHOGRAPHIC.name, ORTHOGRAPHIC);
+        supportedProjections.put(POLAR_STEREOGRAPHIC.name, POLAR_STEREOGRAPHIC);
+        supportedProjections.put(STEREOGRAPHIC.name, STEREOGRAPHIC);
+
+        // TODO:
+        //    ALBERS_EQUAL_AREA, AZIMUTHAL_EQUIDISTANT,  LAMBERT_CONFORMAL, LAMBERT_CYLINDRICAL_EQUAL_AREA, MERCATOR,
+        //    , ROTATED_POLE, STEREOGRAPHIC,
 //        supportedProjections.put(LAMBERT_CONFORMAL_CONIC_2SP.name, LAMBERT_CONFORMAL_CONIC_2SP);
     }
 
@@ -372,7 +407,7 @@ public class NetCDFProjection {
             if (inverseFlatteningAttribute != null) {
                 inverseFlattening = inverseFlatteningAttribute.getNumericValue().doubleValue();
             }
-            ellipsoid = DefaultEllipsoid.createFlattenedSphere(UNKNOWN,semiMajor, inverseFlattening, linearUnit);
+            ellipsoid = DefaultEllipsoid.createFlattenedSphere(UNKNOWN, semiMajor, inverseFlattening, linearUnit);
         }
         return ellipsoid;
     }
