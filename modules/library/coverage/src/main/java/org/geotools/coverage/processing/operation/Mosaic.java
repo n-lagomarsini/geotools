@@ -819,7 +819,7 @@ public class Mosaic extends OperationJAI {
     protected void extractSources(final ParameterValueGroup parameters,
             final Collection<GridCoverage2D> sources, final String[] sourceNames)
             throws ParameterNotFoundException, InvalidParameterValueException {
-        if (!JAIExt.isJAIExtOperation(JAIExt.getOperationName(getName()))) {
+        if (!JAIExt.isJAIExtOperation(JAIExt.getOperationName(getName())) && parameters.parameter("sources").getValue() == null) {
             super.extractSources(parameters, sources, sourceNames);
         } else {
             Utilities.ensureNonNull("parameters", parameters);
