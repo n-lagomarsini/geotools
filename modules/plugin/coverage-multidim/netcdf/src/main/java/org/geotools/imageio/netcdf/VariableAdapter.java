@@ -35,6 +35,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Level;
 
+import javax.measure.unit.Unit;
+
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridEnvelope2D;
@@ -94,7 +96,6 @@ import org.opengis.referencing.operation.MathTransform2D;
 import org.opengis.util.InternationalString;
 import org.opengis.util.ProgressListener;
 
-import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
 import ucar.nc2.Variable;
 import ucar.nc2.constants.AxisType;
@@ -752,7 +753,26 @@ public class VariableAdapter extends CoverageSourceDescriptor {
         }
         final StringBuilder sb = new StringBuilder();
         final Set<SampleDimension> sampleDims = new HashSet<SampleDimension>();
-        sampleDims.add(new GridSampleDimension(description + ":sd", categories, null));
+
+        // Parsing the unit of measure of this variable
+        Unit unit = null;
+        String unitString = variableDS.getUnitsString();
+        if (unitString != null) {
+            try {
+                if (unitString.contains("-") || unitString.contains(".")) {
+                    // Replace weird characters to transform as an instance:
+                    // kg.m-2 -------> kg*m^-2 which is properly recognized 
+                    // by the javax.measure.unit.Unit parser
+                    unitString = unitString.replace("-", "^-").replace(".", "*");
+                }
+                unit = Unit.valueOf(unitString);
+            } catch (IllegalArgumentException iae) {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.fine("Unable to parse the unit:" + unitString + "\nNo unit will be assigned");
+                }
+            }
+        }
+        sampleDims.add(new GridSampleDimension(description + ":sd", categories, unit));
 
         InternationalString desc = null;
         if (description != null && !description.isEmpty()) {
@@ -778,8 +798,9 @@ public class VariableAdapter extends CoverageSourceDescriptor {
             try {
                 domain = new UnidataAdditionalDomain(cv);
                 additionalDomains.add(domain);
+
              // TODO: Parse Units from axis and map them to UCUM units
-                dimensions.add(new DefaultDimensionDescriptor(cv.getName(), "FIXME_UNIT", "FIXME_UNITSYMBOL", cv.getName(), null));
+                dimensions.add(new DefaultDimensionDescriptor(cv.getName(), cv.getUnit(), cv.getUnit(), cv.getName(), null));
                 this.setHasAdditionalDomains(true);
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, e.getMessage(), e);
@@ -797,9 +818,8 @@ public class VariableAdapter extends CoverageSourceDescriptor {
     protected GridGeometry2D getGridGeometry() throws IOException {
         int[] low = new int[2];
         int[] high = new int[2];
-        // String[] axesNames = new String[rank];
         double[] origin = new double[2];
-        double scaleX=Double.POSITIVE_INFINITY, scaleY=Double.POSITIVE_INFINITY;
+        double scaleX = Double.POSITIVE_INFINITY, scaleY = Double.POSITIVE_INFINITY;
 
         for( CoordinateVariable<?> cv : reader.georeferencing.getCoordinatesVariables(variableDS.getShortName()) ) {
             if(!cv.isNumeric()){
@@ -851,21 +871,20 @@ public class VariableAdapter extends CoverageSourceDescriptor {
                 // raster space
                 low[1] = 0;
                 high[1] = (int) cv.getSize();
-                
+
                 // model space
-                if(cv.isRegular()){
+                if (cv.isRegular()) {
 
-                    if(cv.getIncrement()>0){
-                        //the latitude axis is increasing! This is a special case so we flip it around
-                        scaleY=-cv.getIncrement();
-                        origin[1]=cv.getStart()-scaleY*(high[1]-1);
-                    }else{
-
-                        scaleY=cv.getIncrement();
-                        origin[1]=cv.getStart();
+                    if (cv.getIncrement() > 0) {
+                        // the latitude axis is increasing! This is a special case so we flip it around
+                        scaleY = -cv.getIncrement();
+                        origin[1] = cv.getStart() - scaleY * (high[1] - 1);
+                    } else {
+                        scaleY = cv.getIncrement();
+                        origin[1] = cv.getStart();
                     }
                 } else {
-                    
+
                     // model space is not declared to be regular, but we kind of assume it is!!!
                     final int valuesLength=(int) cv.getSize();
                     double min = ((Number)cv.getMinimum()).doubleValue();
