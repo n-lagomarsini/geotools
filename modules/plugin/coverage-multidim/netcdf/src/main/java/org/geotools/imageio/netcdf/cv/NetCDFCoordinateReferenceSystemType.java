@@ -20,6 +20,7 @@ import org.geotools.imageio.netcdf.utilities.NetCDFUtilities;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.referencing.operation.projection.LambertAzimuthalEqualArea;
 import org.geotools.referencing.operation.projection.LambertConformal1SP;
+import org.geotools.referencing.operation.projection.LambertConformal2SP;
 import org.geotools.referencing.operation.projection.Orthographic;
 import org.geotools.referencing.operation.projection.PolarStereographic;
 import org.geotools.referencing.operation.projection.Stereographic;
@@ -90,18 +91,17 @@ public enum NetCDFCoordinateReferenceSystemType {
             return NetCDFProjection.LAMBERT_CONFORMAL_CONIC_1SP;
         }
     },
-//    LAMBERT_CONFORMAL_CONIC_2SP {
-//        @Override
-//        public NetCDFCoordinate[] getCoordinates() {
-//            return NetCDFCoordinate.YX_COORDS;
-//        }
-//
-//        @Override
-//        public NetCDFProjection getNetCDFProjection() {
-//            return NetCDFProjection.LAMBERT_CONFORMAL_CONIC_2SP;
-//        };
-//
-//    },
+    LAMBERT_CONFORMAL_CONIC_2SP {
+        @Override
+        public NetCDFCoordinate[] getCoordinates() {
+            return NetCDFCoordinate.YX_COORDS;
+        }
+
+        @Override
+        public NetCDFProjection getNetCDFProjection() {
+            return NetCDFProjection.LAMBERT_CONFORMAL_CONIC_2SP;
+        };
+    },
 
     TRANSVERSE_MERCATOR {
         @Override
@@ -168,8 +168,8 @@ public enum NetCDFCoordinateReferenceSystemType {
                 return TRANSVERSE_MERCATOR;
             } else if (transform instanceof LambertConformal1SP) {
                 return LAMBERT_CONFORMAL_CONIC_1SP;
-//            } else if (transform instanceof LambertConformal2SP) {
-//                return LAMBERT_CONFORMAL_CONIC_2SP;
+            } else if (transform instanceof LambertConformal2SP) {
+                return LAMBERT_CONFORMAL_CONIC_2SP;
             } else if (transform instanceof LambertAzimuthalEqualArea) {
                 return LAMBERT_AZIMUTHAL_EQUAL_AREA;
             } else if (transform instanceof Orthographic) {

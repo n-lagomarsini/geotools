@@ -41,7 +41,6 @@ import org.geotools.referencing.cs.DefaultEllipsoidalCS;
 import org.geotools.referencing.datum.DefaultEllipsoid;
 import org.geotools.referencing.datum.DefaultGeodeticDatum;
 import org.geotools.referencing.datum.DefaultPrimeMeridian;
-import org.geotools.referencing.factory.AllAuthoritiesFactory;
 import org.geotools.referencing.operation.DefaultOperationMethod;
 import org.geotools.referencing.operation.DefiningConversion;
 import org.geotools.referencing.operation.projection.MapProjection;
@@ -49,7 +48,6 @@ import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.crs.GeographicCRS;
-import org.opengis.referencing.datum.DatumFactory;
 import org.opengis.referencing.datum.Ellipsoid;
 import org.opengis.referencing.datum.GeodeticDatum;
 import org.opengis.referencing.datum.PrimeMeridian;
@@ -209,17 +207,18 @@ public class NetCDFProjection {
         Map<String, String> lcc_1sp_mapping = new HashMap<String, String>();
         lcc_1sp_mapping.putAll(lcc_mapping);
         lcc_1sp_mapping.put(LATITUDE_OF_ORIGIN, CF.STANDARD_PARALLEL);
-        LAMBERT_CONFORMAL_CONIC_1SP = new NetCDFProjection(CF.LAMBERT_CONFORMAL_CONIC + "_1SP", lcc_1sp_mapping);
+        LAMBERT_CONFORMAL_CONIC_1SP = new NetCDFProjection(CF.LAMBERT_CONFORMAL_CONIC, lcc_1sp_mapping);
 
         // Setting up Lambert Conformal Conic 2SP
         Map<String, String> lcc_2sp_mapping = new HashMap<String, String>();
         lcc_2sp_mapping.putAll(lcc_mapping);
         lcc_2sp_mapping.put(STANDARD_PARALLEL_1, CF.STANDARD_PARALLEL);
         lcc_2sp_mapping.put(STANDARD_PARALLEL_2, CF.STANDARD_PARALLEL);
-        LAMBERT_CONFORMAL_CONIC_2SP = new NetCDFProjection(CF.LAMBERT_CONFORMAL_CONIC + "_2SP", lcc_2sp_mapping);
+        LAMBERT_CONFORMAL_CONIC_2SP = new NetCDFProjection(CF.LAMBERT_CONFORMAL_CONIC, lcc_2sp_mapping);
 
         supportedProjections.put(TRANSVERSE_MERCATOR.name, TRANSVERSE_MERCATOR);
-        supportedProjections.put(LAMBERT_CONFORMAL_CONIC_1SP.name, LAMBERT_CONFORMAL_CONIC_1SP);
+        supportedProjections.put(CF.LAMBERT_CONFORMAL_CONIC + "_1SP", LAMBERT_CONFORMAL_CONIC_1SP);
+        supportedProjections.put(CF.LAMBERT_CONFORMAL_CONIC + "_2SP", LAMBERT_CONFORMAL_CONIC_2SP);
         supportedProjections.put(LAMBERT_AZIMUTHAL_EQUAL_AREA.name, LAMBERT_AZIMUTHAL_EQUAL_AREA);
         supportedProjections.put(ORTHOGRAPHIC.name, ORTHOGRAPHIC);
         supportedProjections.put(POLAR_STEREOGRAPHIC.name, POLAR_STEREOGRAPHIC);
@@ -228,7 +227,6 @@ public class NetCDFProjection {
         // TODO:
         //    ALBERS_EQUAL_AREA, AZIMUTHAL_EQUIDISTANT,  LAMBERT_CONFORMAL, LAMBERT_CYLINDRICAL_EQUAL_AREA, MERCATOR,
         //    , ROTATED_POLE, STEREOGRAPHIC,
-//        supportedProjections.put(LAMBERT_CONFORMAL_CONIC_2SP.name, LAMBERT_CONFORMAL_CONIC_2SP);
     }
 
     /** 
@@ -271,8 +269,7 @@ public class NetCDFProjection {
         if (mappingName.equalsIgnoreCase(CF.LAMBERT_CONFORMAL_CONIC)) {
             Attribute standardParallel = var.findAttribute(CF.STANDARD_PARALLEL);
             final int numParallels = standardParallel.getLength();
-            projectionName = numParallels == 1 ? LAMBERT_CONFORMAL_CONIC_1SP.name : 
-                LAMBERT_CONFORMAL_CONIC_2SP.name;
+            projectionName = CF.LAMBERT_CONFORMAL_CONIC + (numParallels == 1 ? "_1SP" : "_2SP");
         }
 
         // Getting the proper projection and set the projection parameters
@@ -285,16 +282,7 @@ public class NetCDFProjection {
         Map<String, String> projectionParams = projection.getParameters();
         Set<String> parameterKeys = projectionParams.keySet();
         for (String parameterKey: parameterKeys) {
-            String attributeName = projectionParams.get(parameterKey);
-            Attribute attribute = var.findAttribute(attributeName);
-            if (attribute != null) {
-                // Get the parameter value and handle special management for longitudes outside -180, 180
-                double value = attribute.getNumericValue().doubleValue();
-                if (attributeName.contains("meridian") || attributeName.contains("longitude")) {
-                    value = value - (360) * Math.floor(value / (360) + 0.5);
-                }
-                parameters.parameter(parameterKey).setValue(value);
-            }
+            handleParam(projectionParams, parameters, parameterKey, var);
         }
 
         Unit<Length> linearUnit = SI.METER; //allAuthoritiesFactory.createUnit("EPSG:" + METER_UNIT_CODE);
@@ -334,11 +322,44 @@ public class NetCDFProjection {
 
         // Create the projected CRS
         return new DefaultProjectedCRS(
-                java.util.Collections.singletonMap("name", UNKNOWN),
+                java.util.Collections.singletonMap("name", "GRIB_Lambert_conformal_conic_1SP"),
                 conversionFromBase,
                 baseCRS,
                 transform,
                 DefaultCartesianCS.PROJECTED);
+    }
+
+    private static void handleParam(Map<String, String> projectionParams, ParameterValueGroup parameters, String parameterKey,
+            Variable var) {
+        String attributeName = projectionParams.get(parameterKey);
+        Double value = null;
+        if (parameterKey.equalsIgnoreCase("standard_parallel_1")
+                || parameterKey.equalsIgnoreCase("standard_parallel_2")) {
+            Attribute attribute = var.findAttribute(attributeName);
+            if (attribute != null) {
+                final int numValues = attribute.getLength();
+                if (numValues > 1) {
+                    int index = parameterKey.equalsIgnoreCase("standard_parallel_1") ? 0 : 1;
+                    Number number = (Number) attribute.getValue(index);
+                    value = number.doubleValue();
+                } else {
+                    value = attribute.getNumericValue().doubleValue();
+                }
+            }
+        } else {
+
+            Attribute attribute = var.findAttribute(attributeName);
+            if (attribute != null) {
+                // Get the parameter value and handle special management for longitudes outside -180, 180
+                value = attribute.getNumericValue().doubleValue();
+                if (attributeName.contains("meridian") || attributeName.contains("longitude")) {
+                    value = value - (360) * Math.floor(value / (360) + 0.5);
+                }
+            }
+        }
+        if (value != null) {
+            parameters.parameter(parameterKey).setValue(value);
+        }
     }
 
     /** 
