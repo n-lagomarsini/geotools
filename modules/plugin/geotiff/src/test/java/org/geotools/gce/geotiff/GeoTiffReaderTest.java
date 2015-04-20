@@ -17,6 +17,7 @@
  */
 package org.geotools.gce.geotiff;
 
+import it.geosolutions.imageio.maskband.DatasetLayout;
 import it.geosolutions.jaiext.range.NoDataContainer;
 import it.geosolutions.jaiext.range.Range;
 
@@ -29,14 +30,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.util.logging.Logger;
 
 import javax.media.jai.ImageLayout;
 import javax.media.jai.PlanarImage;
+import javax.media.jai.ROI;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridEnvelope2D;
 import org.geotools.coverage.grid.GridGeometry2D;
+import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.OverviewPolicy;
 import org.geotools.coverage.grid.io.imageio.IIOMetadataDumper;
@@ -50,6 +54,7 @@ import org.geotools.referencing.operation.matrix.XAffineTransform;
 import org.geotools.resources.coverage.CoverageUtilities;
 import org.geotools.test.TestData;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.opengis.parameter.GeneralParameterValue;
@@ -402,6 +407,108 @@ public class GeoTiffReaderTest extends org.junit.Assert {
         String crsDef = crs.toWKT();
         // Ensure the Unit of Measure define is Meter
         assertTrue(crsDef.contains("UNIT[\"m\", 1.0]"));
+    }
+
+    /**
+     * Test that the reader sets a ROI property based on the input internal masks
+     */
+    @Test
+    public void testMasking() throws Exception {
+        // Reading file
+        final File file = TestData.file(GeoTiffReaderTest.class,"mask/masks.tif");
+        assertNotNull(file);
+        final AbstractGridFormat format = new GeoTiffFormat();
+        AbstractGridCoverage2DReader reader = format.getReader(file);
+        GridCoverage2D coverage = reader.read(null);
+        // Checking if ROI is present
+        ROI roi = CoverageUtilities.getROIProperty(coverage);
+        assertNotNull(roi);
+        // Ensure has the same size of the input image
+        Rectangle roiBounds = roi.getBounds();
+        Rectangle imgBounds = coverage.getGridGeometry().getGridRange2D();
+        assertEquals(imgBounds.x, roiBounds.x);
+        assertEquals(imgBounds.y, roiBounds.y);
+        assertEquals(imgBounds.width, roiBounds.width);
+        assertEquals(imgBounds.height, roiBounds.height);
+        // Getting DatasetLayout
+        DatasetLayout layout = reader.getDatasetLayout();
+        Assert.assertEquals(5, layout.getNumInternalMasks());
+        Assert.assertEquals(-1, layout.getNumExternalMasks());
+        Assert.assertEquals(4, layout.getNumInternalOverviews());
+        Assert.assertEquals(-1, layout.getNumExternalOverviews());
+        Assert.assertEquals(-1, layout.getNumExternalMaskOverviews());
+        
+        Assert.assertNull(layout.getExternalMasks());
+        Assert.assertNull(layout.getExternalOverviews());
+        Assert.assertNull(layout.getExternalMaskOverviews());        
+    }
+
+    /**
+     * Test that the reader sets a ROI property based on the input external masks
+     */
+    @Test
+    public void testMaskingExternal() throws Exception {
+        // Reading file
+        final File file = TestData.file(GeoTiffReaderTest.class,"mask/external.tif");
+        assertNotNull(file);
+        final AbstractGridFormat format = new GeoTiffFormat();
+        AbstractGridCoverage2DReader reader = format.getReader(file);
+        GridCoverage2D coverage = reader.read(null);
+        // Checking if ROI is present
+        ROI roi = CoverageUtilities.getROIProperty(coverage);
+        assertNotNull(roi);
+        // Ensure has the same size of the input image
+        Rectangle roiBounds = roi.getBounds();
+        Rectangle imgBounds = coverage.getGridGeometry().getGridRange2D();
+        assertEquals(imgBounds.x, roiBounds.x);
+        assertEquals(imgBounds.y, roiBounds.y);
+        assertEquals(imgBounds.width, roiBounds.width);
+        assertEquals(imgBounds.height, roiBounds.height);
+        // Getting DatasetLayout
+        DatasetLayout layout = reader.getDatasetLayout();
+        Assert.assertEquals(0, layout.getNumInternalMasks());
+        Assert.assertEquals(5, layout.getNumExternalMasks());
+        Assert.assertEquals(4, layout.getNumInternalOverviews());
+        Assert.assertEquals(0, layout.getNumExternalOverviews());
+        Assert.assertEquals(0, layout.getNumExternalMaskOverviews());
+        
+        Assert.assertTrue(!layout.getExternalMasks().getAbsolutePath().isEmpty());
+        Assert.assertNull(layout.getExternalOverviews());
+        Assert.assertNull(layout.getExternalMaskOverviews());   
+    }
+    
+    /**
+     * Test that the reader sets a ROI property based on the input external masks with external overviews
+     */
+    @Test
+    public void testMaskingExternalOverviews() throws Exception {
+        // Reading file
+        final File file = TestData.file(GeoTiffReaderTest.class,"mask/external2.tif");
+        assertNotNull(file);
+        final AbstractGridFormat format = new GeoTiffFormat();
+        AbstractGridCoverage2DReader reader = format.getReader(file);
+        GridCoverage2D coverage = reader.read(null);
+        // Checking if ROI is present
+        ROI roi = CoverageUtilities.getROIProperty(coverage);
+        assertNotNull(roi);
+        // Ensure has the same size of the input image
+        Rectangle roiBounds = roi.getBounds();
+        Rectangle imgBounds = coverage.getGridGeometry().getGridRange2D();
+        assertEquals(imgBounds.x, roiBounds.x);
+        assertEquals(imgBounds.y, roiBounds.y);
+        assertEquals(imgBounds.width, roiBounds.width);
+        assertEquals(imgBounds.height, roiBounds.height);
+        // Getting DatasetLayout
+        DatasetLayout layout = reader.getDatasetLayout();
+        Assert.assertEquals(0, layout.getNumInternalMasks());
+        Assert.assertEquals(1, layout.getNumExternalMasks());
+        Assert.assertEquals(0, layout.getNumInternalOverviews());
+        Assert.assertEquals(0, layout.getNumExternalOverviews());
+        Assert.assertEquals(4, layout.getNumExternalMaskOverviews());
+        
+        Assert.assertTrue(!layout.getExternalMasks().getAbsolutePath().isEmpty());
+        Assert.assertNull(layout.getExternalOverviews());
+        Assert.assertTrue(!layout.getExternalMaskOverviews().getAbsolutePath().isEmpty());   
     }
     
     /**
