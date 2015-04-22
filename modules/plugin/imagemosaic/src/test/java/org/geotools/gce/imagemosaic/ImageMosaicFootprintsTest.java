@@ -80,6 +80,10 @@ public class ImageMosaicFootprintsTest {
     private URL testMosaicUrl;
 
     private File footprintsSource;
+    
+    private File testMosaicRaster;
+
+    private URL testMosaicRasterUrl;
 
     @Before
     public void cleanup() throws IOException {
@@ -94,9 +98,19 @@ public class ImageMosaicFootprintsTest {
         FileUtils.copyDirectory(mosaicSource, testMosaic);
         testMosaicUrl = DataUtilities.fileToURL(testMosaic);
 
+        // Raster
+        testMosaicRaster = new File(TestData.file(this,"."),"footprintRaster");
+        if (testMosaicRaster.exists()) {
+            FileUtils.deleteDirectory(testMosaicRaster);
+        }
+
+        // create the base mosaic we are going to use
+        File mosaicSourceRaster = TestData.file(this,"rastermask");
+        FileUtils.copyDirectory(mosaicSourceRaster, testMosaicRaster);
+        testMosaicRasterUrl = DataUtilities.fileToURL(testMosaicRaster);
+        
         // footprint source
         footprintsSource = TestData.file(this,"rgb-footprints");
-
     }
 
     @Test
@@ -499,5 +513,48 @@ public class ImageMosaicFootprintsTest {
         coverage.evaluate(new DirectPosition2D(8, 45), pixel);
         assertTrue(pixel[0] + pixel[1] + pixel[2] > 0);
         disposeCoverage(coverage);
+    }
+    
+    @Test
+    public void testRasterFootprint() throws Exception {
+        // copy the footprints mosaic properties
+        Properties p = new Properties();
+        // Setting Raster property
+        p.put(MultiLevelROIProviderFactory.SOURCE_PROPERTY, "raster"); 
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(new File(testMosaicRaster, "footprints.properties"));
+            p.store(fos, null);
+        } finally {
+            IOUtils.closeQuietly(fos);
+        }
+        final AbstractGridFormat format = TestUtils.getFormat(testMosaicRasterUrl);
+        final ImageMosaicReader reader = TestUtils.getReader(testMosaicRasterUrl, format);     
+        
+        // activate footprint management
+        GeneralParameterValue[] params = new GeneralParameterValue[3];
+        ParameterValue<String> footprintManagement = ImageMosaicFormat.FOOTPRINT_BEHAVIOR.createValue();
+        footprintManagement.setValue(FootprintBehavior.Cut.name());
+        params[0] = footprintManagement;
+        
+        // this prevents us from having problems with link to files still open.
+        ParameterValue<Boolean> jaiImageRead = ImageMosaicFormat.USE_JAI_IMAGEREAD.createValue();
+        jaiImageRead.setValue(false); 
+        params[1] = jaiImageRead;
+        
+        // limit yourself to reading just a bit of it
+        final ParameterValue<GridGeometry2D> gg = AbstractGridFormat.READ_GRIDGEOMETRY2D
+                .createValue();
+        final Dimension dim = new Dimension();
+        dim.setSize(4, 4);
+        final Rectangle rasterArea = ((GridEnvelope2D) reader.getOriginalGridRange());
+        rasterArea.setSize(dim);
+        final GridEnvelope2D range = new GridEnvelope2D(rasterArea);
+        gg.setValue(new GridGeometry2D(range, PixelInCell.CELL_CENTER,reader.getOriginalGridToWorld(PixelInCell.CELL_CENTER),reader.getCoordinateReferenceSystem(),null));
+        params[2]=gg;
+        
+        GridCoverage2D coverage = reader.read(params);
+        reader.dispose();
+        assertNotNull(coverage);
     }
 }
