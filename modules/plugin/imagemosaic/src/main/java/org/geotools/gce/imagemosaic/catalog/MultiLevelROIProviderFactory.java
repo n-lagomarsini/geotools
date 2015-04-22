@@ -1,12 +1,15 @@
 package org.geotools.gce.imagemosaic.catalog;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.IOCase;
+import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.geotools.data.DataUtilities;
 import org.geotools.filter.text.ecql.ECQL;
 import org.geotools.gce.imagemosaic.Utils;
@@ -29,6 +32,8 @@ public class MultiLevelROIProviderFactory {
 
     // store types
     private static final String TYPE_SIDECAR = "sidecar";
+    
+    private static final String TYPE_RASTER = "raster";
 
     private MultiLevelROIProviderFactory() {
     }
@@ -51,13 +56,14 @@ public class MultiLevelROIProviderFactory {
 
         // load the type of config file
         String source = (String) properties.get(SOURCE_PROPERTY);
-        FootprintGeometryProvider provider;
+        FootprintGeometryProvider provider = null;
         if (source == null) {
             // see if we have the default whole mosaic footprint
             File defaultShapefileFootprint = new File(mosaicFolder, "footprints.shp");
             if (defaultShapefileFootprint.exists()) {
                 provider = buildShapefileSource(mosaicFolder, defaultShapefileFootprint.getName(),
                         properties);
+                // Handle Raster case
             } else {
                 provider = new SidecarFootprintProvider(mosaicFolder);
             }
@@ -65,15 +71,39 @@ public class MultiLevelROIProviderFactory {
             provider = new SidecarFootprintProvider(mosaicFolder);
         } else if (source.toLowerCase().endsWith(".shp")) {
             provider = buildShapefileSource(mosaicFolder, source, properties);
+        } else if(TYPE_RASTER.equals(source)){
+            // Raster masking
+            return new MultiLevelROIRasterProvider(mosaicFolder);
         } else {
             throw new IllegalArgumentException("Invalid source type, it should be a reference "
                     + "to a shapefile or 'sidecar', but was '" + source + "' instead");
         }
-
+        
+        // Create the provider
         // handle inset if necessary
         double inset = getInset(properties);
         FootprintInsetPolicy insetPolicy = getInsetPolicy(properties);
-        return new MultiLevelROIProvider(provider, inset, insetPolicy);
+        return new MultiLevelROIGeometryProvider(provider, inset, insetPolicy);
+    }
+
+    /**
+     * Check whether the folder data contains internal masks
+     * 
+     * @param mosaicFolder Mosaic Folder to search inside
+     * @return  a boolean indicating if input files have internal Masks
+     */
+    private static boolean hasRasterMasks(File mosaicFolder) {
+        // Initialize result
+        boolean maskAvailable = false;
+        // Filter files
+        FileFilter xmlFilter = FileFilterUtils.suffixFileFilter("xml", IOCase.INSENSITIVE);
+        FileFilter propertiesFilter = FileFilterUtils.suffixFileFilter("properties", IOCase.INSENSITIVE);
+        
+        
+        
+        
+        
+        return maskAvailable;
     }
 
     private static FootprintInsetPolicy getInsetPolicy(Properties properties) {

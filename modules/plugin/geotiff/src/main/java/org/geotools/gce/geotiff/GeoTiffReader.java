@@ -672,8 +672,7 @@ public class GeoTiffReader extends AbstractGridCoverage2DReader implements GridC
                 LOGGER.fine("Scaling ROI");
             }
             // Input Mask is scaled to the image size, rescaled to Bytes and then used as ROI
-            roi = new ImageWorker(roiRaster).affine(tr, null, null).rescaleToBytes()
-                    .getImageAsROI();
+            roi = new ImageWorker(roiRaster).affine(tr, null, null).getImageAsROI();
         }
         // //
         //

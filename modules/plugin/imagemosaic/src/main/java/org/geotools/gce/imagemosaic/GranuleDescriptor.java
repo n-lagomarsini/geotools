@@ -833,11 +833,20 @@ public class GranuleDescriptor {
             // adjust roi
             if (useFootprint) {
 
-                ROIGeometry transformed;
+                ROI transformed;
                 try {
-                    transformed = roiProvider.getTransformedROI(finalRaster2Model.createInverse());
-                    if (transformed.getAsGeometry().isEmpty()) {
+                    Rectangle imgBounds = new Rectangle(raster.getMinX(), raster.getMinY(),
+                            raster.getWidth(), raster.getHeight());
+                    transformed = roiProvider.getTransformedROI(finalRaster2Model.createInverse(),
+                            imageIndex, imgBounds, request.getReadType());
+                    if(transformed instanceof ROIGeometry && ((ROIGeometry)transformed).getAsGeometry().isEmpty()){
                         // inset might have killed the geometry fully
+                        return null;
+                    }
+                    if (transformed == null || transformed.getBounds().isEmpty()) {
+                        if (LOGGER.isLoggable(java.util.logging.Level.INFO))
+                            LOGGER.info("Unable to create a granuleDescriptor " + this.toString()
+                                    + " due to a problem when managing the ROI");
                         return null;
                     } 
 
@@ -929,7 +938,9 @@ public class GranuleDescriptor {
                 iw.affine(finalRaster2Model, interpolation, request.getBackgroundValues());
                         RenderedImage renderedImage = iw.getRenderedImage();
                         Object roi = renderedImage.getProperty("ROI");
-				if( useFootprint && roi instanceof ROIGeometry && ((ROIGeometry) roi).getAsGeometry().isEmpty()){
+				if( useFootprint 
+				        && (roi instanceof ROIGeometry && ((ROIGeometry) roi).getAsGeometry().isEmpty())
+				        || (roi instanceof ROI && ((ROI)roi).getBounds().isEmpty())){
 				    //JAI not only transforms the ROI, but may also apply clipping to the image boundary
 				    //this results in an empty geometry in some edge cases
                 		    return null;
