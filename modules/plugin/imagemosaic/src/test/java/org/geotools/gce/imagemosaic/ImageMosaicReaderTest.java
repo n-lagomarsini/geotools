@@ -3282,6 +3282,47 @@ public class ImageMosaicReaderTest extends Assert{
         reader.dispose();
 
     }
+    
+    /**
+     * Tests the {@link ImageMosaicReader} with external overviews (Actually only TIFF is supported) 
+     */
+    @Test
+    public void externalOverviews() throws Exception {
+        final File workDir = new File(TestData.file(this, "."), "mosaic-ext-ovr");
+        if (!workDir.mkdir()) {
+            FileUtils.deleteDirectory(workDir);
+            assertTrue("Unable to create workdir:" + workDir, workDir.mkdir());
+        }
+        FileUtils.copyDirectory(TestData.file(this, "ext-overview"), workDir);
+
+        URL dirURL = DataUtilities.fileToURL(workDir);
+        final AbstractGridFormat format = TestUtils.getFormat(dirURL);
+        final ImageMosaicReader reader = TestUtils.getReader(dirURL, format);
+
+        // limit yourself to reading just a bit of it
+        final ParameterValue<GridGeometry2D> gg = AbstractGridFormat.READ_GRIDGEOMETRY2D
+                .createValue();
+        final GeneralEnvelope envelope = reader.getOriginalEnvelope();
+        final Dimension dim = new Dimension();
+        dim.setSize(reader.getOriginalGridRange().getSpan(0) / 2.0, reader.getOriginalGridRange()
+                .getSpan(1) / 2.0);
+        final Rectangle rasterArea = ((GridEnvelope2D) reader.getOriginalGridRange());
+        rasterArea.setSize(dim);
+        final GridEnvelope2D range = new GridEnvelope2D(rasterArea);
+        gg.setValue(new GridGeometry2D(range, envelope));
+
+        // use imageio with defined tiles
+        final ParameterValue<Boolean> useJai = AbstractGridFormat.USE_JAI_IMAGEREAD.createValue();
+        useJai.setValue(false);
+
+        final ParameterValue<String> tileSize = AbstractGridFormat.SUGGESTED_TILE_SIZE
+                .createValue();
+        tileSize.setValue("128,128");
+
+        // Test the output coverage
+        TestUtils.checkCoverage(reader, new GeneralParameterValue[] { gg, useJai, tileSize },
+                "external overviews test");
+    }
 
     @AfterClass
 	public static void close(){

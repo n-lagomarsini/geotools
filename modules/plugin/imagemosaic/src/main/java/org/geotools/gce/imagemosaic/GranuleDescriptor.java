@@ -813,45 +813,45 @@ public class GranuleDescriptor {
                         int ovrIndex = imageIndex;
                         boolean isExternal = false;
                         if(layout != null){
-                            // TODO CONTINUE FROM HERE
-                            // NEED TO ONLY HANDLE THIS CASE AND STOP
-                            // ONLY A MINOR TEST
                             int extOvr = layout.getNumExternalOverviews();
                             int intOvr = layout.getNumInternalOverviews();
-                            if(extOvr > 0 && imageIndex >= reader.getNumImages(true)){
+                            if (extOvr > 0 && imageIndex >= reader.getNumImages(true)) {
                                 ovrIndex = imageIndex - intOvr - 1;
                                 // get a stream
-                                assert cachedStreamOvrSPI!=null:"no cachedStreamSPI available!";
-                                inStream = cachedStreamOvrSPI.createInputStreamInstance(granuleUrl, ImageIO.getUseCache(), ImageIO.getCacheDirectory());
-                                if(inStream==null)
-                                        return null;
-                                
-                
+                                assert cachedStreamOvrSPI != null : "no cachedStreamSPI available!";
+                                inStream = cachedStreamOvrSPI.createInputStreamInstance(granuleUrl,
+                                        ImageIO.getUseCache(), ImageIO.getCacheDirectory());
+                                if (inStream == null)
+                                    return null;
+            
                                 // get a reader and try to cache the relevant SPI
-                                if(cachedReaderSPI==null){
-                                        reader = ImageIOExt.getImageioReader(inStream);
-                                        if(reader!=null)
-                                                cachedReaderSPI=reader.getOriginatingProvider();
-                                }
-                                else
-                                        reader=cachedReaderSPI.createReaderInstance();
-                                if(reader==null) {
-                                        if (LOGGER.isLoggable(java.util.logging.Level.WARNING)){
-                                                LOGGER.warning(new StringBuilder("Unable to get s reader for granuleDescriptor ").append(this.toString())
-                                                        .append(" with request ").append(request.toString()).append(" Resulting in no granule loaded: Empty result").toString());
-                                        }
-                                        return null;
+                                if (cachedReaderOvrSPI == null) {
+                                    reader = ImageIOExt.getImageioReader(inStream);
+                                    if (reader != null)
+                                        cachedReaderOvrSPI = reader.getOriginatingProvider();
+                                } else
+                                    reader = cachedReaderOvrSPI.createReaderInstance();
+                                if (reader == null) {
+                                    if (LOGGER.isLoggable(java.util.logging.Level.WARNING)) {
+                                        LOGGER.warning(new StringBuilder(
+                                                "Unable to get s reader for granuleDescriptor ")
+                                                .append(this.toString()).append(" with request ")
+                                                .append(request.toString())
+                                                .append(" Resulting in no granule loaded: Empty result")
+                                                .toString());
+                                    }
+                                    return null;
                                 }
                                 // set input
-                                customizeReaderInitialization(reader, hints);
                                 reader.setInput(inStream);
+                                isExternal = true;
                             }else {
                                 ovrIndex = layout.getInternalOverviewImageIndex(imageIndex);
                             }
                         }
 			
 			//get selected level and base level dimensions
-			final GranuleOverviewLevelDescriptor selectedlevel= getLevel(ovrIndex,reader);
+			final GranuleOverviewLevelDescriptor selectedlevel= getLevel(ovrIndex,reader,imageIndex, isExternal);
 	
 			
 			// now create the crop grid to world which can be used to decide
@@ -1111,13 +1111,13 @@ public class GranuleDescriptor {
                 }
             }
 
-	private GranuleOverviewLevelDescriptor getLevel(final int index, final ImageReader reader) {
-
-		if(reader==null)
+	private GranuleOverviewLevelDescriptor getLevel(final int index, final ImageReader reader, final int imageIndex, final boolean external) {
+	    int indexValue = external ? imageIndex : index;
+	    if(reader==null)
 			throw new NullPointerException("Null reader passed to the internal GranuleOverviewLevelDescriptor method");		
 		synchronized (granuleLevels) {
-			if(granuleLevels.containsKey(Integer.valueOf(index)))
-				return granuleLevels.get(Integer.valueOf(index));
+			if(granuleLevels.containsKey(Integer.valueOf(indexValue)))
+				return granuleLevels.get(Integer.valueOf(indexValue));
 			else
 			{
 				//load level
@@ -1136,7 +1136,7 @@ public class GranuleDescriptor {
 					
 					// add the base level
 					final GranuleOverviewLevelDescriptor newLevel=new GranuleOverviewLevelDescriptor(scaleX,scaleY,levelDimension.width,levelDimension.height);
-					this.granuleLevels.put(Integer.valueOf(index),newLevel);
+					this.granuleLevels.put(Integer.valueOf(indexValue),newLevel);
 					
 					return newLevel;
 					
@@ -1180,7 +1180,7 @@ public class GranuleDescriptor {
 				reader.setInput(inStream, false, ignoreMetadata);
 				
 				// call internal method which will close everything
-				return getLevel(index, reader);
+				return getLevel(index, reader, index, false);
 
 			} catch (IllegalStateException e) {
 				
