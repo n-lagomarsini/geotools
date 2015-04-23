@@ -1085,7 +1085,7 @@ public abstract class AbstractGridCoverage2DReader implements GridCoverage2DRead
                     + "is not supported");
         }
         if(dtLayout == null){
-            return 0;
+            return numOverviews;
         }
         return dtLayout.getNumInternalOverviews() + (dtLayout.getNumExternalOverviews() > 0 ? dtLayout.getNumExternalOverviews() : 0);
     }

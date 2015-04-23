@@ -120,7 +120,7 @@ public class MultiLevelROIRaster implements MultiLevelROI {
                 worker.affine(translate, null, null).getRenderedImage();
             }
             // Creating ROI
-            return worker.getImageAsROI();
+            return worker.binarize(1).getImageAsROI();
         } catch (IOException e) {
             if (LOGGER.isLoggable(Level.SEVERE)) {
                 LOGGER.log(Level.SEVERE, e.getMessage(), e);

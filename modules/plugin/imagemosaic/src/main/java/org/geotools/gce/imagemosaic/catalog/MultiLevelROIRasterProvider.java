@@ -49,9 +49,12 @@ public class MultiLevelROIRasterProvider implements MultiLevelROIProvider {
                     // If present use it
                     if(layout != null){
                         // Getting Total Number of masks
-                        int totalMasks = layout.getNumExternalMasks() + 
-                                layout.getNumInternalMasks() + 
-                                layout.getNumExternalMaskOverviews();
+                        int numExternalMasks = layout.getNumExternalMasks() > 0 ? layout.getNumExternalMasks() : 0;
+                        int numInternalMasks = layout.getNumInternalMasks() > 0 ? layout.getNumInternalMasks() : 0;
+                        int numExternalMaskOverviews = layout.getNumExternalMaskOverviews() > 0 ? layout.getNumExternalMaskOverviews() : 0;
+                        int totalMasks = numExternalMasks + 
+                                numInternalMasks + 
+                                numExternalMaskOverviews;
                         // Check if masks are present
                         // NOTE No Mask: Outside ROI
                         if(totalMasks > 0){

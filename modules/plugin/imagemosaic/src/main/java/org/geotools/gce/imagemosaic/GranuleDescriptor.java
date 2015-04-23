@@ -16,6 +16,7 @@
  */
 package org.geotools.gce.imagemosaic;
 
+import it.geosolutions.imageio.maskband.DatasetLayout;
 import it.geosolutions.imageio.pam.PAMDataset;
 import it.geosolutions.imageio.pam.PAMParser;
 import it.geosolutions.imageio.utilities.ImageIOUtilities;
@@ -57,6 +58,9 @@ import javax.media.jai.TileScheduler;
 
 import org.apache.commons.beanutils.MethodUtils;
 import org.geotools.coverage.grid.GridEnvelope2D;
+import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
+import org.geotools.coverage.grid.io.AbstractGridFormat;
+import org.geotools.coverage.grid.io.GridFormatFinder;
 import org.geotools.data.DataUtilities;
 import org.geotools.factory.Hints;
 import org.geotools.gce.imagemosaic.catalog.MultiLevelROI;
@@ -112,6 +116,8 @@ public class GranuleDescriptor {
 	private final static Logger LOGGER = org.geotools.util.logging.Logging.getLogger(GranuleDescriptor.class);
 
     private static final String AUXFILE_EXT = ".aux.xml";
+    
+    public static final Hints EXCLUDE_MOSAIC = new Hints(Utils.EXCLUDE_MOSAIC, true);
 
     static {
         try {
@@ -280,6 +286,8 @@ public class GranuleDescriptor {
 	AffineTransform baseGridToWorld;
 	
 	ImageReaderSpi cachedReaderSPI;
+	
+	ImageReaderSpi cachedReaderOvrSPI;
 
 	SimpleFeature originator;
 	
@@ -290,10 +298,14 @@ public class GranuleDescriptor {
 	boolean filterMe = false;
 
         ImageInputStreamSpi cachedStreamSPI;
+        
+        ImageInputStreamSpi cachedStreamOvrSPI;
 
         private GridToEnvelopeMapper geMapper;
 
         private boolean singleDimensionalGranule;
+
+        private DatasetLayout layout;
         
 	private void init(final BoundingBox granuleBBOX, final URL granuleUrl,
 			final ImageReaderSpi suggestedSPI, final MultiLevelROI roiProvider,
@@ -305,10 +317,19 @@ public class GranuleDescriptor {
 		this.handleArtifactsFiltering = handleArtifactsFiltering;
     		filterMe = handleArtifactsFiltering && roiProvider != null;
                 
+                // When looking for formats which may parse this file, make sure to exclude the ImageMosaicFormat as return
+    		File granuleFile = DataUtilities.urlToFile(granuleUrl);
+                AbstractGridFormat format = (AbstractGridFormat) GridFormatFinder.findFormat(granuleFile, EXCLUDE_MOSAIC);
+                AbstractGridCoverage2DReader gcReader = format.getReader(granuleFile);
+                // Getting Dataset Layout
+                layout = gcReader.getDatasetLayout();
 		
 		// create the base grid to world transformation
 		ImageInputStream inStream = null;
 		ImageReader reader = null;
+		// Create External Overviews readers
+                ImageInputStream inStreamOvr = null;
+                ImageReader readerOvr = null;
 		try {
 			//
 			//get info about the raster we have to read
@@ -361,6 +382,46 @@ public class GranuleDescriptor {
 			this.granuleLevels.put(Integer.valueOf(0), new GranuleOverviewLevelDescriptor(1, 1, originalDimension.width, originalDimension.height));
 			
 			////////////////////// Setting overviewController ///////////////////////
+                        boolean hasDataSetLayout = layout != null;
+                        // Variables initialization
+                        int numInternalOverviews = hasDataSetLayout ? layout.getNumInternalOverviews() : 0;
+                        int numExternalOverviews = hasDataSetLayout ? layout.getNumExternalOverviews() : 0;
+                        // Handle external overviews
+                        if (numExternalOverviews > 0) {
+                            File ovrFile = new File(DataUtilities.urlToFile(granuleUrl).getAbsolutePath()
+                                    + ".ovr");
+                            URL ovrURL = DataUtilities.fileToURL(ovrFile);
+                            if (cachedStreamOvrSPI == null) {
+                                cachedStreamOvrSPI = Utils.getInputStreamSPIFromURL(ovrURL);
+                                inStreamOvr = cachedStreamSPI.createInputStreamInstance(ovrURL,
+                                        ImageIO.getUseCache(), ImageIO.getCacheDirectory());
+                                if (inStreamOvr == null) {
+                                    if (LOGGER.isLoggable(Level.WARNING)) {
+                                        LOGGER.log(
+                                                Level.WARNING,
+                                                "Unable to get an input stream for the provided file "
+                                                        + ovrURL.toString());
+                                    }
+                                    throw new IllegalArgumentException("Unable to get an input stream for the provided file "+ovrURL.toString());
+                                } else {
+                                    // get a reader and try to cache the suggested SPI first
+                                    if (cachedReaderOvrSPI == null) {
+                                        cachedReaderOvrSPI = Utils.getReaderSpiFromStream(suggestedSPI,
+                                                inStreamOvr);
+                                    }
+                                    if (readerOvr == null) {
+                                        if (cachedReaderOvrSPI == null) {
+                                            throw new IllegalArgumentException(
+                                                    "Unable to get a ReaderSPI for the provided input: "
+                                                            + ovrURL.toString());
+                                        }
+                                        readerOvr = cachedReaderOvrSPI.createReaderInstance();
+                                        readerOvr.setInput(inStreamOvr, false, false);
+                                    }
+                                }
+                            }
+                        }
+			
 			if (heterogeneousGranules) {
 			    // //
 			    //
@@ -373,8 +434,8 @@ public class GranuleDescriptor {
 	                    // Getting the first level descriptor
                             final GranuleOverviewLevelDescriptor baseOverviewLevelDescriptor = granuleLevels.get(0);
 
-                            // Variables initialization
-			    final int numberOfOvervies = reader.getNumImages(true) - 1;
+                            final int numberOfOvervies = hasDataSetLayout ? (numInternalOverviews + numExternalOverviews)
+                                    : reader.getNumImages(true) - 1;
 			    final AffineTransform2D baseG2W = baseOverviewLevelDescriptor.getGridToWorldTransform();
 			    final int width = baseOverviewLevelDescriptor.getWidth();
 			    final int height = baseOverviewLevelDescriptor.getHeight();
@@ -385,8 +446,20 @@ public class GranuleDescriptor {
 			    
 			    // Populating overviews and initializing overviewsController
 			    for (int i = 0; i < numberOfOvervies; i++){
-			        overviewsResolution[i][0]= (highestRes[0] * width) / reader.getWidth(i + 1);
-			        overviewsResolution[i][1]= (highestRes[1] * height) / reader.getHeight(i + 1);
+			        if(numExternalOverviews > 0 && i >= numInternalOverviews){
+			            int index = i - numInternalOverviews;
+                                    overviewsResolution[i][0] = (highestRes[0] * width)
+                                            / readerOvr.getWidth(index);
+                                    overviewsResolution[i][1] = (highestRes[1] * height)
+                                            / readerOvr.getHeight(index);
+			        } else {
+                                    int index = hasDataSetLayout ? layout.getInternalOverviewImageIndex(i + 1)
+                                            : i + 1;
+                                    overviewsResolution[i][0] = (highestRes[0] * width)
+                                            / reader.getWidth(index);
+                                    overviewsResolution[i][1] = (highestRes[1] * height)
+                                            / reader.getHeight(index);
+			        }
 			    }
 			    overviewsController = new OverviewsController(highestRes, numberOfOvervies, overviewsResolution);
 			}
@@ -418,6 +491,18 @@ public class GranuleDescriptor {
 					reader.dispose();
 				}
 			}
+	                 // close/dispose stream and readers
+                        try {
+                                if(inStreamOvr != null){
+                                    inStreamOvr.close();
+                                }
+                        } catch (Throwable e) {
+                                throw new IllegalArgumentException(e);
+                        } finally{
+                                if (readerOvr != null){
+                                    readerOvr.dispose();
+                                }
+                        }
 		}
 	}
 	
@@ -724,9 +809,49 @@ public class GranuleDescriptor {
 			    imageIndex = index;
 			    readParameters = imageReadParameters;
 			}
+                        // Defining an Overview Index value
+                        int ovrIndex = imageIndex;
+                        boolean isExternal = false;
+                        if(layout != null){
+                            // TODO CONTINUE FROM HERE
+                            // NEED TO ONLY HANDLE THIS CASE AND STOP
+                            // ONLY A MINOR TEST
+                            int extOvr = layout.getNumExternalOverviews();
+                            int intOvr = layout.getNumInternalOverviews();
+                            if(extOvr > 0 && imageIndex >= reader.getNumImages(true)){
+                                ovrIndex = imageIndex - intOvr - 1;
+                                // get a stream
+                                assert cachedStreamOvrSPI!=null:"no cachedStreamSPI available!";
+                                inStream = cachedStreamOvrSPI.createInputStreamInstance(granuleUrl, ImageIO.getUseCache(), ImageIO.getCacheDirectory());
+                                if(inStream==null)
+                                        return null;
+                                
+                
+                                // get a reader and try to cache the relevant SPI
+                                if(cachedReaderSPI==null){
+                                        reader = ImageIOExt.getImageioReader(inStream);
+                                        if(reader!=null)
+                                                cachedReaderSPI=reader.getOriginatingProvider();
+                                }
+                                else
+                                        reader=cachedReaderSPI.createReaderInstance();
+                                if(reader==null) {
+                                        if (LOGGER.isLoggable(java.util.logging.Level.WARNING)){
+                                                LOGGER.warning(new StringBuilder("Unable to get s reader for granuleDescriptor ").append(this.toString())
+                                                        .append(" with request ").append(request.toString()).append(" Resulting in no granule loaded: Empty result").toString());
+                                        }
+                                        return null;
+                                }
+                                // set input
+                                customizeReaderInitialization(reader, hints);
+                                reader.setInput(inStream);
+                            }else {
+                                ovrIndex = layout.getInternalOverviewImageIndex(imageIndex);
+                            }
+                        }
 			
 			//get selected level and base level dimensions
-			final GranuleOverviewLevelDescriptor selectedlevel= getLevel(imageIndex,reader);
+			final GranuleOverviewLevelDescriptor selectedlevel= getLevel(ovrIndex,reader);
 	
 			
 			// now create the crop grid to world which can be used to decide
@@ -783,7 +908,7 @@ public class GranuleDescriptor {
 			RenderedImage raster;
 			try {
 				// read
-				raster= request.getReadType().read(readParameters,imageIndex, granuleUrl, selectedlevel.rasterDimensions, reader, hints,false);
+				raster= request.getReadType().read(readParameters,ovrIndex, granuleUrl, selectedlevel.rasterDimensions, reader, hints,false);
 				
 			} catch (Throwable e) {
 				if (LOGGER.isLoggable(java.util.logging.Level.FINE)){

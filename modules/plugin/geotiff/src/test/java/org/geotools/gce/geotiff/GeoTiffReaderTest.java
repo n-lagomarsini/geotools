@@ -440,7 +440,7 @@ public class GeoTiffReaderTest extends org.junit.Assert {
         
         Assert.assertNull(layout.getExternalMasks());
         Assert.assertNull(layout.getExternalOverviews());
-        Assert.assertNull(layout.getExternalMaskOverviews());        
+        Assert.assertNull(layout.getExternalMaskOverviews());
     }
 
     /**

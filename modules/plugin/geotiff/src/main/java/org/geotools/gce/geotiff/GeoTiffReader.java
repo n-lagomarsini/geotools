@@ -574,7 +574,7 @@ public class GeoTiffReader extends AbstractGridCoverage2DReader implements GridC
         } else {
             pbjRead.add(inStreamSPI != null ? inStreamSPI.createInputStreamInstance(source, ImageIO.getUseCache(), ImageIO.getCacheDirectory()) : ImageIO.createImageInputStream(source));
             // Setting correct ImageChoice
-            int overviewImageIndex = imageChoice > 0 ? dtLayout.getInternalOverviewImageIndex(imageChoice) : 0;
+            int overviewImageIndex = dtLayout.getInternalOverviewImageIndex(imageChoice);
             int index = overviewImageIndex >= 0 ? overviewImageIndex : 0;
             pbjRead.add(index);
         }
@@ -667,12 +667,16 @@ public class GeoTiffReader extends AbstractGridCoverage2DReader implements GridC
             final double scaleX = ssWidth / (1.0 * roiRaster.getWidth());
             final double scaleY = ssHeight / (1.0 * roiRaster.getHeight());
             AffineTransform tr = AffineTransform.getScaleInstance(scaleX, scaleY);
+            // Translation Factors
+            final int transX = coverageRaster.getMinX();
+            final int transY = coverageRaster.getMinY();
+            tr.concatenate(AffineTransform.getTranslateInstance(transX, transY));
             // Logging the Scale operation
             if (!tr.isIdentity()) {
                 LOGGER.fine("Scaling ROI");
             }
             // Input Mask is scaled to the image size, rescaled to Bytes and then used as ROI
-            roi = new ImageWorker(roiRaster).affine(tr, null, null).getImageAsROI();
+            roi = new ImageWorker(roiRaster).affine(tr, null, null).binarize(1).getImageAsROI();
         }
         // //
         //
