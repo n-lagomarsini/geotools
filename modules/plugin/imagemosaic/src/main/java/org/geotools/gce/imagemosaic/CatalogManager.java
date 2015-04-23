@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
@@ -60,15 +61,18 @@ import org.geotools.gce.imagemosaic.catalogbuilder.CatalogBuilderConfiguration;
 import org.geotools.gce.imagemosaic.properties.PropertiesCollector;
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.util.DefaultProgressListener;
 import org.geotools.util.Utilities;
 import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.feature.type.Name;
 import org.opengis.filter.Filter;
 import org.opengis.geometry.Envelope;
+import org.opengis.referencing.ReferenceIdentifier;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -248,6 +252,17 @@ public class CatalogManager {
                 // override the crs in case the provided one was wrong or absent
                 indexSchema = DataUtilities.createSubType(indexSchema,
                         DataUtilities.attributeNames(indexSchema), actualCRS);
+                if (actualCRS != null) {
+                    Set<ReferenceIdentifier> identifiers = actualCRS.getIdentifiers();
+                    if (identifiers == null || identifiers.isEmpty()) {
+                        GeometryDescriptor geometryDescriptor = indexSchema.getGeometryDescriptor();
+                        if (geometryDescriptor != null) {
+                            Map<Object, Object> userData = geometryDescriptor.getUserData();
+                            userData.put(JDBCDataStore.JDBC_NATIVE_SRID,0);
+                        }
+                    }
+                }
+                
             } catch (Throwable e) {
                 if (LOGGER.isLoggable(Level.FINE))
                     LOGGER.log(Level.FINE, e.getLocalizedMessage(), e);
