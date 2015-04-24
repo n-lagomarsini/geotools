@@ -385,7 +385,7 @@ public class GranuleDescriptor {
                         boolean hasDataSetLayout = layout != null;
                         // Variables initialization
                         int numInternalOverviews = hasDataSetLayout ? layout.getNumInternalOverviews() : 0;
-                        int numExternalOverviews = hasDataSetLayout ? layout.getNumExternalOverviews() : 0;
+                        int numExternalOverviews = hasDataSetLayout ? (layout.getNumExternalOverviews() > 0 ? layout.getNumExternalOverviews() : 0): 0;
                         // Handle external overviews
                         if (numExternalOverviews > 0) {
                             File ovrFile = new File(DataUtilities.urlToFile(granuleUrl).getAbsolutePath()
@@ -812,14 +812,28 @@ public class GranuleDescriptor {
                         // Defining an Overview Index value
                         int ovrIndex = imageIndex;
                         boolean isExternal = false;
+                        // Define a new URL to use
+                        URL granuleURLUpdated = granuleUrl;
                         if(layout != null){
                             int extOvr = layout.getNumExternalOverviews();
                             int intOvr = layout.getNumInternalOverviews();
                             if (extOvr > 0 && imageIndex >= reader.getNumImages(true)) {
                                 ovrIndex = imageIndex - intOvr - 1;
+                                try {
+                                    if (inStream != null) {
+                                        inStream.close();
+                                    }
+                                } finally {
+                                    if (reader != null) {
+                                        reader.dispose();
+                                    }
+                                }
+                                // Define new URL
+                                File granuleFile = DataUtilities.urlToFile(granuleUrl);
+                                granuleURLUpdated = DataUtilities.fileToURL(new File(granuleFile.getAbsolutePath() + ".ovr"));
                                 // get a stream
                                 assert cachedStreamOvrSPI != null : "no cachedStreamSPI available!";
-                                inStream = cachedStreamOvrSPI.createInputStreamInstance(granuleUrl,
+                                inStream = cachedStreamOvrSPI.createInputStreamInstance(granuleURLUpdated,
                                         ImageIO.getUseCache(), ImageIO.getCacheDirectory());
                                 if (inStream == null)
                                     return null;
@@ -908,7 +922,7 @@ public class GranuleDescriptor {
 			RenderedImage raster;
 			try {
 				// read
-				raster= request.getReadType().read(readParameters,ovrIndex, granuleUrl, selectedlevel.rasterDimensions, reader, hints,false);
+				raster= request.getReadType().read(readParameters,ovrIndex, granuleURLUpdated, selectedlevel.rasterDimensions, reader, hints,false);
 				
 			} catch (Throwable e) {
 				if (LOGGER.isLoggable(java.util.logging.Level.FINE)){
@@ -1014,7 +1028,7 @@ public class GranuleDescriptor {
 			// apply the affine transform  conserving indexed color model
 			final RenderingHints localHints = new RenderingHints(JAI.KEY_REPLACE_INDEX_COLOR_MODEL, interpolation instanceof InterpolationNearest? Boolean.FALSE:Boolean.TRUE);
 			if(XAffineTransform.isIdentity(finalRaster2Model,Utils.AFFINE_IDENTITY_EPS)) {
-			    return new GranuleLoadingResult(raster, null, granuleUrl, doFiltering, pamDataset);
+			    return new GranuleLoadingResult(raster, null, granuleURLUpdated, doFiltering, pamDataset);
 			} else {
 				//
 				// In case we are asked to use certain tile dimensions we tile
@@ -1076,7 +1090,7 @@ public class GranuleDescriptor {
 				    t.setProperty(NoDataContainer.GC_NODATA, new NoDataContainer(iw.getNoData()));
 				    renderedImage = t;
 				}
-				return new GranuleLoadingResult(renderedImage, null, granuleUrl, doFiltering, pamDataset);
+				return new GranuleLoadingResult(renderedImage, null, granuleURLUpdated, doFiltering, pamDataset);
 			}
 		
 		} catch (IllegalStateException e) {

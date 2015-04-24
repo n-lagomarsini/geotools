@@ -477,7 +477,12 @@ class RasterLayerResponse{
 
                    // path management
                    File inputFile = DataUtilities.urlToFile(result.granuleUrl);
-                   String canonicalPath = inputFile.getCanonicalPath();                   
+                   String canonicalPath = inputFile.getCanonicalPath();
+                   // Remove ovr extension if present
+                   String fileCanonicalPath = canonicalPath;
+                   if(canonicalPath.endsWith(".ovr")){
+                       fileCanonicalPath = canonicalPath.substring(0, canonicalPath.length() - 4);
+                   }
                    paths.append(canonicalPath).append(",");
                    
                    // add to the mosaic collection, with preprocessing
@@ -485,7 +490,7 @@ class RasterLayerResponse{
                    MosaicElement input = preProcessGranuleRaster(
                                            loadedImage,
                                            result,
-                                           canonicalPath);  
+                                           fileCanonicalPath);  
                    returnValues.add(input);
                    
                 } catch (Exception e) {

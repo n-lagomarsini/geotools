@@ -417,7 +417,7 @@ public class GeoTiffReader extends AbstractGridCoverage2DReader implements GridC
                 double spanRes0 = highestRes[0] * this.originalGridRange.getSpan(0);
                 double spanRes1 = highestRes[1] * this.originalGridRange.getSpan(1);
                 for (int i = 0; i < firstExternalOverview; i++) {
-                    int overviewImageIndex = dtLayout.getInternalOverviewImageIndex(i);
+                    int overviewImageIndex = dtLayout.getInternalOverviewImageIndex(i + 1);
                     int index = overviewImageIndex >= 0 ? overviewImageIndex : 0;
                     overViewResolutions[i][0] = spanRes0 / reader.getWidth(index);
                     overViewResolutions[i][1] = spanRes1 / reader.getHeight(index);

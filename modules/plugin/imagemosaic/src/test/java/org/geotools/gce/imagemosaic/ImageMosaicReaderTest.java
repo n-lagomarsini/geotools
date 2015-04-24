@@ -3320,11 +3320,21 @@ public class ImageMosaicReaderTest extends Assert{
         tileSize.setValue("128,128");
 
         // Test the output coverage
-        TestUtils.checkCoverage(reader, new GeneralParameterValue[] { gg, useJai, tileSize },
+        GeneralParameterValue[] values = new GeneralParameterValue[] { gg, useJai, tileSize };
+        final GridCoverage2D coverage = TestUtils.checkCoverage(reader, values,
                 "external overviews test");
+
+        // Checking Overview Path
+        Object fileLocation = coverage
+                .getProperty(AbstractGridCoverage2DReader.FILE_SOURCE_PROPERTY);
+        assertNotNull(fileLocation);
+        assertTrue(fileLocation instanceof String);
+        String path = (String) fileLocation;
+        assertTrue(!path.isEmpty());
+        assertTrue(path.endsWith(".ovr"));
     }
 
-    @AfterClass
+        @AfterClass
 	public static void close(){
 		System.clearProperty("org.geotools.referencing.forceXY");
 	        CRS.reset("all");
