@@ -34,6 +34,7 @@ import it.geosolutions.jaiext.stats.HistogramWrapper;
 import it.geosolutions.jaiext.stats.Statistics;
 import it.geosolutions.jaiext.stats.Statistics.StatsType;
 import it.geosolutions.jaiext.warp.WarpDescriptor;
+import it.geosolutions.rendered.viewer.RenderedImageBrowser;
 
 import java.awt.Color;
 import java.awt.HeadlessException;
@@ -644,6 +645,12 @@ public class ImageWorker {
      */
     public final ImageWorker setROI(final ROI roi) {
         this.roi = roi;
+        // If ROI == null remove it also from the image properties
+        if(roi == null){
+            PlanarImage pl = getPlanarImage();
+            pl.removeProperty("ROI");
+            image = pl;
+        }
         invalidateStatistics();
         return this;
     }
@@ -3859,18 +3866,52 @@ public class ImageWorker {
                         PlanarImage sourceImage = op.getSourceImage(0);
                         final ParameterBlock paramBlk = new ParameterBlock().addSource(sourceImage);
                         Object property = sourceImage.getProperty("ROI");
-                        if ((property == null) || property.equals(java.awt.Image.UndefinedProperty)
-                                || !(property instanceof ROI)) {
+                        if (((property == null) || property.equals(java.awt.Image.UndefinedProperty)
+                                || !(property instanceof ROI))) {
                             paramBlk.add(warp).add(interpolation).add(bgValues);
                             paramBlk.set(nodata, 4);
-                            if(isNoDataNeeded() && bgValues != null && bgValues.length > 0){
+                            // Try to reproject ROI after Warp
+                            ROI newROI = null;
+                            if(roi != null){
+                                ROI reprojectedROI = roi;
+                                try{
+                                    MathTransform inverse = originalTransform.inverse();
+                                    if(inverse instanceof AffineTransform){
+                                        AffineTransform inv = (AffineTransform)inverse;
+                                        newROI = reprojectedROI.transform(inv);
+                                    }
+                                }catch(Exception e){
+                                    if(LOGGER.isLoggable(Level.WARNING)){
+                                        LOGGER.log(Level.WARNING, "Unable to compute the inverse of the new ROI provided", e);
+                                    }
+                                }
+                            }
+  
+                            if(newROI != null){
+                                setROI(newROI);
+                                paramBlk.set(newROI, 3);
+                            }
+                            if((isNoDataNeeded() || newROI != null) && bgValues != null && bgValues.length > 0){
                                 setNoData(RangeFactory.create(bgValues[0], bgValues[0]));
                             }
                         } else {
                             // Intersect ROIs
                             ROI newROI = null;
                             if (roi != null) {
-                                newROI = roi.intersect((ROI) property);
+                                // Try to reproject ROI after Warp
+                                ROI reprojectedROI = roi;
+                                try{
+                                    MathTransform inverse = originalTransform.inverse();
+                                    if(inverse instanceof AffineTransform){
+                                        AffineTransform inv = (AffineTransform)inverse;
+                                        reprojectedROI = reprojectedROI.transform(inv);
+                                        newROI = reprojectedROI.intersect((ROI) property);
+                                    }
+                                }catch(Exception e){
+                                    if(LOGGER.isLoggable(Level.WARNING)){
+                                        LOGGER.log(Level.WARNING, "Unable to compute the inverse of the new ROI provided", e);
+                                    }
+                                }
                             } else {
                                 newROI = (ROI) property;
                             }
@@ -3907,6 +3948,8 @@ public class ImageWorker {
                         Object prop = gen.getProperty("roi", image);
                         if(prop != null && prop instanceof ROI){
                             setROI((ROI) prop);
+                        } else {
+                            setROI(null);
                         }
                         return this;
                     }
@@ -4059,6 +4102,8 @@ public class ImageWorker {
                     Object prop = gen.getProperty("roi", image);
                     if(prop != null && prop instanceof ROI){
                         setROI((ROI) prop);
+                    }  else {
+                        setROI(null);
                     }
                 }
 
@@ -4084,7 +4129,10 @@ public class ImageWorker {
                             .getPropertyGenerators(RenderedRegistryMode.MODE_NAME)[0];
                     Object prop = gen.getProperty("roi", image);
                     if (prop != null && prop instanceof ROI) {
+                        //RenderedImageBrowser.showChain(((ROI)prop).getAsImage(), false, false);
                         setROI((ROI) prop);
+                    }  else {
+                        setROI(null);
                     }
                 }
             }
@@ -4108,6 +4156,8 @@ public class ImageWorker {
                 Object prop = gen.getProperty("roi", image);
                 if (prop != null && prop instanceof ROI) {
                     setROI((ROI) prop);
+                }  else {
+                    setROI(null);
                 }
             }
         }
@@ -4368,6 +4418,8 @@ public class ImageWorker {
         Object prop = gen.getProperty("roi", image);
         if(prop != null && prop instanceof ROI){
             setROI((ROI) prop);
+        }  else {
+            setROI(null);
         }
 
         return this;
@@ -4401,6 +4453,8 @@ public class ImageWorker {
         Object prop = gen.getProperty("roi", image);
         if(prop != null && prop instanceof ROI){
             setROI((ROI) prop);
+        }  else {
+            setROI(null);
         }
         return this;
     }

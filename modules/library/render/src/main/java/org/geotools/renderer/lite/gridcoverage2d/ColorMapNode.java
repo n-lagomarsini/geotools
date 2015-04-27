@@ -21,6 +21,7 @@ import it.geosolutions.jaiext.classifier.LinearColorMap;
 import it.geosolutions.jaiext.classifier.LinearColorMapElement;
 import it.geosolutions.jaiext.piecewise.Domain1D;
 import it.geosolutions.jaiext.range.NoDataContainer;
+import it.geosolutions.rendered.viewer.RenderedImageBrowser;
 
 import java.awt.Color;
 import java.awt.image.DataBuffer;
@@ -279,6 +280,9 @@ class ColorMapNode extends StyleVisitorCoverageProcessingNodeAdapter implements
 	        //prepare the colorMapTransform operation
 	        ImageWorker w = new ImageWorker(sourceImage);
 	        w.setROI(CoverageUtilities.getROIProperty(sourceCoverage));
+	        if(CoverageUtilities.getROIProperty(sourceCoverage) != null){
+	            //RenderedImageBrowser.showChain(CoverageUtilities.getROIProperty(sourceCoverage).getAsImage(), false, false);
+	        }
 	        NoDataContainer noDataProperty = CoverageUtilities.getNoDataProperty(sourceCoverage);
                 w.setNoData(noDataProperty != null ? noDataProperty.getAsRange() : null);
 	        w.classify(colorMapTransform, null);

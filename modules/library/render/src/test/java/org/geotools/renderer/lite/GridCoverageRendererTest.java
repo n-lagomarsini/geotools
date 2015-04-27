@@ -700,6 +700,7 @@ public class GridCoverageRendererTest  {
 
         RenderedImage image = renderer.renderImage(rainReader, null, rasterSymbolizer, Interpolation.getInstance(Interpolation.INTERP_NEAREST),
                 Color.RED, 256, 256);
+        
         assertNotNull(image);
         File reference = new File(
                 "src/test/resources/org/geotools/renderer/lite/gridcoverage2d/polar_whitecorner_up.png");
