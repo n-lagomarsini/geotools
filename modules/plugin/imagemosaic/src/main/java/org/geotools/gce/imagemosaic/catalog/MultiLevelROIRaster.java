@@ -89,14 +89,14 @@ public class MultiLevelROIRaster implements MultiLevelROI {
     }
 
     public ROI getTransformedROI(AffineTransform at, int imageIndex, Rectangle imgBounds,
-            ReadType readType) {
+            ImageReadParam params, ReadType readType) {
         // Check if ROI must be taken from internal or external masks
         int numInternalMasks = layout.getNumInternalMasks();
         int numExternalMasks = layout.getNumExternalMasks();
         int numExternalMaskOverviews = layout.getNumExternalMaskOverviews();
         // Getting FileHelper
         FileHelper h = findBestMatch(imgBounds, imageIndex, numInternalMasks, numExternalMasks,
-                numExternalMaskOverviews);
+                numExternalMaskOverviews, params);
         // Define which File must be used for reading mask info
         File inFile = h.file;
         // Defining imageIndex based on the imageIndex
@@ -144,7 +144,7 @@ public class MultiLevelROIRaster implements MultiLevelROI {
             // Wrapping Raster with ImageWorker
             ImageWorker worker = new ImageWorker(raster);
             // Scaling ROI if necessary
-            if (!translate.isIdentity()) {
+            if (!scale.isIdentity()) {
                 worker.affine(translate, null, null).getRenderedImage();
             }
             // Creating ROI
@@ -195,15 +195,16 @@ public class MultiLevelROIRaster implements MultiLevelROI {
      * @param numInternalMasks
      * @param numExternalMasks
      * @param numExternalMaskOverviews
+     * @param params 
      * @return
      */
     private FileHelper findBestMatch(Rectangle imgBounds, int imageIndex, int numInternalMasks,
-            int numExternalMasks, int numExternalMaskOverviews) {
+            int numExternalMasks, int numExternalMaskOverviews, ImageReadParam params) {
         int index = -1;
         File inFile = null;
         // ImageReadParameters definition
         ImageReadParam readParameters = new ImageReadParam();
-        readParameters.setSourceRegion(new Rectangle(0, 0, imgBounds.width, imgBounds.height));
+        readParameters.setSourceRegion(params.getSourceRegion());
         readParameters.setSourceSubsampling(1, 1, 0, 0);
         int totalExternalMask = numExternalMasks + numExternalMaskOverviews;
         if (imageIndex < numInternalMasks) {
@@ -217,7 +218,7 @@ public class MultiLevelROIRaster implements MultiLevelROI {
             index = imageIndex - numExternalMasks;
         } else {
             // Reset ImageParameter Definition
-            readParameters = new ImageReadParam();
+            //readParameters = new ImageReadParam();
             readParameters.setSourceSubsampling(1, 1, 0, 0);
             // Getting last available mask value
             if (numInternalMasks > 0) {

@@ -20,6 +20,7 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 
+import javax.imageio.ImageReadParam;
 import javax.media.jai.ROI;
 import javax.media.jai.ROIShape;
 
@@ -76,7 +77,7 @@ public class MultiLevelROIGeometry implements MultiLevelROI{
     }
 
     public ROIGeometry getTransformedROI(AffineTransform at, int imageIndex, Rectangle imgBounds,
-            ReadType readType) {
+            ImageReadParam params, ReadType readType) {
         if(empty) {
             return null;
         }

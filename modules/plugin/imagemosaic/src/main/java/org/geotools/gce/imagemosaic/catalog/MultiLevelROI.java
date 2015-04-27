@@ -19,6 +19,7 @@ package org.geotools.gce.imagemosaic.catalog;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 
+import javax.imageio.ImageReadParam;
 import javax.media.jai.ROI;
 
 import org.geotools.gce.imagemosaic.ReadType;
@@ -43,7 +44,7 @@ public interface MultiLevelROI {
      * @return a {@link ROI} object
      */
     public ROI getTransformedROI(AffineTransform at, int imageIndex, Rectangle imgBounds,
-            ReadType readType);
+            ImageReadParam params, ReadType readType);
 
     /**
      * Checks if the provided {@link MultiLevelROI} object is empty or not

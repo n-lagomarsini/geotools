@@ -1002,7 +1002,7 @@ public class GranuleDescriptor {
                             raster.getWidth(), raster.getHeight());
                     // Getting Transformed ROI
                     transformed = roiProvider.getTransformedROI(finalRaster2Model.createInverse(),
-                            imageIndex, imgBounds, request.getReadType());
+                            imageIndex, imgBounds, readParameters, request.getReadType());
                     // Check for vectorial ROI
                     if(transformed instanceof ROIGeometry && ((ROIGeometry)transformed).getAsGeometry().isEmpty()){
                         // inset might have killed the geometry fully
