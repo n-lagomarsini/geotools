@@ -147,7 +147,6 @@ class NetCDFResponse extends CoverageResponse{
     public CoverageResponse createResponse() throws IOException {
         processRequest();
         return this;
-
     }
 
     /**
@@ -327,7 +326,7 @@ class NetCDFResponse extends CoverageResponse{
             Query query,
             Filter requestFilter, String timeFilterAttribute, String elevationFilterAttribute) {
         final List<Filter> filters = new ArrayList<Filter>();
-        
+
         // //
         // Setting up time filter
         // //
@@ -340,7 +339,7 @@ class NetCDFResponse extends CoverageResponse{
                     FeatureUtilities.DEFAULT_FILTER_FACTORY.greaterOrEqual(FeatureUtilities.DEFAULT_FILTER_FACTORY.property(timeFilterAttribute),
                             FeatureUtilities.DEFAULT_FILTER_FACTORY.literal(range.getMinValue()))));
         }
-        
+
         // //
         // Setting up elevation filter
         // //
@@ -412,7 +411,7 @@ class NetCDFResponse extends CoverageResponse{
 
             // === init raster bounds
             initRasterBounds();
-            
+
             // === init targetGrid2World
             initTargetTransformation();
 
@@ -440,7 +439,6 @@ class NetCDFResponse extends CoverageResponse{
 
         // update final grid to world
         finalGridToWorldCorner = new AffineTransform2D(targetGridToWorld);
-        
     }
 
     /**
@@ -456,12 +454,15 @@ class NetCDFResponse extends CoverageResponse{
         // than what we need. The code below is a bit better since it uses a proper logic (see GridEnvelope
         // Javadoc)
         // rasterBounds = new GridEnvelope2D(new Envelope2D(tempRasterBounds), PixelInCell.CELL_CORNER);
-        if (rasterBounds.width == 0)
+        if (rasterBounds.width == 0) {
             rasterBounds.width++;
-        if (rasterBounds.height == 0)
+        }
+        if (rasterBounds.height == 0) {
             rasterBounds.height++;
-        if (oversampledRequest)
+        }
+        if (oversampledRequest) {
             rasterBounds.grow(2, 2);
+        }
     }
 
     /**
@@ -492,7 +493,7 @@ class NetCDFResponse extends CoverageResponse{
             // SG going back to working on a per level basis to do the composition
             // g2w = new AffineTransform(request.getRequestedGridToWorld());
             g2w.concatenate(AffineTransform.getScaleInstance(baseReadParameters.getSourceXSubsampling(), baseReadParameters.getSourceYSubsampling()));
-        }   
+        }
         // move it to the corner
         finalGridToWorldCorner = new AffineTransform2D(g2w);
         finalWorldToGridCorner = finalGridToWorldCorner.inverse();// compute raster bounds

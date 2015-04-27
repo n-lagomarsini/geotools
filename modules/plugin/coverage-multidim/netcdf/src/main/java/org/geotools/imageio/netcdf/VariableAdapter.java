@@ -35,6 +35,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Level;
 
+import javax.measure.unit.Unit;
+
 import org.geotools.coverage.Category;
 import org.geotools.coverage.GridSampleDimension;
 import org.geotools.coverage.grid.GridEnvelope2D;
@@ -482,7 +484,7 @@ public class VariableAdapter extends CoverageSourceDescriptor {
 
         // ADDITIONAL DOMAINS
         addAdditionalDomain(otherAxes, dimensions);
-        
+
         setDimensionDescriptors(dimensions);
         if (reader.ancillaryFileManager.isImposedSchema()) {
             updateDimensions(getDimensionDescriptors());
@@ -550,7 +552,7 @@ public class VariableAdapter extends CoverageSourceDescriptor {
      */
     public void updateMapping(SimpleFeatureType indexSchema, List<DimensionDescriptor> descriptors)
             throws IOException {
-        Map<String, String> dimensionsMapping = reader.dimensionsMapping;
+        Map<String, String> dimensionsMapping = reader.georeferencing.getDimensions();
         Set<String> keys = dimensionsMapping.keySet();
         int indexAttribute = FIRST_ATTRIBUTE_INDEX;
 
@@ -634,11 +636,6 @@ public class VariableAdapter extends CoverageSourceDescriptor {
         // Wrapper for the CoordinateSystem
         coordinateSystem = new CoordinateSystemAdapter(coordinateSystem);
 
-        // ////
-        // Creating the CoordinateReferenceSystem
-        // ////
-        coordinateReferenceSystem=NetCDFCRSUtilities.WGS84;
-
         /*
          * Adds the axis in reverse order, because the NetCDF image reader put the last dimensions in the rendered image. Typical NetCDF convention is
          * to put axis in the (time, depth, latitude, longitude) order, which typically maps to (longitude, latitude, depth, time) order in GeoTools
@@ -646,7 +643,7 @@ public class VariableAdapter extends CoverageSourceDescriptor {
          */
         final List<CoordinateVariable<?>> otherAxes = new ArrayList<CoordinateVariable<?>>();
         for(CoordinateAxis axis :coordinateSystem.getCoordinateAxes()){
-            CoordinateVariable<?> cv=reader.coordinatesVariables.get(axis.getShortName());
+            CoordinateVariable<?> cv=reader.georeferencing.getCoordinateVariable(axis.getShortName());
             switch(cv.getAxisType()){
             case Time:case RunTime:
                 initTemporalDomain(cv, dimensions);
@@ -667,6 +664,12 @@ public class VariableAdapter extends CoverageSourceDescriptor {
             }
             
         }
+
+        // ////
+        // Creating the CoordinateReferenceSystem
+        // ////
+        ReferencedEnvelope bbox = reader.georeferencing.getBoundingBox(variableDS.getShortName());
+        coordinateReferenceSystem = bbox.getCoordinateReferenceSystem();
         return otherAxes;
     }
 
@@ -714,9 +717,11 @@ public class VariableAdapter extends CoverageSourceDescriptor {
         // SPATIAL DOMAIN
         final UnidataSpatialDomain spatialDomain = new UnidataSpatialDomain();
         this.setSpatialDomain(spatialDomain);
-        spatialDomain.setCoordinateReferenceSystem(coordinateReferenceSystem);
 
-        spatialDomain.setReferencedEnvelope(reader.boundingBox);
+        //TODO: add support for multiple 2D coordinates definitions within the same dataset
+        ReferencedEnvelope bbox = reader.georeferencing.getBoundingBox(variableDS.getShortName());
+        spatialDomain.setCoordinateReferenceSystem(coordinateReferenceSystem);
+        spatialDomain.setReferencedEnvelope(bbox);
         spatialDomain.setGridGeometry(getGridGeometry());
     }
 
@@ -748,7 +753,26 @@ public class VariableAdapter extends CoverageSourceDescriptor {
         }
         final StringBuilder sb = new StringBuilder();
         final Set<SampleDimension> sampleDims = new HashSet<SampleDimension>();
-        sampleDims.add(new GridSampleDimension(description + ":sd", categories, null));
+
+        // Parsing the unit of measure of this variable
+        Unit unit = null;
+        String unitString = variableDS.getUnitsString();
+        if (unitString != null) {
+            try {
+                if (unitString.contains("-") || unitString.contains(".")) {
+                    // Replace weird characters to transform as an instance:
+                    // kg.m-2 -------> kg*m^-2 which is properly recognized 
+                    // by the javax.measure.unit.Unit parser
+                    unitString = unitString.replace("-", "^-").replace(".", "*");
+                }
+                unit = Unit.valueOf(unitString);
+            } catch (IllegalArgumentException iae) {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.fine("Unable to parse the unit:" + unitString + "\nNo unit will be assigned");
+                }
+            }
+        }
+        sampleDims.add(new GridSampleDimension(description + ":sd", categories, unit));
 
         InternationalString desc = null;
         if (description != null && !description.isEmpty()) {
@@ -774,8 +798,9 @@ public class VariableAdapter extends CoverageSourceDescriptor {
             try {
                 domain = new UnidataAdditionalDomain(cv);
                 additionalDomains.add(domain);
+
              // TODO: Parse Units from axis and map them to UCUM units
-                dimensions.add(new DefaultDimensionDescriptor(cv.getName(), "FIXME_UNIT", "FIXME_UNITSYMBOL", cv.getName(), null));
+                dimensions.add(new DefaultDimensionDescriptor(cv.getName(), cv.getUnit(), cv.getUnit(), cv.getName(), null));
                 this.setHasAdditionalDomains(true);
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, e.getMessage(), e);
@@ -785,6 +810,7 @@ public class VariableAdapter extends CoverageSourceDescriptor {
 
     /**
      * Extracts the {@link GridGeometry2D grid geometry} from the unidata variable.
+     * @param variableDS2 
      * 
      * @return the {@link GridGeometry2D}.
      * @throws IOException 
@@ -792,11 +818,10 @@ public class VariableAdapter extends CoverageSourceDescriptor {
     protected GridGeometry2D getGridGeometry() throws IOException {
         int[] low = new int[2];
         int[] high = new int[2];
-        // String[] axesNames = new String[rank];
         double[] origin = new double[2];
-        double scaleX=Double.POSITIVE_INFINITY, scaleY=Double.POSITIVE_INFINITY;
+        double scaleX = Double.POSITIVE_INFINITY, scaleY = Double.POSITIVE_INFINITY;
 
-        for( CoordinateVariable<?> cv : reader.coordinatesVariables.values() ) {
+        for( CoordinateVariable<?> cv : reader.georeferencing.getCoordinatesVariables(variableDS.getShortName()) ) {
             if(!cv.isNumeric()){
                 continue;
             }
@@ -846,21 +871,20 @@ public class VariableAdapter extends CoverageSourceDescriptor {
                 // raster space
                 low[1] = 0;
                 high[1] = (int) cv.getSize();
-                
+
                 // model space
-                if(cv.isRegular()){
+                if (cv.isRegular()) {
 
-                    if(cv.getIncrement()>0){
-                        //the latitude axis is increasing! This is a special case so we flip it around
-                        scaleY=-cv.getIncrement();
-                        origin[1]=cv.getStart()-scaleY*(high[1]-1);
-                    }else{
-
-                        scaleY=cv.getIncrement();
-                        origin[1]=cv.getStart();
+                    if (cv.getIncrement() > 0) {
+                        // the latitude axis is increasing! This is a special case so we flip it around
+                        scaleY = -cv.getIncrement();
+                        origin[1] = cv.getStart() - scaleY * (high[1] - 1);
+                    } else {
+                        scaleY = cv.getIncrement();
+                        origin[1] = cv.getStart();
                     }
                 } else {
-                    
+
                     // model space is not declared to be regular, but we kind of assume it is!!!
                     final int valuesLength=(int) cv.getSize();
                     double min = ((Number)cv.getMinimum()).doubleValue();
@@ -900,7 +924,8 @@ public class VariableAdapter extends CoverageSourceDescriptor {
                 high[0]-low[0], 
                 high[1]-low[1]);
         final MathTransform raster2Model = ProjectiveTransform.create(at);
-        return new GridGeometry2D(gridRange,PixelInCell.CELL_CENTER,raster2Model, coordinateReferenceSystem,GeoTools.getDefaultHints());
+        return new GridGeometry2D(gridRange, PixelInCell.CELL_CENTER, raster2Model,
+               coordinateReferenceSystem, GeoTools.getDefaultHints());
     }
 
     public int getNumBands() {
@@ -1094,13 +1119,14 @@ public class VariableAdapter extends CoverageSourceDescriptor {
             final CoordinateSystem cs,
             final int imageIndex, 
             final SimpleFeatureType indexSchema) {
-        
+
         final Date date = getTimeValueByIndex(variable, tIndex, cs);
         final Number verticalValue = getVerticalValueByIndex(variable, zIndex, cs);
         final int dimSize = variable.getDimensions().size();
 
         final SimpleFeature feature = DataUtilities.template(indexSchema);
-        feature.setAttribute(CoverageSlice.Attributes.GEOMETRY, NetCDFCRSUtilities.GEOM_FACTORY.toGeometry(reader.boundingBox));
+        feature.setAttribute(CoverageSlice.Attributes.GEOMETRY, 
+                NetCDFCRSUtilities.GEOM_FACTORY.toGeometry(reader.georeferencing.getBoundingBox(variable.getShortName())));
         feature.setAttribute(CoverageSlice.Attributes.INDEX, imageIndex);
 
         // TIME management
@@ -1112,11 +1138,10 @@ public class VariableAdapter extends CoverageSourceDescriptor {
         }
 
         // ELEVATION or other dimension
-        final String elevationCVName = reader.dimensionsMapping.get(NetCDFUtilities.ELEVATION_DIM);
         if (!Double.isNaN(verticalValue.doubleValue())) {
             List<AttributeDescriptor> descriptors = indexSchema.getAttributeDescriptors();
             String attribute = null;
-            
+            final String elevationCVName = reader.georeferencing.getDimension(NetCDFUtilities.ELEVATION_DIM);
             // Once we don't deal anymore with old coverage APIs, we can consider directly use the dimension name as attribute
             for (AttributeDescriptor descriptor: descriptors) {
                 if (descriptor.getLocalName().equalsIgnoreCase(elevationCVName)) {
@@ -1145,9 +1170,9 @@ public class VariableAdapter extends CoverageSourceDescriptor {
     private String getTimeAttribute(CoordinateSystem cs) {
         CoordinateAxis timeAxis = cs.getTaxis();
         String name = timeAxis.getFullName();
-        String timeAttribute = reader.dimensionsMapping.get(name.toUpperCase());
+        String timeAttribute = reader.georeferencing.getDimension(name.toUpperCase());
         if (timeAttribute == null) {
-            timeAttribute = reader.dimensionsMapping.get(NetCDFUtilities.TIME_DIM);
+            timeAttribute = reader.georeferencing.getDimension(NetCDFUtilities.TIME_DIM);
         }
         return timeAttribute;
     }
@@ -1168,7 +1193,7 @@ public class VariableAdapter extends CoverageSourceDescriptor {
         if (cs != null && cs.hasVerticalAxis()) {
             final int rank = variable.getRank();
             final Dimension verticalDimension = variable.getDimension(rank - NetCDFUtilities.Z_DIMENSION);
-            return (Number) reader.coordinatesVariables.get(verticalDimension.getFullName()).read(zIndex);
+            return (Number) reader.georeferencing.getCoordinateVariable(verticalDimension.getFullName()).read(zIndex);
         }
         return ve;
     }
@@ -1189,7 +1214,7 @@ public class VariableAdapter extends CoverageSourceDescriptor {
             final int rank = variable.getRank();
             final Dimension temporalDimension = variable.getDimension(rank
                     - ((cs.hasVerticalAxis() ? NetCDFUtilities.Z_DIMENSION : 2) + 1));
-            return (Date) reader.coordinatesVariables.get(temporalDimension.getFullName()).read(timeIndex);
+            return (Date) reader.georeferencing.getCoordinateVariable(temporalDimension.getFullName()).read(timeIndex);
         }
 
         return null;
