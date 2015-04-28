@@ -69,6 +69,7 @@ import org.geotools.gce.imagemosaic.catalog.index.SchemaType;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.imageio.GeoSpatialImageReader;
 import org.geotools.imageio.netcdf.cv.CoordinateVariable;
+import org.geotools.imageio.netcdf.cv.NetCDFProjection;
 import org.geotools.imageio.netcdf.utilities.NetCDFCRSUtilities;
 import org.geotools.imageio.netcdf.utilities.NetCDFUtilities;
 import org.geotools.imageio.netcdf.utilities.NetCDFUtilities.CheckType;
@@ -875,18 +876,30 @@ public class NetCDFImageReader extends GeoSpatialImageReader implements FileSetM
         if (schema == null||schema.getAttributes()==null) {
             // TODO incapsulate in coveragedescriptor
             schemaDef = suggestSchemaFromCoordinateSystem(coverage, coordinateSystem);
-            
+
             //set the schema name to be the coverageName
-            ancillaryFileManager.setSchema(coverage,coverage.getName(),schemaDef);   
+            ancillaryFileManager.setSchema(coverage,coverage.getName(),schemaDef);
             schema = coverage.getSchema();
         } 
-        
+        CoordinateReferenceSystem crs = NetCDFCRSUtilities.WGS84;
+
+        String variableName = ancillaryFileManager.variablesMap.get(coverageName);
+        Variable var = dataset.findVariable(variableName);
+        Attribute attrib = var.findAttribute(NetCDFUtilities.GRID_MAPPING);
+        if (attrib != null) {
+            // Grid Mapping found
+            Variable projection = dataset.findVariable(attrib.getStringValue());
+            if (projection != null) {
+                crs = NetCDFProjection.parseProjection(projection);
+            }
+        }
+
         // create featuretype, the name is the CoverageName
-        final SimpleFeatureType indexSchema = NetCDFUtilities.createFeatureType(coverage.getName(),schemaDef,NetCDFCRSUtilities.WGS84);
-        
-        // create 
+        final SimpleFeatureType indexSchema = NetCDFUtilities.createFeatureType(coverage.getName(), schemaDef, crs);
+
+        // create
         forceSchemaCreation(indexSchema);
-        
+
         // return
         return indexSchema;
     }

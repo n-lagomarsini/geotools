@@ -266,10 +266,13 @@ public class NetCDFProjection {
         // Preliminar checks on special cases 
         String mappingName = gridMappingName.getStringValue();
         String projectionName = mappingName;
+        boolean adjustLatitudeOfOrigin = false;
         if (mappingName.equalsIgnoreCase(CF.LAMBERT_CONFORMAL_CONIC)) {
-            Attribute standardParallel = var.findAttribute(CF.STANDARD_PARALLEL);
-            final int numParallels = standardParallel.getLength();
-            projectionName = CF.LAMBERT_CONFORMAL_CONIC + (numParallels == 1 ? "_1SP" : "_2SP");
+//            Attribute standardParallel = var.findAttribute(CF.STANDARD_PARALLEL);
+//            final int numParallels = standardParallel.getLength();
+            projectionName = CF.LAMBERT_CONFORMAL_CONIC + /*(numParallels == 1 ? "_1SP" : */"_2SP"/*)*/;
+            // Special management for LambertConformalConic to remap latitudeOfOrigin to zero.
+            adjustLatitudeOfOrigin = true;
         }
 
         // Getting the proper projection and set the projection parameters
@@ -309,7 +312,11 @@ public class NetCDFProjection {
 
         // setting missing parameters
         parameters.parameter("semi_minor").setValue(semiMajor * (1 - (1 / inverseFlattening)));
-        parameters.parameter("semi_major").setValue(semiMajor); 
+        parameters.parameter("semi_major").setValue(semiMajor);
+        if (adjustLatitudeOfOrigin) {
+            // TODO: check this setting. Without this, grib coverages are in the wrong geo-place
+            parameters.parameter("latitude_of_origin").setValue(0);
+        }
 
         // create math transform
         MathTransform transform = mtFactory.createParameterizedTransform(parameters);
@@ -322,7 +329,7 @@ public class NetCDFProjection {
 
         // Create the projected CRS
         return new DefaultProjectedCRS(
-                java.util.Collections.singletonMap("name", "GRIB_Lambert_conformal_conic_1SP"),
+                java.util.Collections.singletonMap("name", projectionName),
                 conversionFromBase,
                 baseCRS,
                 transform,
