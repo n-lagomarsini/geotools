@@ -51,6 +51,7 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -67,6 +68,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.spi.ImageInputStreamSpi;
 import javax.imageio.spi.ImageReaderSpi;
+import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageInputStream;
 import javax.media.jai.BorderExtender;
 import javax.media.jai.Histogram;
@@ -91,6 +93,7 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.geotools.data.DataAccessFactory.Param;
 import org.geotools.data.DataStoreFactorySpi;
 import org.geotools.data.DataUtilities;
+import org.geotools.data.PrjFileReader;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
@@ -112,6 +115,8 @@ import org.geotools.util.Range;
 import org.geotools.util.Utilities;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.spatial.BBOX;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
@@ -378,7 +383,7 @@ public class Utils {
                 FileFilterUtils.suffixFileFilter("ncx"), FileFilterUtils.suffixFileFilter("gbx9"),
                 FileFilterUtils.nameFileFilter("error.txt"),
                 FileFilterUtils.nameFileFilter("_metadata"),
-                FileFilterUtils.suffixFileFilter("sample_image"),
+                FileFilterUtils.suffixFileFilter(SAMPLE_IMAGE_NAME),
                 FileFilterUtils.nameFileFilter("error.txt.lck"),
                 FileFilterUtils.suffixFileFilter("xml"),
                 FileFilterUtils.suffixFileFilter("db"));
@@ -2018,5 +2023,63 @@ public class Utils {
                             + granuleUrl.toString());
         }
         return streamSPI;
+    }
+
+    public static CoordinateReferenceSystem loadPRJ(File prjFile) {
+        CoordinateReferenceSystem crs = null;
+        if (prjFile != null && prjFile.exists()) {
+            // it exists then we have top read it
+            PrjFileReader projReader = null;
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(prjFile);
+                final FileChannel channel = fis.getChannel();
+                projReader = new PrjFileReader(channel);
+                crs = projReader.getCoordinateReferenceSystem();
+            } catch (FileNotFoundException e) {
+                // warn about the error but proceed, it is not fatal
+                LOGGER.log(Level.INFO, e.getLocalizedMessage(), e);
+            } catch (IOException e) {
+                // warn about the error but proceed, it is not fatal
+                LOGGER.log(Level.INFO, e.getLocalizedMessage(), e);
+            } catch (FactoryException e) {
+                // warn about the error but proceed, it is not fatal
+                LOGGER.log(Level.INFO, e.getLocalizedMessage(), e);
+            } finally {
+                if (projReader != null) {
+                    try {
+                        projReader.close();
+                    } catch (IOException e) {
+                        // Does nothing
+                    }
+                }
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (Throwable e) {
+                        // Does nothing
+                    }
+                }
+            }
+        }
+        return crs;
+    }
+
+    public static void storePRJ(File file, CoordinateReferenceSystem crs)
+            throws FileNotFoundException, IOException {
+        FileImageOutputStream fos = null;
+        try {
+            fos = new FileImageOutputStream(file);
+            String wkt = crs.toWKT();
+            fos.write(wkt.getBytes());
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (Throwable t) {
+                    // Does nothing
+                }
+            }
+        }
     }
 }

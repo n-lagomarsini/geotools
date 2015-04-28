@@ -843,6 +843,7 @@ public class RasterManager {
     /** Default {@link SampleModel}. */
     SampleModel defaultSM;
 
+    CoordinateReferenceSystem suppliedCRS;
     /**
      * The name of the input coverage TODO consider URI
      */
@@ -883,9 +884,9 @@ public class RasterManager {
     ImageMosaicReader parentReader;
 
     GranuleCatalog granuleCatalog;
-    
+
     GranuleStore granuleStore;
-    
+
     GranuleSource granuleSource;
 
     String typeName;
@@ -923,6 +924,8 @@ public class RasterManager {
 
         // load defaultSM and defaultCM by using the sample_image if it was provided
         loadSampleImage(configuration);
+        CoordinateReferenceSystem configuredCRS = configuration.getCrs(); 
+        suppliedCRS = configuredCRS != null && configuredCRS.getIdentifiers().isEmpty()? configuredCRS : loadCRS(configuration);
 
         if (configuration != null) {
             CatalogConfigurationBean catalogBean = configuration.getCatalogConfigurationBean();
@@ -1077,6 +1080,44 @@ public class RasterManager {
 					LOGGER.warning("Unable to find sample image for path "+baseURL);
 	}
 
+    /**
+     * This code tries to load the CoordinateReferenceSystem.
+     * 
+     * @param configuration
+     */
+    private CoordinateReferenceSystem loadCRS(MosaicConfigurationBean configuration) {
+        if (this.parentReader.sourceURL == null) {
+           return null;
+        }
+
+        final URL baseURL = this.parentReader.sourceURL;
+        final File baseFile = DataUtilities.urlToFile(baseURL);
+        // in case we do not manage to convert the source URL we leave right away
+        if (baseFile == null) {
+            if (LOGGER.isLoggable(Level.FINE))
+                LOGGER.fine("Unable to find CRS for path " + baseURL);
+            return null;
+        }
+        String baseName = baseFile.getParent() + "/";
+        String fileName = null;
+        File prjFile = null;
+        if (configuration != null) {
+            String name = configuration.getName();
+            if (name != null) {
+                fileName = baseName + name + ".prj";
+                prjFile = new File(fileName);
+                if (!prjFile.exists() || !prjFile.canRead()) {
+                    prjFile = null;
+                }
+            }
+        }
+
+        if (prjFile == null) {
+            prjFile = new File(baseName + "crs.prj");
+        }
+        return Utils.loadPRJ(prjFile);
+    }
+	
 	/**
 	 * This method is responsible for checking the overview policy as defined by
 	 * the provided {@link Hints}.
@@ -1420,7 +1461,7 @@ public class RasterManager {
         }
     }
 
-    void initialize(final boolean checkDomains) throws IOException {
+    void initialize(final boolean checkDomains, MosaicConfigurationBean mosaicConfiguration) throws IOException {
         final BoundingBox bounds = granuleCatalog.getBounds(typeName);
         if (checkDomains) {
             initDomains(configuration);
@@ -1432,10 +1473,16 @@ public class RasterManager {
 
         // we might have an imposed bbox
         CoordinateReferenceSystem crs = bounds.getCoordinateReferenceSystem();
+        if (crs == null) {
+            crs = suppliedCRS != null ? suppliedCRS : mosaicConfiguration.getCrs();
+        }
         GeneralEnvelope originalEnvelope = null;
 
         if (imposedEnvelope == null) {
             originalEnvelope = new GeneralEnvelope(bounds);
+            if (bounds.getCoordinateReferenceSystem() == null) {
+                originalEnvelope.setCoordinateReferenceSystem(crs);
+            }
         } else {
             originalEnvelope = new GeneralEnvelope(imposedEnvelope);
             originalEnvelope.setCoordinateReferenceSystem(crs);

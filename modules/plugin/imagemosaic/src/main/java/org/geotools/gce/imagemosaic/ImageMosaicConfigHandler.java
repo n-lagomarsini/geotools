@@ -390,8 +390,11 @@ public class ImageMosaicConfigHandler {
                     for (String key : keys) {
                         MosaicConfigurationBean mosaicConfiguration = configurations.get(key);
                         RasterManager manager = parentReader.getRasterManager(key);
-                        manager.initialize(supportsEmpty);
+                        manager.initialize(supportsEmpty, mosaicConfiguration);
                         // create sample image if the needed elements are available
+                        if (manager.suppliedCRS != null) {
+                            createPRJ(mosaicConfiguration, useName, manager.suppliedCRS);
+                        }
                         createSampleImage(mosaicConfiguration, useName);
                         eventHandler.fireEvent(Level.INFO, "Creating final properties file ", 99.9);
                         createPropertiesFiles(mosaicConfiguration);
@@ -435,7 +438,7 @@ public class ImageMosaicConfigHandler {
     }
 
     /**
-     * Store a sample image frmo which we can derive the default SM and CM
+     * Store a sample image from which we can derive the default SM and CM
      */
     private void createSampleImage(final MosaicConfigurationBean mosaicConfiguration,
             final boolean useName) {
@@ -452,6 +455,28 @@ public class ImageMosaicConfigHandler {
             try {
                 Utils.storeSampleImage(new File(filePath), mosaicConfiguration.getSampleModel(),
                         mosaicConfiguration.getColorModel());
+            } catch (IOException e) {
+                eventHandler.fireEvent(Level.SEVERE, e.getLocalizedMessage(), 0);
+            }
+        }
+    }
+
+    /**
+     * Store a PRJ from which we can derive the CoordinateReferenceSystem in 
+     * case not available within the index 
+     */
+    private void createPRJ(final MosaicConfigurationBean mosaicConfiguration,
+            final boolean useName, CoordinateReferenceSystem crs) {
+
+        Utilities.ensureNonNull("mosaicConfiguration", mosaicConfiguration);
+        String filePath = null;
+        if (crs != null) {
+
+            // TODO: Consider revisit this using different name/folder
+            final String baseName = runConfiguration.getParameter(Prop.ROOT_MOSAIC_DIR) + "/";
+            filePath = baseName + (useName ? mosaicConfiguration.getName() : "") + "crs.prj";
+            try {
+                Utils.storePRJ(new File(filePath), crs);
             } catch (IOException e) {
                 eventHandler.fireEvent(Level.SEVERE, e.getLocalizedMessage(), 0);
             }

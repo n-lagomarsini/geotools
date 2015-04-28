@@ -1085,7 +1085,7 @@ public class ImageMosaicReader extends AbstractGridCoverage2DReader implements S
             defaultName = name;
         }
         if (init) {
-            rasterManager.initialize(false);
+            rasterManager.initialize(false, configuration);
         }
         return rasterManager;
     }
